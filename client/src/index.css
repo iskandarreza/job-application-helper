@@ -6,3 +6,44 @@
 	margin: 0;
 	padding: 0;
 }
+
+.open-cell .MuiSelect-select{
+	color: blue;
+}
+
+.applied-cell .MuiSelect-select{
+	color: darkgreen;
+}
+
+.uncertain-cell .MuiSelect-select {
+	color: orange;
+}
+
+.declined-cell .MuiSelect-select {
+	color: palevioletred;
+}
+
+.closed-cell .MuiSelect-select {
+	color: darkgray;
+}
+
+.removed-cell .MuiSelect-select {
+	color: lightgray;
+}
+
+.makeStyles-formControl-1 fieldset{
+	border: none;
+}
+
+[data-field="status1"] {
+	padding: 0;
+}
+
+.status2 {
+	display: flex !important;
+	justify-content: space-between !important;
+}
+
+.status2>div:empty {
+	width: 100%;
+}
