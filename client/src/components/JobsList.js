@@ -1,155 +1,11 @@
-import React, { useState, useEffect } from "react"
-import { DataGrid, useGridApiRef } from "@mui/x-data-grid"
-import { makeStyles } from "@material-ui/core/styles"
-import {
-  MenuItem,
-  Select,
-  Button,
-  Box,
-  TextField,
-  IconButton,
-} from "@mui/material"
-import { Edit } from "@material-ui/icons"
+import React, { useState, useLayoutEffect } from "react"
+import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
+import { Status1Cell, Status2Cell } from "./atoms/JobStatusCell"
+import { DataGrid } from "@mui/x-data-grid"
+import { Box } from "@mui/material"
+import { getData } from "../utility/api"
+
 import "../index.css"
-import { getData, updateRecordByID } from "../utility/api"
-
-const useStyles = makeStyles((theme) => ({
-  formControl: {
-    margin: theme.spacing(1),
-    minWidth: 120,
-    fieldset: {
-      border: 'none'
-    }
-  },
-}))
-
-const status1Options = [
-  "open",
-  "closed",
-  "removed",
-  "applied",
-  "uncertain",
-  "declined",
-]
-
-const Status1Cell = ({ params }) => {
-  const [value, setValue] = useState(params.value)
-
-  const handleChange = async (event) => {
-    const newValue = event.target.value
-
-    setValue(newValue)
-  }
-
-  const classes = useStyles()
-  const status1CellClassNames = {}
-
-  status1Options.forEach((value) => {
-    status1CellClassNames[value] = `${value}-cell`
-  })
-
-  const cellClassName = status1CellClassNames[value] || ""
-
-  return (
-    <Select
-      className={`${classes.formControl} ${cellClassName}`}
-      value={value}
-      onChange={handleChange}
-    >
-      {status1Options.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </Select>
-  )
-}
-
-const Status2Cell = ({ params }) => {
-  const [value, setValue] = useState(params.value)
-  const [editing, setEditing] = useState(false)
-
-  const handleEdit = () => {
-    setEditing(true)
-  }
-
-  const handleBlur = () => {
-    setEditing(false)
-  }
-
-  const handleChange = (e) => {
-    const newValue = e.target.value
-    setValue(newValue)
-  }
-
-  useEffect(() => {
-    if (!editing) {
-      if (value) {
-        updateRecordByID(params, value)
-      }
-    }
-  }, [editing, value, params])
-
-  const classes = useStyles()
-
-  if (editing) {
-    return (
-      <TextField
-        className={classes.formControl}
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        autoFocus
-      />
-    )
-  }
-
-  return (
-    <>
-      <IconButton
-        className={classes.iconButton}
-        onClick={handleEdit}
-        size="small"
-      >
-        <Edit />
-      </IconButton>
-      <div>{value}</div>
-    </>
-  )
-}
-
-const JobLinkButtonRenderer = (params) => {
-  const isIndeed = params.row.url?.includes("indeed.com")
-  const handleClickLink = () => {
-    window.open(params.row.url, "_blank")
-  }
-  const handleClickSource = () => {
-    window.open(
-      `${"https://www.indeed.com/rc/clk/dl?jk=" + params.row.id}`,
-      "_blank"
-    )
-  }
-
-  return (
-    <>
-      <Button
-        variant="contained"
-        size="small"
-        onClick={handleClickLink}
-        sx={{ marginRight: "5px" }}
-      >
-        Link
-      </Button>
-      {isIndeed ? (
-        <Button variant="outlined" size="small" onClick={handleClickSource}>
-          Source
-        </Button>
-      ) : (
-        ""
-      )}
-    </>
-  )
-}
 
 const columns = [
   {
@@ -195,9 +51,12 @@ const columns = [
 
 export default function JobsAlertGrid() {
   const [tableData, setTableData] = useState([])
-
-  useEffect(() => {
-    getData(setTableData)
+  const fetchData = async () => {
+    const data = await getData()
+    setTableData(data)
+  }
+  useLayoutEffect(() => {
+    fetchData()
   }, [])
 
   return (
@@ -221,3 +80,4 @@ export default function JobsAlertGrid() {
     </div>
   )
 }
+

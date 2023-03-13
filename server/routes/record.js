@@ -146,19 +146,4 @@ recordRoutes.route("/:id").delete((req, response) => {
     .catch((e) => console.log(e))
 })
 
-// module.exports = recordRoutes
-
-//       console.log(data)
-//       res.json(data)
-//     })
-//     .catch((e) => console.log(e))
-// })
-
-// module.exports = recordRoutes;
-//       console.log(data)
-//       res.json(data)
-//     })
-//     .catch((e) => console.log(e))
-// })
-
 module.exports = recordRoutes;
