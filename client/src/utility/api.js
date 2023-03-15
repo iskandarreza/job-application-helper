@@ -61,6 +61,21 @@ export const updateRecordByID = async (params, newValue) => {
   updateValue[params.field] = newValue
   return axios.post("http://localhost:5000/update/" + params.row._id, updateValue)
     .then((response) => { 
+      const { modifiedCount, upsertedCount, upsertedId } = response.data
+
+      if (modifiedCount || upsertedCount || upsertedId) {
+        toast.success('Record saved successfully!');
+      }
+      return response.data 
+    })
+    .catch((error) => { console.error(error) })
+}
+
+export const deleteRecordByID = async (params, newValue) => {
+  const updateValue = {}
+  updateValue[params.field] = newValue
+  return axios.delete("http://localhost:5000/delete/6411629ce467c63b8bc60501", updateValue)
+    .then((response) => { 
       toast.success('Record saved successfully!');
       return response.data 
     })

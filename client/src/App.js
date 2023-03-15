@@ -1,5 +1,5 @@
 import React from "react"
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { JobsList } from "./components/JobsList"
 
@@ -14,7 +14,7 @@ const App = () => {
           <Route path="/" element={<JobsList />} />
         </Routes>
       </BrowserRouter>
-      <ToastContainer />
+      <ToastContainer position={toast.POSITION.BOTTOM_LEFT} />
     </div>
   )
 }

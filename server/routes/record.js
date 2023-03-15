@@ -133,7 +133,7 @@ recordRoutes.route("/update/:id").post(function (req, res) {
 })
 
 // This section will help you delete a record
-recordRoutes.route("/:id").delete((req, response) => {
+recordRoutes.route("/delete/:id").delete((req, res) => {
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
   db_connect

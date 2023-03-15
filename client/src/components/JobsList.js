@@ -7,11 +7,15 @@ import { getData, getUpdatedData, saveData } from "../utility/api"
 
 import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
 import { RenderSelectMenu } from "./atoms/RenderSelectMenu"
+import { RenderTextField } from "./atoms/RenderTextField"
+
 import { CustomToolbar } from "./atoms/JobLinksToolBar"
 
 import "../index.css"
+import { AddRowForm } from "./atoms/JobRecordInsert"
 
 const columns = [
+  {field: "id", flex: 1},
   {
     field: "org",
     flex: 1,
@@ -26,13 +30,12 @@ const columns = [
   },
   {
     field: "link",
-    flex: 1,
     renderCell: JobLinkButtonRenderer,
   },
   {
     field: "status1",
     headerAlign: 'center',
-    flex: 1,
+    align: 'left',
     renderCell: (params) => <RenderSelectMenu params={params} menuOptions={[
       "open",
       "closed",
@@ -46,7 +49,8 @@ const columns = [
   {
     field: "status2",
     headerAlign: 'center',
-    flex: "1 0",
+    align: 'left',
+    width: 150,
     editable: true,
     cellClassName: "status2",
     renderCell: (params) =>  <RenderSelectMenu params={params}  menuOptions={[
@@ -61,6 +65,7 @@ const columns = [
     field: "status3",
     headerAlign: 'center',
     flex: 1,
+    renderCell: (params) => <RenderTextField params={params} />
   },
 ]
 
@@ -111,12 +116,20 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
       rows={tableData}
       columns={columns}
       components={{
-        Toolbar: (props) => (
+        Toolbar: () => (
           <CustomToolbar
-            {...props}
+            rows={tableData}
+            setRows={setTableData}
             fetchAndInsertData={fetchAndInsertData}
           />
         ),
+      }}
+      initialState={{
+        columns: {
+          columnVisibilityModel: {
+            id: false,
+          },
+        },
       }}
     />
 
@@ -140,6 +153,9 @@ export const JobsList = () => {
       <h1>Job Postings</h1>
       <Box sx={{ height: "75vh", width: "auto" }}>
         <JobsDataGrid tableData={tableData} setTableData={setTableData} />
+      </Box>
+      <Box>
+        <AddRowForm rows={tableData} setRows={setTableData} />
       </Box>
     </div>
   )
