@@ -1,5 +1,6 @@
 import React from "react"
-import { Button } from "@mui/material"
+import { IconButton } from "@mui/material"
+import { Link } from "@material-ui/icons"
 
 export const JobLinkButtonRenderer = (params) => {
   const isIndeed = params.row.url?.includes("indeed.com")
@@ -14,22 +15,27 @@ export const JobLinkButtonRenderer = (params) => {
   }
 
   return (
-    <>
-      <Button
-        variant="contained"
-        size="small"
-        onClick={handleClickLink}
-        sx={{ marginRight: "5px" }}
-      >
-        Link
-      </Button>
-      {isIndeed ? (
-        <Button variant="outlined" size="small" onClick={handleClickSource}>
-          Source
-        </Button>
-      ) : (
-        ""
-      )}
-    </>
+    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
+      <div>
+        <IconButton
+          onClick={handleClickLink}
+          size="small"
+          color="primary"
+        >
+          <Link />
+        </IconButton>
+        {isIndeed ? (
+          <IconButton
+            onClick={handleClickSource}
+            size="small"
+            color="secondary"
+          >
+            <Link>Source</Link>
+          </IconButton>
+        ) : (
+          ""
+        )}
+      </div>
+    </div>
   )
 }

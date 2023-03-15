@@ -1,9 +1,13 @@
-import React, { useState, useLayoutEffect } from "react"
-import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
-import { Status1Cell, Status2Cell } from "./atoms/JobStatusCell"
+import React, { useState, useEffect, useCallback } from "react"
 import { DataGrid } from "@mui/x-data-grid"
-import { Box } from "@mui/material"
-import { getData } from "../utility/api"
+import { toast } from "react-toastify"
+import { Box } from '@mui/material'
+
+import { getData, getUpdatedData, saveData } from "../utility/api"
+
+import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
+import { RenderSelectMenu } from "./atoms/RenderSelectMenu"
+import { CustomToolbar } from "./atoms/JobLinksToolBar"
 
 import "../index.css"
 
@@ -28,19 +32,30 @@ const columns = [
   {
     field: "status1",
     headerAlign: 'center',
-    flex: "1 0",
-    width: 160,
-    renderCell: (params) => <Status1Cell params={params} />,
+    flex: 1,
+    renderCell: (params) => <RenderSelectMenu params={params} menuOptions={[
+      "open",
+      "closed",
+      "removed",
+      "applied",
+      "uncertain",
+      "declined",
+    ]} />,
     editable: true,
   },
   {
     field: "status2",
     headerAlign: 'center',
-    width: 210,
     flex: "1 0",
     editable: true,
     cellClassName: "status2",
-    renderCell: (params) => <Status2Cell params={params} />,
+    renderCell: (params) =>  <RenderSelectMenu params={params}  menuOptions={[
+      'app viewed',
+      'test requested',
+      'test taken',
+      'closed',
+      'rejected',	
+    ]} />,
   },
   {
     field: "status3",
@@ -49,35 +64,83 @@ const columns = [
   },
 ]
 
-export default function JobsAlertGrid() {
-  const [tableData, setTableData] = useState([])
-  const fetchData = async () => {
-    const data = await getData()
-    setTableData(data)
+const JobsDataGrid = ({ tableData, setTableData }) => {
+  const [paginationModel, setPaginationModel] = useState({
+    pageSize: 25,
+    page: 0,
+  })
+
+  const fetchAndInsertData = async () => {
+    try {
+      const newDataArray = await getUpdatedData()
+
+      const newDataToInsert = newDataArray.filter(
+        (newData) => !tableData.some((tableDatum) => tableDatum.url === newData.url)
+      )
+
+      const newDataWithOpenStatus = newDataToInsert.map((newData) => {
+        if (newData.status1 === '') {
+          return { ...newData, status1: 'open' }
+        } else {
+          return newData
+        }
+      })
+
+      if (newDataWithOpenStatus.length > 0) {
+        const response = await saveData(newDataWithOpenStatus)
+        const insertedIds = response.upsertedIds
+        console.log({ insertedIds })
+        const newDataWithIds = newDataWithOpenStatus.map((newData, index) => {
+          return { ...newData, _id: insertedIds[index] }
+        })
+        setTableData((prevData) => [...prevData, ...newDataWithIds])
+      } else {
+        toast.info('No new records added since last update')
+      }
+
+    } catch (error) {
+      console.error(error)
+    }
   }
-  useLayoutEffect(() => {
-    fetchData()
-  }, [])
 
   return (
-    <div>
+
+    <DataGrid
+      paginationModel={paginationModel}
+      onPaginationModelChange={setPaginationModel}
+      rows={tableData}
+      columns={columns}
+      components={{
+        Toolbar: (props) => (
+          <CustomToolbar
+            {...props}
+            fetchAndInsertData={fetchAndInsertData}
+          />
+        ),
+      }}
+    />
+
+  )
+}
+
+export const JobsList = () => {
+  const [tableData, setTableData] = useState([])
+
+  const fetchData = useCallback(async () => {
+    const data = await getData();
+    setTableData(data);
+  }, []);
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+  return (
+    <div style={{ padding: '5px 20px' }}>
       <h1>Job Postings</h1>
-      <Box sx={{ height: "95vh", width: "100%" }}>
-        <DataGrid
-          rows={tableData}
-          columns={columns}
-          initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 12,
-              },
-            },
-          }}
-          pageSizeOptions={[12]}
-          disableRowSelectionOnClick
-        />
+      <Box sx={{ height: "75vh", width: "auto" }}>
+        <JobsDataGrid tableData={tableData} setTableData={setTableData} />
       </Box>
     </div>
   )
 }
-
