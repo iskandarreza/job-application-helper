@@ -5,8 +5,14 @@ This script scrapes LinkedIn and Indeed job alert emails sent to your Gmail for 
 1. Create a new Google Sheet and name it "Email Links".
 2. In the "Email Links" sheet, create columns "Key", "URL", "Company", "Position", "Location", and "Posting".
 3. Open the script editor by selecting **\`Extension** > **Apps Script\`**.
-4. Copy and paste the code from the **\`script.js\`** file into the script editor.
-5. Save the script.
+4. Copy and paste the code from the **\`script.js\`** file into the script editor (`**Code.gs**`).
+5. Add the Cheerio Library (script ID: `1ReeQ6WO8kKNxoaA_O0XEQ589cIrRvEBA9qcWpNqdOP17i47u6N9M5Xh0`)
+6. Save the script.
+7. Click on `**Run**`.
+8. It will ask for permission authorization. Click on `**Review Permissions**`
+9. A window will pop up, choose your Google Account
+10. A security warning will pop up, click on `**Advanced**` then `**Go to Untitled project (unsafe)**`
+That's it!
 
 ## Usage
 
