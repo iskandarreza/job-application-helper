@@ -11,19 +11,6 @@ const dbo = require("../db/conn")
 // This help convert the id from string to ObjectId for the _id.
 const ObjectId = require("mongodb").ObjectId
 
-/**
- * `serverLog` is a function that takes in `data` and logs it to the console, then logs the number of
- * documents upserted, modified, and inserted, and then sends a JSON response with the data
- * @param data - the data returned from the database
- */
-const serverLog = (data) => {
-  console.log(data)
-  console.log(`${data.nUpserted} documents upserted`)
-  console.log(`${data.nModified} documents modified`)
-  console.log(`${data.nInserted} documents inserted`)
-  // res.json(data)
-}
-
 // This section will help you get a list of all the records.
 recordRoutes.route("/record").get(async function (req, res) {
   let db_connect = dbo.getDb()
@@ -33,7 +20,6 @@ recordRoutes.route("/record").get(async function (req, res) {
     .find({})
     .toArray()
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -48,7 +34,6 @@ recordRoutes.route("/record/:id").get(async function (req, res) {
     .collection("email-link-data")
     .findOne(myquery)
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -65,7 +50,6 @@ recordRoutes.route("/record/add").post(function (req, res) {
     .collection("email-link-data")
     .insertOne(myobj)
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -101,7 +85,6 @@ recordRoutes.route("/record/addbulk").post(function (req, res) {
   bulk
     .execute()
     .then((data) => {
-      serverLog(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -114,20 +97,49 @@ recordRoutes.route("/update/:id").post(function (req, res) {
   let myquery = { _id: new ObjectId(req.params.id) }
 
   let updateFields = {}
+  let fieldsModified = []
+
   Object.keys(req.body).forEach((key) => {
-    if (key !== "_id") {
+    if (key !== "_id" && key !== "dateModified" && key !== "fieldsModified") {
+      fieldsModified.push(key)
       updateFields[key] = req.body[key]
     }
   })
 
-  let newvalues = { $set: updateFields }
+  let newvalues = {}
+  if (fieldsModified.length > 0) {
+    newvalues.$set = updateFields
+    newvalues.$set.dateModified = new Date().toISOString()
+    newvalues.$push = { fieldsModified: { $each: fieldsModified } }
+  }
 
   db_connect
     .collection("email-link-data")
-    .updateOne(myquery, newvalues)
-    .then((data) => {
-      console.log(data)
-      res.json(data)
+    .findOne(myquery)
+    .then((doc) => {
+      if (doc) {
+        let isSame = true
+        fieldsModified.forEach((key) => {
+          if (doc[key] !== req.body[key]) {
+            isSame = false
+          }
+        })
+        if (isSame) {
+          res.json({ message: "No fields were modified." })
+        } else {
+          db_connect
+            .collection("email-link-data")
+            .updateOne(myquery, newvalues)
+            .then((data) => {
+              data.query = myquery
+              data.updateValue = newvalues
+              res.json(data)
+            })
+            .catch((e) => console.log(e))
+        }
+      } else {
+        res.status(404).json({ message: "Record not found." })
+      }
     })
     .catch((e) => console.log(e))
 })

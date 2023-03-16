@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Box, TextField, MenuItem, Select, Button } from "@mui/material"
 import { Add } from "@material-ui/icons"
-import { insertRecord } from "../../utility/api"
+import { insertRecord } from "../../utils/api"
 import { toast } from "react-toastify"
 
 const rowModel = {
@@ -25,7 +25,7 @@ export const AddRowForm = (props) => {
   }
 
   const handleAddRow = () => {
-    const newRow = {...row}
+    const newRow = { ...row }
     if (row.linkId) {
       newRow.id = row.linkId
       if (!rows.some(existingRow => existingRow.id === newRow.id)) {
@@ -38,21 +38,22 @@ export const AddRowForm = (props) => {
         toast.warning('ID already exist, record not added.')
         console.log(rows.filter(existingRow => existingRow.id === newRow.id))
       }
-  
+
     } else {
       toast.warning('No ID given, record not added.')
     }
   }
 
   return (
-    <Box sx={{ mt: "20px" }}>
+    <Box sx={{ mt: "20px", width: 'auto' }}>
       <h2>Add new record</h2>
 
-      <div style={{ display: "flex", gap: "10px" }}>
+      <div style={{ display: "flex", justifyContent: 'space-between', gap: "10px" }}>
         {Object.keys(rowModel).map((key) => (
-          <div key={key} >
+          <div key={key} style={{ display: 'flex', flex: 1 }} >
             {key !== "status1" ? (
               <TextField
+                style={{ width: 'auto', flex: 1 }}
                 label={key}
                 value={row[key]}
                 onChange={handleRowChange}
@@ -60,7 +61,7 @@ export const AddRowForm = (props) => {
               />
             ) : (
               <Select
-                style={{ width: "120px" }}
+                style={{ width: 'auto', flex: 1 }}
                 name={key}
                 value={row[key]}
                 onChange={handleRowChange}

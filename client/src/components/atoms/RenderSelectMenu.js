@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { makeStyles } from "@material-ui/core/styles"
 import { MenuItem, Select } from "@mui/material"
-import { updateRecordByID } from "../../utility/api"
+import { updateRecordByID } from "../../utils/api"
 
 const useStyles = makeStyles((theme) => ({
   formControl: {

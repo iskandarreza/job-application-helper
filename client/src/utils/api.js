@@ -62,7 +62,6 @@ export const updateRecordByID = async (params, newValue) => {
   return axios.post("http://localhost:5000/update/" + params.row._id, updateValue)
     .then((response) => { 
       const { modifiedCount, upsertedCount, upsertedId } = response.data
-
       if (modifiedCount || upsertedCount || upsertedId) {
         toast.success('Record saved successfully!');
       }
@@ -71,12 +70,10 @@ export const updateRecordByID = async (params, newValue) => {
     .catch((error) => { console.error(error) })
 }
 
-export const deleteRecordByID = async (params, newValue) => {
-  const updateValue = {}
-  updateValue[params.field] = newValue
-  return axios.delete("http://localhost:5000/delete/6411629ce467c63b8bc60501", updateValue)
+export const deleteRecordByID = async (rowID) => {
+  return axios.delete("http://localhost:5000/delete/" + rowID)
     .then((response) => { 
-      toast.success('Record saved successfully!');
+      toast.success(`Record ID:${rowID} deleted`);
       return response.data 
     })
     .catch((error) => { console.error(error) })

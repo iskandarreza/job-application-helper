@@ -3,7 +3,7 @@ import { DataGrid } from "@mui/x-data-grid"
 import { toast } from "react-toastify"
 import { Box } from '@mui/material'
 
-import { getData, getUpdatedData, saveData } from "../utility/api"
+import { getUpdatedData, saveData } from "../utils/api"
 
 import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
 import { RenderSelectMenu } from "./atoms/RenderSelectMenu"
@@ -14,8 +14,23 @@ import { CustomToolbar } from "./atoms/JobLinksToolBar"
 import "../index.css"
 import { AddRowForm } from "./atoms/JobRecordInsert"
 
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchJobs } from '../redux/actions/jobActions';
+
 const columns = [
   {field: "id", flex: 1},
+  {
+    field: "dateModified",
+    flex: 1,
+    renderCell: (params) => {
+      const details = () => {
+        console.log(params.row)
+      }
+      return (
+        <span onClick={() => details()}>{params.row?.dateModified}</span>
+      )
+    }
+  },
   {
     field: "org",
     flex: 1,
@@ -65,11 +80,15 @@ const columns = [
     field: "status3",
     headerAlign: 'center',
     flex: 1,
-    renderCell: (params) => <RenderTextField params={params} />
+    renderCell: (params) => <RenderTextField params={params} />,
+    editable: true,
   },
 ]
 
 const JobsDataGrid = ({ tableData, setTableData }) => {
+  const jobs = useSelector((state) => state.jobRecords.jobs)
+  const jobsLoading = useSelector((state) => state.jobRecords.loading)
+  const dispatch = useDispatch()
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
@@ -108,6 +127,39 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
     }
   }
 
+  const filterRows = useCallback((rows) => {
+    return rows.filter(row => !['closed', 'removed', 'declined'].includes(row.status1))
+  }, [])
+
+  const handleFilterClick = useCallback(() => {
+    const filteredRows = filterRows(jobs)
+    setTableData(filteredRows)
+    const filteredOutRows = jobs.length - filteredRows.length
+    toast.info(`${filteredOutRows} rows filtered out, ${filteredRows.length} rows remaining`)
+  }, [jobs, filterRows, setTableData])
+
+  const fetchData = useCallback(async () => {
+    if (!jobsLoading) {
+      dispatch(fetchJobs())  
+    }
+  },[jobsLoading, dispatch])
+
+  useEffect(() => {
+    if(jobs.length > 0) {
+      const filteredRows = filterRows(jobs)
+      setTableData(filteredRows)
+    }
+  }, [jobs, filterRows, setTableData])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
+
+
+  useEffect(() => {
+    console.log('DataGrid HOC mounted')
+  }, [])
+
   return (
 
     <DataGrid
@@ -118,8 +170,8 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
       components={{
         Toolbar: () => (
           <CustomToolbar
-            rows={tableData}
-            setRows={setTableData}
+            handleFilterClick={handleFilterClick}
+            fetchData={fetchData}
             fetchAndInsertData={fetchAndInsertData}
           />
         ),
@@ -137,16 +189,18 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
 }
 
 export const JobsList = () => {
-  const [tableData, setTableData] = useState([])
+  const jobs = useSelector((state) => state.jobRecords.jobs);
+  const [tableData, setTableData] = useState(jobs)
 
-  const fetchData = useCallback(async () => {
-    const data = await getData();
-    setTableData(data);
-  }, []);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    dispatch(fetchJobs());
+  }, [dispatch]);
+
+  useEffect(() => {
+    setTableData(jobs);
+  }, [jobs]);
 
   return (
     <div style={{ padding: '5px 20px' }}>

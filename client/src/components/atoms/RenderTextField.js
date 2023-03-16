@@ -1,17 +1,52 @@
 import React, { useCallback, useEffect, useState } from "react"
 import { makeStyles } from "@material-ui/core/styles"
 import { TextField } from "@mui/material"
-import { updateRecordByID } from "../../utility/api"
+import { useDispatch } from "react-redux"
+import { updateRecord } from "../../redux/actions/jobActions"
 
 const useStyles = makeStyles((theme) => ({
   formControl: {
     margin: theme.spacing(1),
     minWidth: 120,
     fieldset: {
-      border: 'none'
-    }
+      border: "none",
+    },
   },
 }))
+
+// export const RenderTextField = ({ params }) => {
+//   const { value, row, columnDef } = params;
+//   const initValue = value || '' // in case value is null
+//   const [currentValue, setCurrentValue] = useState(initValue);
+//   const dispatch = useDispatch()
+
+//   const classes = useStyles()
+
+//   useEffect(() => {
+//     const newValues = {
+//       id: row.id,
+//       field: columnDef?.field,
+//       value: currentValue,
+//     }
+
+//     if (value && typeof value === 'string' && value.trim() !== '') {
+//       setCurrentValue(value)
+//       dispatch(updateRecord(newValues, currentValue))
+//     } else if (value === '') {
+//       // TODO: figure out a better way to clear the record
+//       // setCurrentValue(value)
+//       // dispatch(updateRecord(newValues, currentValue));
+//     }
+
+//   }, [currentValue, dispatch, row.id, columnDef?.field]);
+
+//   return (
+//     <TextField
+//       className={classes.formControl}
+//       value={currentValue}
+//     />
+//   )
+// }
 
 // Workaround since the methods shown at 
 // https://mui.com/x/react-data-grid/editing/ does not seem to work
@@ -22,34 +57,23 @@ export const RenderTextField = ({ params }) => {
   const initValue = valueProp || '' // in case valueProp is null
   const [value, setValue] = useState(initValue)
 
-  const updateRecord = useCallback(async () => {
-    const result = await updateRecordByID(params, value)
-    if (result?.modifiedCount) {
-      console.log(result)
-    }
-  }, [params, value])
+  const dispatch = useDispatch();
 
-  // if (id === 'e772e7882c5763f7') {
-  //   console.log(`Rendering cell '${field}' at row ${id}`)
-  // }
+  const handleUpdate = useCallback(async () => {
+    dispatch(updateRecord(params, value));
+  }, [dispatch, params, value]);
 
   useEffect(() => {
     if (valueProp && typeof valueProp === 'string' && valueProp.trim() !== '') {
-      // if (id === 'e772e7882c5763f7') {
-      //   console.log(`valueProp: ${valueProp}, value: ${value}`)
-      // }
       setValue(valueProp);
-      updateRecord()
+      handleUpdate()
 
-    } else if (valueProp === '') {
-      // if (id === 'e772e7882c5763f7') {
-      //   console.log(`Clearing cell '${field}' at row ${id}`)
-      // }
+    } else if (valueProp === '') {   // this loads on first render, gotta figure out a way to prevent that
       setValue(valueProp)
-      updateRecord()
+      handleUpdate()
     }
 
-  }, [updateRecord, valueProp, value, field, id])
+  }, [handleUpdate, valueProp, value, field, id])
 
   return (
     <TextField className={classes.formControl} value={value} />
