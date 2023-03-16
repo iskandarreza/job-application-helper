@@ -15,7 +15,6 @@ const jobUpdatesReducer = (state = initialState, action) => {
         error: null
       }
     case UPDATE_RECORD_SUCCESS:
-      // console.log('Jobs data:', action.payload); 
       return {
         ...state,
         loading: false,

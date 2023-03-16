@@ -11,12 +11,35 @@ const dbo = require("../db/conn")
 // This help convert the id from string to ObjectId for the _id.
 const ObjectId = require("mongodb").ObjectId
 
+const collection = "email-link-data-dev"
+
+recordRoutes.route("/clone").get(async function (req, res) {
+  const db = dbo.getDb();
+  
+  try {
+    // Find all documents in the email-link-data collection
+    const docs = await db.collection("email-link-data").find().toArray();
+
+    // Insert all documents into the email-link-data-dev collection
+    const result = await db.collection("email-link-data-dev").insertMany(docs);
+    
+    console.log(`Inserted ${result.insertedCount} documents into email-link-data-dev`);
+    
+    res.send("Cloned collection successfully");
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Failed to clone collection");
+  }
+});
+
+
 // This section will help you get a list of all the records.
 recordRoutes.route("/record").get(async function (req, res) {
+  console.log(`endpoint "/record" get from: ${req.headers.origin}. req.headers: `, req.headers)
   let db_connect = dbo.getDb()
 
   db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .find({})
     .toArray()
     .then((data) => {
@@ -31,7 +54,7 @@ recordRoutes.route("/record/:id").get(async function (req, res) {
   let myquery = { _id: new ObjectId(req.params.id) }
 
   db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .findOne(myquery)
     .then((data) => {
       res.json(data)
@@ -41,13 +64,13 @@ recordRoutes.route("/record/:id").get(async function (req, res) {
 
 // This section will help you create a new record.
 recordRoutes.route("/record/add").post(function (req, res) {
-  console.log(JSON.stringify(req.body))
+  console.log(`endpoint "/record/add" post from ${req.headers.origin}, req.body: `, req.body)
 
   let db_connect = dbo.getDb()
   let myobj = req.body
 
   db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .insertOne(myobj)
     .then((data) => {
       res.json(data)
@@ -60,7 +83,7 @@ recordRoutes.route("/record/addbulk").post(function (req, res) {
   let db_connect = dbo.getDb()
 
   const bulk = db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .initializeUnorderedBulkOp()
   const now = new Date()
   req.body.forEach((doc) => {
@@ -92,7 +115,7 @@ recordRoutes.route("/record/addbulk").post(function (req, res) {
 
 // This section will help you update a record by id.
 recordRoutes.route("/update/:id").post(function (req, res) {
-  console.log(req.params)
+  console.log(`endpoint "/update/id" post from ${req.headers.origin}, req.body: `, req.body)
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
@@ -114,7 +137,7 @@ recordRoutes.route("/update/:id").post(function (req, res) {
   }
 
   db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .findOne(myquery)
     .then((doc) => {
       if (doc) {
@@ -128,7 +151,7 @@ recordRoutes.route("/update/:id").post(function (req, res) {
           res.json({ message: "No fields were modified." })
         } else {
           db_connect
-            .collection("email-link-data")
+            .collection(collection)
             .updateOne(myquery, newvalues)
             .then((data) => {
               data.query = myquery
@@ -149,10 +172,9 @@ recordRoutes.route("/delete/:id").delete((req, res) => {
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
   db_connect
-    .collection("email-link-data")
+    .collection(collection)
     .deleteOne(myquery)
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))

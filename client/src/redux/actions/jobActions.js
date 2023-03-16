@@ -43,7 +43,7 @@ export const fetchJobs = () => {
   return async (dispatch, getState) => {
     const { lastFetch, jobs } = getState().jobRecords
     // Check if data is cached
-    if (lastFetch && (Date.now() - lastFetch) < 3600000) { // 1 hour
+    if (lastFetch && (Date.now() - lastFetch) < 1000 * 60 * 1) { // 1 minute
       toast.info('Data is still fresh')
       dispatch(fetchJobsSuccess(jobs))
     } else {

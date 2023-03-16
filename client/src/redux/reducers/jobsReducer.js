@@ -16,7 +16,6 @@ const jobsReducer = (state = initialState, action) => {
         error: null
       }
     case FETCH_JOBS_SUCCESS:
-      // console.log('Jobs data:', action.payload.jobs); 
       return {
         ...state,
         loading: false,

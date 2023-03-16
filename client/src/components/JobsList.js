@@ -7,29 +7,21 @@ import { getUpdatedData, saveData } from "../utils/api"
 
 import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
 import { RenderSelectMenu } from "./atoms/RenderSelectMenu"
-import { RenderTextField } from "./atoms/RenderTextField"
-
 import { CustomToolbar } from "./atoms/JobLinksToolBar"
 
 import "../index.css"
 import { AddRowForm } from "./atoms/JobRecordInsert"
 
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchJobs } from '../redux/actions/jobActions';
+import { fetchJobs, updateRecord } from '../redux/actions/jobActions';
+import { RenderLastModifiedText } from "./atoms/RenderLastModifiedText"
 
 const columns = [
   {field: "id", flex: 1},
   {
     field: "dateModified",
     flex: 1,
-    renderCell: (params) => {
-      const details = () => {
-        console.log(params.row)
-      }
-      return (
-        <span onClick={() => details()}>{params.row?.dateModified}</span>
-      )
-    }
+    renderCell: RenderLastModifiedText
   },
   {
     field: "org",
@@ -66,8 +58,6 @@ const columns = [
     headerAlign: 'center',
     align: 'left',
     width: 150,
-    editable: true,
-    cellClassName: "status2",
     renderCell: (params) =>  <RenderSelectMenu params={params}  menuOptions={[
       'app viewed',
       'test requested',
@@ -75,20 +65,21 @@ const columns = [
       'closed',
       'rejected',	
     ]} />,
+    editable: true,
   },
   {
     field: "status3",
     headerAlign: 'center',
     flex: 1,
-    renderCell: (params) => <RenderTextField params={params} />,
     editable: true,
   },
 ]
 
-const JobsDataGrid = ({ tableData, setTableData }) => {
+const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
   const dispatch = useDispatch()
+  const [tableData, setTableData] = useState(jobs)
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
@@ -146,15 +137,13 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
 
   useEffect(() => {
     if(jobs.length > 0) {
-      const filteredRows = filterRows(jobs)
-      setTableData(filteredRows)
+      setTableData(jobs)
     }
-  }, [jobs, filterRows, setTableData])
+  }, [jobs, setTableData])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
-
 
   useEffect(() => {
     console.log('DataGrid HOC mounted')
@@ -183,33 +172,25 @@ const JobsDataGrid = ({ tableData, setTableData }) => {
           },
         },
       }}
+      onCellEditStop={(params, event) => {
+        const value = event.target.value
+        dispatch(updateRecord(params, value));
+
+      }}
     />
 
   )
 }
 
 export const JobsList = () => {
-  const jobs = useSelector((state) => state.jobRecords.jobs);
-  const [tableData, setTableData] = useState(jobs)
-
-  const dispatch = useDispatch();
-
-  useEffect(() => {
-    dispatch(fetchJobs());
-  }, [dispatch]);
-
-  useEffect(() => {
-    setTableData(jobs);
-  }, [jobs]);
-
   return (
     <div style={{ padding: '5px 20px' }}>
       <h1>Job Postings</h1>
       <Box sx={{ height: "75vh", width: "auto" }}>
-        <JobsDataGrid tableData={tableData} setTableData={setTableData} />
+        <JobsDataGrid  />
       </Box>
       <Box>
-        <AddRowForm rows={tableData} setRows={setTableData} />
+        <AddRowForm />
       </Box>
     </div>
   )

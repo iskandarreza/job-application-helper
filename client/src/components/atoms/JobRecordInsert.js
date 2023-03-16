@@ -3,6 +3,7 @@ import { Box, TextField, MenuItem, Select, Button } from "@mui/material"
 import { Add } from "@material-ui/icons"
 import { insertRecord } from "../../utils/api"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 
 const rowModel = {
   org: "",
@@ -15,8 +16,9 @@ const rowModel = {
 
 const status1Options = ["open", "applied", "uncertain"]
 
-export const AddRowForm = (props) => {
-  const { rows, setRows } = props
+export const AddRowForm = () => {
+  const jobs = useSelector((state) => state.jobRecords.jobs)
+  const { rows, setRows } = useState(jobs)
   const [row, setRow] = useState(rowModel)
 
   const handleRowChange = (event) => {
