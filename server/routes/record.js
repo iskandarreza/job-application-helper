@@ -12,6 +12,7 @@ const dbo = require("../db/conn")
 const ObjectId = require("mongodb").ObjectId
 
 const collection = "email-link-data-dev"
+// const collection = "email-link-data"
 
 recordRoutes.route("/clone").get(async function (req, res) {
   const db = dbo.getDb();
@@ -66,12 +67,16 @@ recordRoutes.route("/record/:id").get(async function (req, res) {
 recordRoutes.route("/record/add").post(function (req, res) {
   console.log(`endpoint "/record/add" post from ${req.headers.origin}, req.body: `, req.body)
 
+  const now = new Date()
   let db_connect = dbo.getDb()
-  let myobj = req.body
+  let record = req.body
+
+  record.dateAdded = now
+  record.dateModified = now
 
   db_connect
     .collection(collection)
-    .insertOne(myobj)
+    .insertOne(record)
     .then((data) => {
       res.json(data)
     })
@@ -179,5 +184,46 @@ recordRoutes.route("/delete/:id").delete((req, res) => {
     })
     .catch((e) => console.log(e))
 })
+
+// recordRoutes.route("/fix").get((req, res) => {
+//   let db_connect = dbo.getDb()
+//   db_connect
+//     .collection(collection)
+//     .bulkWrite([
+//       {
+//         updateMany: {
+//           filter: { id: { $exists: false }, linkId: { $exists: true } },
+//           update: { $rename: { linkId: "id" } }
+//         }
+//       },
+//       {
+//         updateMany: {
+//           filter: {},
+//           update: { $rename: { link: "url" } }
+//         }
+//       },
+//       {
+//         updateMany: {
+//           filter: {},
+//           update: { $unset: { linkId: "" } }
+//         }
+//       },
+//       {
+//         updateMany: {
+//           filter: { dateAdded: { $exists: false } },
+//           update: { $currentDate: { dateAdded: true } }
+//         }
+//       },
+//       {
+//         updateMany: {
+//           filter: { dateModified: { $exists: false } },
+//           update: { $currentDate: { dateModified: true } }
+//         }
+//       }
+//     ])    .then((data) => {
+//       res.json(data)
+//     })
+//     .catch((e) => console.log(e))
+// })
 
 module.exports = recordRoutes;

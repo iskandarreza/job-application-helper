@@ -8,9 +8,9 @@ import { getUpdatedData, saveData } from "../utils/api"
 import { JobLinkButtonRenderer } from "./atoms/JobLinkButtonRenderer"
 import { RenderSelectMenu } from "./atoms/RenderSelectMenu"
 import { CustomToolbar } from "./atoms/JobLinksToolBar"
+import { AddRowForm } from "./atoms/JobRecordInsert"
 
 import "../index.css"
-import { AddRowForm } from "./atoms/JobRecordInsert"
 
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchJobs, updateRecord } from '../redux/actions/jobActions';
@@ -78,6 +78,7 @@ const columns = [
 const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
+  const updatePending = useSelector((state) => state.jobRecordUpdates.loading)
   const dispatch = useDispatch()
   const [tableData, setTableData] = useState(jobs)
   const [paginationModel, setPaginationModel] = useState({
@@ -119,8 +120,10 @@ const JobsDataGrid = () => {
   }
 
   const filterRows = useCallback((rows) => {
-    return rows.filter(row => !['closed', 'removed', 'declined'].includes(row.status1))
+    const filteredRows = rows.filter(row => !['closed', 'removed', 'declined'].includes(row.status1))
+    return filteredRows.filter(row => !['closed', 'rejected'].includes(row.status2))
   }, [])
+    
 
   const handleFilterClick = useCallback(() => {
     const filteredRows = filterRows(jobs)
@@ -173,9 +176,10 @@ const JobsDataGrid = () => {
         },
       }}
       onCellEditStop={(params, event) => {
-        const value = event.target.value
-        dispatch(updateRecord(params, value));
-
+        const value = event?.target?.value
+        if (!updatePending) {
+          dispatch(updateRecord(params, value))
+        }
       }}
     />
 

@@ -25,7 +25,7 @@ const jobUpdatesReducer = (state = initialState, action) => {
         ...state,
         loading: false,
         error: action.payload.error,
-        update: []
+        update: {}
       }
     default:
       return state

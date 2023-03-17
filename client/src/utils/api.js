@@ -46,7 +46,7 @@ export const saveData = async (tableData) => {
     .catch((error) => { console.error(error) })
 }
 
-export const insertRecord = async (row) => {
+export const addRecord = async (row) => {
   toast.info("Saving record to db...")
   return axios.post("http://localhost:5000/record/add", row)
     .then((response) => {

@@ -1,6 +1,6 @@
 export const RenderLastModifiedText = (params) => {
   const details = () => {
-    console.log(params.row)
+    console.info(params)
   }
   function timeDifferenceFromNow(dateString) {
     const date = new Date(dateString);

@@ -1,94 +1,165 @@
-import React, { useState } from "react"
-import { Box, TextField, MenuItem, Select, Button } from "@mui/material"
-import { Add } from "@material-ui/icons"
-import { insertRecord } from "../../utils/api"
-import { toast } from "react-toastify"
-import { useSelector } from "react-redux"
+import React, { useEffect, useState } from "react";
+import { Box, TextField, Button } from "@mui/material";
+import { Add } from "@material-ui/icons";
+import { insertRecord } from "../../redux/actions/jobActions";
+import { useDispatch, useSelector } from "react-redux";
+import CustomSelect from "./CustomSelect";
+
+const defaultValidationMessage = 'Please fill out all fields.';
+
+const status1Options = ["open", "applied", "uncertain"];
 
 const rowModel = {
   org: "",
   role: "",
   location: "",
-  link: "",
-  linkId: "",
-  status1: ""
-}
-
-const status1Options = ["open", "applied", "uncertain"]
+  url: "",
+  id: "",
+  status1: "",
+};
 
 export const AddRowForm = () => {
-  const jobs = useSelector((state) => state.jobRecords.jobs)
-  const { rows, setRows } = useState(jobs)
-  const [row, setRow] = useState(rowModel)
+  const jobs = useSelector(state => state.jobRecords.jobs);
+  const dispatch = useDispatch();
+  const [row, setRow] = useState(rowModel);
+  const [isValidating, setIsValidating] = useState(false);
+  const [isRowValid, setIsRowValid] = useState(false);
+  const [rowValidationModel, setRowValidationModel] = useState({
+    ...Object.keys(rowModel).reduce((acc, key) => ({
+      ...acc,
+      [key]: { isValid: true, validationMessage: defaultValidationMessage },
+    }), {}),
+    status1: { isValid: true, validationMessage: 'Please select a valid status.' },
+  });
 
-  const handleRowChange = (event) => {
-    const { name, value } = event.target
-    setRow((prevRow) => ({ ...prevRow, [name]: value }))
-  }
+  const isIdAlreadyExist = jobs.some(existingRow => existingRow.id === row.id);
+  const isAddRowDisabled = !isRowValid || isIdAlreadyExist;
 
-  const handleAddRow = () => {
-    const newRow = { ...row }
-    if (row.linkId) {
-      newRow.id = row.linkId
-      if (!rows.some(existingRow => existingRow.id === newRow.id)) {
-        setRows(prevRows => [...prevRows, newRow])
-        insertRecord(newRow).then((response) => {
-          console.log(response)
-          setRow(rowModel)
-        })
+  const handleRowBlur = event => {
+    const { name, value } = event.target;
+
+    if (isValidating) {
+      const isValid = value !== '';
+      const validationMessage = isValid ? '' : defaultValidationMessage;
+
+      if (name === 'status1') {
+        setRowValidationModel(prevState => ({
+          ...prevState,
+          [name]: { isValid: status1Options.includes(value), validationMessage: 'Please select a valid status.' },
+        }));
       } else {
-        toast.warning('ID already exist, record not added.')
-        console.log(rows.filter(existingRow => existingRow.id === newRow.id))
+        setRowValidationModel(prevState => ({
+          ...prevState,
+          [name]: { isValid, validationMessage },
+        }));
+      }
+    }
+  };
+
+  const handleRowChange = event => {
+    const { name, value } = event.target;
+
+    if (name === 'url') {
+      const isLinkedIn = value.includes('linkedin.com');
+      const isIndeed = value.includes('indeed.com');
+      const generateRandomId = () => {
+        const randomStr = Math.random().toString(36).substring(2, 10);
+        const timestampStr = Date.now().toString(36);
+        return randomStr + timestampStr;
+      };
+
+      let id;
+      if (isIndeed) {
+        id = value.match(/jk=([^&]*)/i)[1];
+      } else if (isLinkedIn) {
+        const linkWithoutQueryString = value.split('?')[0];
+        id = linkWithoutQueryString.match(/\/(\d+)\/?$/)[1];
+      } else {
+        id = generateRandomId();
       }
 
+      setRow(prevRow => ({ ...prevRow, [name]: value, id }));
     } else {
-      toast.warning('No ID given, record not added.')
+      setRow(prevRow => ({ ...prevRow, [name]: value }));
     }
+  };
+
+  const handleAddRow = () => {
+    let id = row.id;
+    const { url } = row
+    const isLinkedIn = url.includes('linkedin.com')
+    const isIndeed = url.includes('indeed.com')
+    const generateRandomId = () => {
+      const randomStr = Math.random().toString(36).substring(2, 10);
+      const timestampStr = Date.now().toString(36);
+      return randomStr + timestampStr;
+    }
+  
+    if (!id) {
+      if (isIndeed) {
+        id = url.match(/jk=([^&]*)/i)?.[1]
+      } else if (isLinkedIn) {
+        const linkWithoutQueryString = url.split('?')[0]
+        id = linkWithoutQueryString.match(/\/(\d+)\/?$/)?.[1]
+      } else {
+        id = generateRandomId()
+      }
+    }
+  
+    const newRow = { ...row, id }
+  
+    dispatch(insertRecord(newRow)).then(() => {
+      setRow(rowModel)
+    })
   }
 
-  return (
-    <Box sx={{ mt: "20px", width: 'auto' }}>
-      <h2>Add new record</h2>
+  useEffect(() => {
+    const rowIsValid = Object.values(rowValidationModel).every((field) => field.isValid)
+    setIsRowValid(rowIsValid)
+  }, [rowValidationModel])
 
+  return (
+    <Box
+      component="form"
+      autoComplete="off"
+      sx={{ mt: "20px", width: 'auto' }}
+      onFocus={() => { setIsValidating(true) }}
+      onBlur={() => { setIsValidating(false) }}
+    >
+      <h2>Add new record</h2>
       <div style={{ display: "flex", justifyContent: 'space-between', gap: "10px" }}>
         {Object.keys(rowModel).map((key) => (
           <div key={key} style={{ display: 'flex', flex: 1 }} >
             {key !== "status1" ? (
               <TextField
                 style={{ width: 'auto', flex: 1 }}
-                label={key}
-                value={row[key]}
-                onChange={handleRowChange}
+                required
+                id={key}
                 name={key}
+                value={row[key]}
+                label={key.toUpperCase()}
+                onChange={handleRowChange}
+                onBlur={handleRowBlur}
+                error={!rowValidationModel[key].isValid}
+                helperText={rowValidationModel[key].isValid ? '' : rowValidationModel[key].validationMessage}
               />
             ) : (
-              <Select
-                style={{ width: 'auto', flex: 1 }}
+              <CustomSelect
+                id={key}
                 name={key}
                 value={row[key]}
+                label={key.toUpperCase()}
+                options={status1Options}
                 onChange={handleRowChange}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>status</MenuItem>
-                {status1Options.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
+              />
             )}
           </div>
         ))}
-        <Button
-          variant="contained"
-          color="primary"
-          size="small"
-          startIcon={<Add />}
-          onClick={handleAddRow}
-        >
-          Add Row
+        <Button variant="contained" color="primary" startIcon={<Add />} onClick={handleAddRow} disabled={isAddRowDisabled}>
+          Add
         </Button>
       </div>
     </Box>
   )
+
 }
