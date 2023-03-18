@@ -78,7 +78,6 @@ const columns = [
 const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
-  const updatePending = useSelector((state) => state.jobRecordUpdates.loading)
   const dispatch = useDispatch()
   const [tableData, setTableData] = useState(jobs)
   const [paginationModel, setPaginationModel] = useState({
@@ -176,10 +175,11 @@ const JobsDataGrid = () => {
         },
       }}
       onCellEditStop={(params, event) => {
+        const { row, field } = params
         const value = event?.target?.value
-        if (!updatePending) {
-          dispatch(updateRecord(params, value))
-        }
+        const newValue = { [field]: value }
+
+        dispatch(updateRecord(row, newValue))
       }}
     />
 

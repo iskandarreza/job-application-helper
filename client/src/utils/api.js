@@ -56,10 +56,9 @@ export const addRecord = async (row) => {
     .catch((error) => { console.error(error) })
 }
 
-export const updateRecordByID = async (params, newValue) => {
-  const updateValue = {}
-  updateValue[params.field] = newValue
-  return axios.post("http://localhost:5000/update/" + params.row._id, updateValue)
+export const updateRecordByID = async (row, newValue) => {
+  const {_id} = row
+  return axios.post("http://localhost:5000/update/" + _id, newValue)
     .then((response) => { 
       const { modifiedCount, upsertedCount, upsertedId } = response.data
       if (modifiedCount || upsertedCount || upsertedId) {

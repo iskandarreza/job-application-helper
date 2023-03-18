@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { makeStyles } from "@material-ui/core/styles"
 import { MenuItem, Select } from "@mui/material"
-import { useDispatch, useSelector } from "react-redux"
+import { useDispatch } from "react-redux"
 import { updateRecord } from "../../redux/actions/jobActions"
 
 const useStyles = makeStyles((theme) => ({
@@ -15,18 +15,18 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 export const RenderSelectMenu = ({ params, menuOptions }) => {
-  const updatePending = useSelector((state) => state.jobRecordUpdates.loading)
   const dispatch = useDispatch()
   const [value, setValue] = useState(params.value ?? "")
 
   const handleChange = async (event) => {
-    const newValue = event.target.value
+    const { row, field } = params
+    const value = event?.target?.value
+    const newValue = { [field]: value }
 
-    if (!updatePending) {
-      setValue(newValue)
-      dispatch(updateRecord(params, newValue))
-    }
-  }
+    setValue(value)
+    dispatch(updateRecord(row, newValue))
+
+}
 
   const classes = useStyles()
   const selectMenuClassNames = {}

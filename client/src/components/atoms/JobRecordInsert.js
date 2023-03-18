@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import CustomSelect from "./CustomSelect";
 
 const defaultValidationMessage = 'Please fill out all fields.';
+const status1ValidationMessage = 'Please select a valid status.'
 
 const status1Options = ["open", "applied", "uncertain"];
 
@@ -29,7 +30,7 @@ export const AddRowForm = () => {
       ...acc,
       [key]: { isValid: true, validationMessage: defaultValidationMessage },
     }), {}),
-    status1: { isValid: true, validationMessage: 'Please select a valid status.' },
+    status1: { isValid: true, validationMessage: status1ValidationMessage },
   });
 
   const isIdAlreadyExist = jobs.some(existingRow => existingRow.id === row.id);
@@ -41,11 +42,11 @@ export const AddRowForm = () => {
     if (isValidating) {
       const isValid = value !== '';
       const validationMessage = isValid ? '' : defaultValidationMessage;
-
-      if (name === 'status1') {
+  
+      if (name.toLowerCase() === 'status1') {
         setRowValidationModel(prevState => ({
           ...prevState,
-          [name]: { isValid: status1Options.includes(value), validationMessage: 'Please select a valid status.' },
+          [name]: { isValid: status1Options.includes(value), validationMessage: status1ValidationMessage },
         }));
       } else {
         setRowValidationModel(prevState => ({
@@ -151,6 +152,9 @@ export const AddRowForm = () => {
                 label={key.toUpperCase()}
                 options={status1Options}
                 onChange={handleRowChange}
+                onBlur={handleRowBlur}
+                error={!rowValidationModel[key].isValid}
+                helperText={rowValidationModel[key].isValid ? '' : rowValidationModel[key].validationMessage}
               />
             )}
           </div>

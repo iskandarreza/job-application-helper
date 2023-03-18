@@ -76,15 +76,13 @@ export const fetchJobs = () => {
   };
 };
 
-export const updateRecord = (params, newValue) => async (dispatch) => {
+export const updateRecord = (row, newValue) => async (dispatch) => {
   try {
-    const response = await updateRecordByID(params, newValue)
+    const response = await updateRecordByID(row, newValue)
     const { modifiedCount } = response
     if (modifiedCount) {
-      const { query, updateValue } = response
-      console.log(`Record updated, id: ${query._id}, values: ${JSON.stringify(updateValue.$set)}`)
+      dispatch(updateRecordSuccess({ ...row, ...newValue }))
     }
-    dispatch(updateRecordSuccess(response))
   } catch (error) {
     console.error(error);
     dispatch(updateRecordFailure(error.message))
