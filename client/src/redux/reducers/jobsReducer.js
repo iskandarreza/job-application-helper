@@ -2,13 +2,18 @@ import {
   FETCH_JOBS_BEGIN,
   FETCH_JOBS_SUCCESS,
   FETCH_JOBS_FAILURE,
+  FETCH_NEW_JOBS_BEGIN,
+  FETCH_NEW_JOBS_SUCCESS,
+  FETCH_NEW_JOBS_FAILURE,
   INSERT_RECORD_BEGIN,
   INSERT_RECORD_SUCCESS,
   INSERT_RECORD_FAILURE,
   UPDATE_RECORD_BEGIN,
   UPDATE_RECORD_SUCCESS,
-  UPDATE_RECORD_FAILURE
-} from "../actions/jobActions"
+  UPDATE_RECORD_FAILURE,
+  FILTER_RECORDS_SUCCESS,
+  FILTER_RECORDS_FAILURE,
+} from '../actions/jobActions'
 
 const initialState = {
   jobs: [],
@@ -17,34 +22,46 @@ const initialState = {
   lastFetch: null,
 }
 
+const beginAction = (state) => ({
+  ...state,
+  loading: true,
+  error: null,
+})
+
+const successAction = (state, payload, replace = false) => {
+  const jobs = replace ? payload : [...state.jobs, ...payload]
+  return {
+    ...state,
+    loading: false,
+    jobs,
+    lastFetch: Date.now(),
+  }
+}
+
+const failureAction = (state, payload) => ({
+  ...state,
+  loading: false,
+  error: payload,
+  jobs: [],
+})
+
 const jobsReducer = (state = initialState, action) => {
+  console.log({ ...action, state })
   switch (action.type) {
     case FETCH_JOBS_BEGIN:
-      return {
-        ...state,
-        loading: true,
-        error: null
-      }
+      return beginAction(state)
     case FETCH_JOBS_SUCCESS:
-      return {
-        ...state,
-        loading: false,
-        jobs: action.payload.jobs,
-        lastFetch: Date.now(),
-      }
+      return successAction(state, action.payload, true)
     case FETCH_JOBS_FAILURE:
-      return {
-        ...state,
-        loading: false,
-        error: action.payload.error,
-        jobs: []
-      }
+      return failureAction(state, action.payload)
+    case FETCH_NEW_JOBS_BEGIN:
+      return beginAction(state)
+    case FETCH_NEW_JOBS_SUCCESS:
+      return successAction(state, action.payload)
+    case FETCH_NEW_JOBS_FAILURE:
+      return failureAction(state, action.payload)
     case INSERT_RECORD_BEGIN:
-      return {
-        ...state,
-        loading: true,
-        error: null,
-      }
+      return beginAction(state)
     case INSERT_RECORD_SUCCESS:
       return {
         ...state,
@@ -52,29 +69,25 @@ const jobsReducer = (state = initialState, action) => {
         jobs: [...state.jobs, action.payload],
       }
     case INSERT_RECORD_FAILURE:
-      return {
-        ...state,
-        loading: false,
-        error: action.payload.error,
-      }
+      return failureAction(state, action.payload)
     case UPDATE_RECORD_BEGIN:
-      return {
-        ...state,
-        loading: true,
-        error: null
-      }
+      return beginAction(state)
     case UPDATE_RECORD_SUCCESS:
       return {
         ...state,
         loading: false,
-        jobs: [...state.jobs, action.payload],
+        jobs: state.jobs.map((job) =>
+          job.id === action.payload.id ? action.payload : job
+        ),
       }
     case UPDATE_RECORD_FAILURE:
-      return {
-        ...state,
-        loading: false,
-        error: action.payload.error,
-      }
+      return failureAction(state, action.payload)
+      
+    case FILTER_RECORDS_SUCCESS:
+      return successAction(state, action.payload, true)
+    case FILTER_RECORDS_FAILURE:
+      return failureAction(state, action.payload)
+    
     default:
       return state
   }

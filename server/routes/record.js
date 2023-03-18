@@ -1,42 +1,37 @@
-const express = require("express")
-
-// recordRoutes is an instance of the express router.
-// We use it to define our routes.
-// The router will be added as a middleware and will take control of requests starting with path /record.
+const express = require('express')
 const recordRoutes = express.Router()
+const dbo = require('../db/conn')
+const ObjectId = require('mongodb').ObjectId
 
-// This will help us connect to the database
-const dbo = require("../db/conn")
+const collection = 'email-link-data'
 
-// This help convert the id from string to ObjectId for the _id.
-const ObjectId = require("mongodb").ObjectId
+recordRoutes.route('/clone').get(async function (req, res) {
+  const db = dbo.getDb()
 
-const collection = "email-link-data-dev"
-// const collection = "email-link-data"
-
-recordRoutes.route("/clone").get(async function (req, res) {
-  const db = dbo.getDb();
-  
   try {
     // Find all documents in the email-link-data collection
-    const docs = await db.collection("email-link-data").find().toArray();
+    const docs = await db.collection('email-link-data').find().toArray()
 
     // Insert all documents into the email-link-data-dev collection
-    const result = await db.collection("email-link-data-dev").insertMany(docs);
-    
-    console.log(`Inserted ${result.insertedCount} documents into email-link-data-dev`);
-    
-    res.send("Cloned collection successfully");
+    const result = await db.collection('email-link-data-dev').insertMany(docs)
+
+    console.log(
+      `Inserted ${result.insertedCount} documents into email-link-data-dev`
+    )
+
+    res.send('Cloned collection successfully')
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Failed to clone collection");
+    console.error(err)
+    res.status(500).send('Failed to clone collection')
   }
-});
+})
 
+recordRoutes.route('/record').get(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
 
-// This section will help you get a list of all the records.
-recordRoutes.route("/record").get(async function (req, res) {
-  console.log(`endpoint "/record" get from: ${req.headers.origin}. req.headers: `, req.headers)
   let db_connect = dbo.getDb()
 
   db_connect
@@ -49,8 +44,7 @@ recordRoutes.route("/record").get(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-// This section will help you get a single record by id
-recordRoutes.route("/record/:id").get(async function (req, res) {
+recordRoutes.route('/record/:id').get(async function (req, res) {
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
@@ -63,9 +57,11 @@ recordRoutes.route("/record/:id").get(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-// This section will help you create a new record.
-recordRoutes.route("/record/add").post(function (req, res) {
-  console.log(`endpoint "/record/add" post from ${req.headers.origin}, req.body: `, req.body)
+recordRoutes.route('/record/add').post(function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
 
   const now = new Date()
   let db_connect = dbo.getDb()
@@ -83,25 +79,86 @@ recordRoutes.route("/record/add").post(function (req, res) {
     .catch((e) => console.log(e))
 })
 
-// This section will help you create multiple new records.
-recordRoutes.route("/record/addbulk").post(function (req, res) {
-  let db_connect = dbo.getDb()
+recordRoutes.route('/record/addbulk').post(function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
 
-  const bulk = db_connect
-    .collection(collection)
-    .initializeUnorderedBulkOp()
+  const db_connect = dbo.getDb()
+  const bulk = db_connect.collection(collection).initializeUnorderedBulkOp()
   const now = new Date()
+  const priorityLocation = 'some location' // replace with your actual priority location
+
+  const uniqueDocs = new Map()
   req.body.forEach((doc) => {
+    const existingDoc = uniqueDocs.get(doc.id)
+    if (existingDoc) {
+      // check if the duplicates are exactly alike, if yes, ignore the new one
+      if (JSON.stringify(existingDoc) === JSON.stringify(doc)) {
+        return
+      }
+
+      // check if the location property string contains the priority location, delete the one without
+      const existingLocation = existingDoc.location
+      const newLocation = doc.location
+      if (
+        existingLocation.includes(priorityLocation) &&
+        !newLocation.includes(priorityLocation)
+      ) {
+        return
+      }
+      if (
+        newLocation.includes(priorityLocation) &&
+        !existingLocation.includes(priorityLocation)
+      ) {
+        uniqueDocs.set(doc.id, doc)
+        return
+      }
+
+      // if they both have location property string === priorityLocation, delete the older record (check dateModified)
+      if (existingLocation === newLocation) {
+        if (existingDoc.dateModified > doc.dateModified) {
+          return
+        }
+        if (doc.dateModified > existingDoc.dateModified) {
+          uniqueDocs.set(doc.id, doc)
+          return
+        }
+      }
+
+      // if they have identical dateModified, pick the bigger one and delete the other
+      if (existingDoc.dateModified === doc.dateModified) {
+        if (existingDoc.size > doc.size) {
+          return
+        }
+        if (doc.size > existingDoc.size) {
+          uniqueDocs.set(doc.id, doc)
+          return
+        }
+      }
+    } else {
+      uniqueDocs.set(doc.id, doc)
+    }
+  })
+
+  uniqueDocs.forEach((doc) => {
     if (doc._id) {
+      // upsert
+      console.log('upsert', { doc })
+
       doc.dateModified = now
       bulk
         .find({ _id: doc._id })
         .updateOne({ $set: { ...doc, dateModified: now } })
     } else {
+      // insert
+      console.log('insert', { doc })
+
       doc.dateAdded = now
       doc.dateModified = now
       const fieldsModified = Object.keys(doc).filter(
-        (key) => key !== "dateAdded" && key !== "_id"
+        (key) => key !== 'dateAdded' && key !== '_id'
       )
       bulk
         .find({ id: doc.id })
@@ -113,14 +170,39 @@ recordRoutes.route("/record/addbulk").post(function (req, res) {
   bulk
     .execute()
     .then((data) => {
-      res.json(data)
+      console.log({ data })
+      const insertedIds = data.getInsertedIds()
+      const upsertedIds = data.getUpsertedIds()
+      console.log({ insertedIds, upsertedIds })
+      const newDataWithIds = [...uniqueDocs.values()]
+        .map((doc, index) => {
+          if (insertedIds[index]) {
+            const insertedId = JSON.stringify(insertedIds[index].valueOf())
+            return {
+              _id: JSON.parse(insertedId)._id,
+              ...doc,
+            }
+          } else if (upsertedIds[index]) {
+            const upsertedId = JSON.stringify(upsertedIds[index].valueOf())
+            return {
+              _id: JSON.parse(upsertedId)._id,
+              ...doc,
+            }
+          }
+        })
+        .filter(Boolean) // filter out the undefined elements
+      console.log({ newDataWithIds })
+      res.json(newDataWithIds)
     })
     .catch((e) => console.log(e))
 })
 
-// This section will help you update a record by id.
-recordRoutes.route("/update/:id").post(function (req, res) {
-  console.log(`endpoint "/update/id" post from ${req.headers.origin}, req.body: `, req.body)
+recordRoutes.route('/update/:id').post(function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
@@ -128,7 +210,7 @@ recordRoutes.route("/update/:id").post(function (req, res) {
   let fieldsModified = []
 
   Object.keys(req.body).forEach((key) => {
-    if (key !== "_id" && key !== "dateModified" && key !== "fieldsModified") {
+    if (key !== '_id' && key !== 'dateModified' && key !== 'fieldsModified') {
       fieldsModified.push(key)
       updateFields[key] = req.body[key]
     }
@@ -153,7 +235,7 @@ recordRoutes.route("/update/:id").post(function (req, res) {
           }
         })
         if (isSame) {
-          res.json({ message: "No fields were modified." })
+          res.json({ message: 'No fields were modified.' })
         } else {
           db_connect
             .collection(collection)
@@ -166,64 +248,69 @@ recordRoutes.route("/update/:id").post(function (req, res) {
             .catch((e) => console.log(e))
         }
       } else {
-        res.status(404).json({ message: "Record not found." })
+        res.status(404).json({ message: 'Record not found.' })
       }
     })
     .catch((e) => console.log(e))
 })
 
-// This section will help you delete a record
-recordRoutes.route("/delete/:id").delete((req, res) => {
+recordRoutes.route('/delete/:id').delete((req, res) => {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
   db_connect
     .collection(collection)
     .deleteOne(myquery)
     .then((data) => {
+      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
 })
 
-// recordRoutes.route("/fix").get((req, res) => {
-//   let db_connect = dbo.getDb()
-//   db_connect
-//     .collection(collection)
-//     .bulkWrite([
-//       {
-//         updateMany: {
-//           filter: { id: { $exists: false }, linkId: { $exists: true } },
-//           update: { $rename: { linkId: "id" } }
-//         }
-//       },
-//       {
-//         updateMany: {
-//           filter: {},
-//           update: { $rename: { link: "url" } }
-//         }
-//       },
-//       {
-//         updateMany: {
-//           filter: {},
-//           update: { $unset: { linkId: "" } }
-//         }
-//       },
-//       {
-//         updateMany: {
-//           filter: { dateAdded: { $exists: false } },
-//           update: { $currentDate: { dateAdded: true } }
-//         }
-//       },
-//       {
-//         updateMany: {
-//           filter: { dateModified: { $exists: false } },
-//           update: { $currentDate: { dateModified: true } }
-//         }
-//       }
-//     ])    .then((data) => {
-//       res.json(data)
-//     })
-//     .catch((e) => console.log(e))
-// })
+recordRoutes.route("/fix").post((req, res) => {
+  let db_connect = dbo.getDb()
+  db_connect
+    .collection(collection)
+    .bulkWrite([
+      {
+        updateMany: {
+          filter: { id: { $exists: false }, linkId: { $exists: true } },
+          update: { $rename: { linkId: "id" } }
+        }
+      },
+      {
+        updateMany: {
+          filter: {},
+          update: { $rename: { link: "url" } }
+        }
+      },
+      {
+        updateMany: {
+          filter: {},
+          update: { $unset: { linkId: "" } }
+        }
+      },
+      {
+        updateMany: {
+          filter: { dateAdded: { $exists: false } },
+          update: { $currentDate: { dateAdded: true } }
+        }
+      },
+      {
+        updateMany: {
+          filter: { dateModified: { $exists: false } },
+          update: { $currentDate: { dateModified: true } }
+        }
+      }
+    ])    .then((data) => {
+      res.json(data)
+    })
+    .catch((e) => console.log(e))
+})
 
-module.exports = recordRoutes;
+module.exports = recordRoutes

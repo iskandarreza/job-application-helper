@@ -1,22 +1,22 @@
-import React, { useState } from "react"
-import { makeStyles } from "@material-ui/core/styles"
-import { MenuItem, Select } from "@mui/material"
-import { useDispatch } from "react-redux"
-import { updateRecord } from "../../redux/actions/jobActions"
+import React, { useState } from 'react'
+import { makeStyles } from '@material-ui/core/styles'
+import { MenuItem, Select } from '@mui/material'
+import { useDispatch } from 'react-redux'
+import { updateRecord } from '../../redux/actions/jobActions'
 
 const useStyles = makeStyles((theme) => ({
   formControl: {
     margin: theme.spacing(1),
     minWidth: 120,
     fieldset: {
-      border: 'none'
-    }
+      border: 'none',
+    },
   },
 }))
 
 export const RenderSelectMenu = ({ params, menuOptions }) => {
   const dispatch = useDispatch()
-  const [value, setValue] = useState(params.value ?? "")
+  const [value, setValue] = useState(params.value ?? '')
 
   const handleChange = async (event) => {
     const { row, field } = params
@@ -25,8 +25,7 @@ export const RenderSelectMenu = ({ params, menuOptions }) => {
 
     setValue(value)
     dispatch(updateRecord(row, newValue))
-
-}
+  }
 
   const classes = useStyles()
   const selectMenuClassNames = {}
@@ -35,7 +34,7 @@ export const RenderSelectMenu = ({ params, menuOptions }) => {
     selectMenuClassNames[value] = `${value}-cell`
   })
 
-  const cellClassName = selectMenuClassNames[value] || ""
+  const cellClassName = selectMenuClassNames[value] || ''
 
   return (
     <Select
