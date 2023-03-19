@@ -24,6 +24,9 @@ export const INSERT_RECORD_FAILURE = 'INSERT_RECORD_FAILURE'
 export const FILTER_RECORDS_SUCCESS = 'FILTER_RECORD_SUCCESS'
 export const FILTER_RECORDS_FAILURE = 'FILTER_RECORD_FAILURE'
 
+export const HIGHLIGHT_RECORD_SUCCESS = 'HIGHLIGHT_RECORD_SUCCESS'
+
+
 
 // Define action creators
 const createAction = (type) => () => ({
@@ -51,6 +54,7 @@ export const insertRecordFailure = createPayloadAction(INSERT_RECORD_FAILURE)
 export const filterJobsSuccess = createPayloadAction(FILTER_RECORDS_SUCCESS)
 export const filterJobFailure = createPayloadAction(FILTER_RECORDS_FAILURE)
 
+export const highlightJobSuccess = createPayloadAction(HIGHLIGHT_RECORD_SUCCESS)
 
 // Define async action creators
 export const fetchJobs = () => {
@@ -133,8 +137,11 @@ export const updateRecord = (row, newValue) => async (dispatch) => {
 export const insertRecord = (row) => async (dispatch) => {
   try {
     const response = await addRecord(row)
-    dispatch(insertRecordSuccess(row))
-    return response
+    const { insertedId } = response
+    const insertedRow = {...row, _id: insertedId}
+
+    dispatch(insertRecordSuccess(insertedRow))
+    return insertedRow
   } catch (error) {
     console.error(error)
     dispatch(insertRecordFailure(error.message))
@@ -164,4 +171,19 @@ export const filterOpenJobs = () => async (dispatch, getState) => {
     console.error(error)
     dispatch(filterJobFailure(error.message))
   }
+
+}
+
+export const highlightJob = (id) => async (dispatch, getState) => {
+  const { jobs: rows } = getState().jobRecords
+  const index = rows?.findIndex((existingRow) => existingRow.id === id)
+
+  if (index !== -1) {
+    const updatedRows = [...rows]
+    const [row] = updatedRows.splice(index, 1)
+    updatedRows.unshift(row)
+
+    dispatch(highlightJobSuccess(updatedRows))
+  }
+
 }

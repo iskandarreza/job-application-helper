@@ -5,13 +5,14 @@ import { useDispatch } from 'react-redux'
 import { updateRecord } from '../../redux/actions/jobActions'
 
 const useStyles = makeStyles((theme) => ({
-  formControl: {
-    margin: theme.spacing(1),
-    minWidth: 120,
-    fieldset: {
+  select: {
+    display: 'flex',
+    flex: 1,
+    justifyContent: 'space-between',
+    '& fieldset': {
       border: 'none',
-    },
-  },
+    }
+  }
 }))
 
 export const RenderSelectMenu = ({ params, menuOptions }) => {
@@ -27,18 +28,26 @@ export const RenderSelectMenu = ({ params, menuOptions }) => {
     dispatch(updateRecord(row, newValue))
   }
 
+  const toKebabCase = (str) => {
+    return str.replace(/([a-z])([A-Z])/g, '$1-$2')
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+  }
+
   const classes = useStyles()
   const selectMenuClassNames = {}
 
   menuOptions.forEach((value) => {
-    selectMenuClassNames[value] = `${value}-cell`
+    const safeClassName = toKebabCase(value) 
+
+    selectMenuClassNames[safeClassName] = `${safeClassName}-cell`
   })
 
   const cellClassName = selectMenuClassNames[value] || ''
 
   return (
     <Select
-      className={`${classes.formControl} ${cellClassName}`}
+      className={`${classes.select} ${cellClassName}`}
       value={value}
       onChange={handleChange}
     >

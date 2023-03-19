@@ -13,6 +13,7 @@ import {
   UPDATE_RECORD_FAILURE,
   FILTER_RECORDS_SUCCESS,
   FILTER_RECORDS_FAILURE,
+  HIGHLIGHT_RECORD_SUCCESS
 } from '../actions/jobActions'
 
 const initialState = {
@@ -87,6 +88,9 @@ const jobsReducer = (state = initialState, action) => {
       return successAction(state, action.payload, true)
     case FILTER_RECORDS_FAILURE:
       return failureAction(state, action.payload)
+
+    case HIGHLIGHT_RECORD_SUCCESS:
+      return successAction(state, action.payload, true)
     
     default:
       return state

@@ -7,7 +7,7 @@ import { RenderSelectMenu } from './atoms/RenderSelectMenu'
 import { CustomToolbar } from './atoms/JobLinksToolBar'
 import { AddRowForm } from './atoms/JobRecordInsert'
 
-import '../index.css'
+import '../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
@@ -45,6 +45,7 @@ const columns = [
     field: 'status1',
     headerAlign: 'center',
     align: 'left',
+    width: 140,
     renderCell: (params) => (
       <RenderSelectMenu
         params={params}
@@ -64,7 +65,7 @@ const columns = [
     field: 'status2',
     headerAlign: 'center',
     align: 'left',
-    width: 150,
+    width: 200,
     renderCell: (params) => (
       <RenderSelectMenu
         params={params}

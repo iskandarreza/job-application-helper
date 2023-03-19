@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { Box, TextField, Button } from '@mui/material'
+import { Box, TextField, Button, FormControl } from '@mui/material'
 import { Add } from '@material-ui/icons'
-import { insertRecord } from '../../redux/actions/jobActions'
+import { highlightJob, insertRecord } from '../../redux/actions/jobActions'
 import { useDispatch, useSelector } from 'react-redux'
 import CustomSelect from './CustomSelect'
 
 const defaultValidationMessage = 'Please fill out all fields.'
 const status1ValidationMessage = 'Please select a valid status.'
+const idValidationMessage = 'ID already exists, verify existing matching entry'
 
 const status1Options = ['open', 'applied', 'uncertain']
 
@@ -36,32 +37,42 @@ export const AddRowForm = () => {
     status1: { isValid: true, validationMessage: status1ValidationMessage },
   })
 
-  const isIdAlreadyExist = jobs?.some(
-    (existingRow) => existingRow.id === row.id
-  )
+  const isIdAlreadyExist = jobs?.some((existingRow) => existingRow.id === row.id)
   const isAddRowDisabled = !isRowValid || isIdAlreadyExist
 
   const handleRowBlur = (event) => {
-    const { name, value } = event.target
+    const { name: field, value } = event.target
 
     if (isValidating) {
       const isValid = value !== ''
       const validationMessage = isValid ? '' : defaultValidationMessage
 
-      if (name.toLowerCase() === 'status1') {
-        setRowValidationModel((prevState) => ({
-          ...prevState,
-          [name]: {
-            isValid: status1Options.includes(value),
-            validationMessage: status1ValidationMessage,
-          },
-        }))
+      if (field.toLowerCase() === 'status1') {
+        setValidationMessage('status1', status1Options.includes(value), status1ValidationMessage)
       } else {
-        setRowValidationModel((prevState) => ({
-          ...prevState,
-          [name]: { isValid, validationMessage },
-        }))
+
+        if (isIdAlreadyExist) {
+          const match = jobs?.find((existingRow) => existingRow.id === row.id)
+          dispatch(highlightJob(row.id))
+          setValidationMessage('id', false, idValidationMessage)
+        } else {
+          setRowValidationModel((prevState) => ({
+            ...prevState,
+            [field]: { isValid, validationMessage },
+          }))
+        }
+
       }
+    }
+
+    function setValidationMessage(field, validator, message) {
+      setRowValidationModel((prevState) => ({
+        ...prevState,
+        [field]: {
+          isValid: validator,
+          validationMessage: message,
+        },
+      }))
     }
   }
 
@@ -187,15 +198,15 @@ export const AddRowForm = () => {
             )}
           </div>
         ))}
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Add />}
-          onClick={handleAddRow}
-          disabled={isAddRowDisabled}
-        >
-          Add
-        </Button>
+          <Button sx={{height: '56px'}}
+            variant="contained"
+            color="primary"
+            startIcon={<Add />}
+            onClick={handleAddRow}
+            disabled={isAddRowDisabled}
+          >
+            Add
+          </Button>
       </div>
     </Box>
   )
