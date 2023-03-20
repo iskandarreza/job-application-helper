@@ -90,3 +90,23 @@ export const deleteRecordByID = async (rowID) => {
       console.error(error)
     })
 }
+
+export const checkJobStatus = async (row) => {
+  const { id, url } = row
+  let hostname
+  if (url.includes('indeed')) {
+    hostname = 'indeed'
+  } else if (url.includes('linkedin')) {
+    hostname = 'linkedin'
+  }
+  return axios
+  .get(`http://localhost:5000/job-status/${hostname}/${id}`)
+    .then((response) => {
+      // toast.info(`Record ID:${rowID} is ${response.data.status}`)
+      console.log(response)
+      return response.data
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+}

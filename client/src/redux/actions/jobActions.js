@@ -122,6 +122,7 @@ export const fetchNewJobs = () => {
 }
 
 export const updateRecord = (row, newValue) => async (dispatch) => {
+  console.log({newValue})
   try {
     const response = await updateRecordByID(row, newValue)
     const { modifiedCount } = response

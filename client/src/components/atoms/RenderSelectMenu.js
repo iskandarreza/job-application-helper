@@ -4,7 +4,7 @@ import { MenuItem, Select } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { updateRecord } from '../../redux/actions/jobActions'
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   select: {
     display: 'flex',
     flex: 1,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
-import { Box } from '@mui/material'
+import { Box, Tooltip } from '@mui/material'
 
 import { JobLinkButtonRenderer } from './atoms/JobLinkButtonRenderer'
 import { RenderSelectMenu } from './atoms/RenderSelectMenu'
@@ -17,8 +17,10 @@ import {
   updateRecord,
 } from '../redux/actions/jobActions'
 import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
+import { RenderRoleCell } from './atoms/RenderRoleCell'
 
 const columns = [
+  { field: '_id', flex: 1 },
   { field: 'id', flex: 1 },
   {
     field: 'dateModified',
@@ -28,14 +30,45 @@ const columns = [
   {
     field: 'org',
     flex: 1,
+    renderCell: (params) => {
+      return (
+        <Tooltip title={params.row.org}>
+          <span>{params.row.org}</span>
+        </Tooltip>
+      )
+    }
   },
   {
     field: 'role',
     flex: 1,
+    renderCell: RenderRoleCell,    
+  },
+  // {
+  //   field: 'test',
+  //   renderCell: (params) => {
+
+  //     return <span>TEST</span>
+
+  //   }
+  // },
+  {
+    field: 'extraData',
+    flex: 1,
+    renderCell: (params) => {
+      let text = params.row?.extraData ? JSON.stringify(params.row?.extraData) : ''
+      return <p>{text}</p>
+    }
   },
   {
     field: 'location',
     flex: 1,
+    renderCell: (params) => {
+      return (
+        <Tooltip title={params.row.org}>
+          <span>{params.row.org}</span>
+        </Tooltip>
+      )
+    }
   },
   {
     field: 'link',
@@ -147,8 +180,9 @@ const JobsDataGrid = () => {
       initialState={{
         columns: {
           columnVisibilityModel: {
+            _id: false,
             id: false,
-            // status3: false
+            extraData: false
           },
         },
         sorting: {

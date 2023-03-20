@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Box, TextField, Button, FormControl } from '@mui/material'
+import { Box, TextField, Button } from '@mui/material'
 import { Add } from '@material-ui/icons'
 import { highlightJob, insertRecord } from '../../redux/actions/jobActions'
 import { useDispatch, useSelector } from 'react-redux'
@@ -52,7 +52,6 @@ export const AddRowForm = () => {
       } else {
 
         if (isIdAlreadyExist) {
-          const match = jobs?.find((existingRow) => existingRow.id === row.id)
           dispatch(highlightJob(row.id))
           setValidationMessage('id', false, idValidationMessage)
         } else {

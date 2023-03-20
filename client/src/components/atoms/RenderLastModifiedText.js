@@ -1,6 +1,11 @@
+import { checkJobStatus } from "../../utils/api"
+
 export const RenderLastModifiedText = (params) => {
-  const details = () => {
-    console.info(params)
+  const details = async () => {
+    const { row } = params
+    console.info({row})
+    const data = await checkJobStatus(row)
+    console.log(data)
   }
   function timeDifferenceFromNow(dateString) {
     const date = new Date(dateString)

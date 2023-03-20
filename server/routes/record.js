@@ -5,26 +5,31 @@ const ObjectId = require('mongodb').ObjectId
 
 const collection = 'email-link-data'
 
-recordRoutes.route('/clone').get(async function (req, res) {
+recordRoutes.route('/backup').get(async function (req, res) {
   const db = dbo.getDb()
 
   try {
+    // Delete all documents in the backup collection
+    const deleteResult = await db.collection('backup').deleteMany({})
+    console.log(`Deleted ${deleteResult.deletedCount} documents from backup`)
+
     // Find all documents in the email-link-data collection
     const docs = await db.collection('email-link-data').find().toArray()
 
-    // Insert all documents into the email-link-data-dev collection
-    const result = await db.collection('email-link-data-dev').insertMany(docs)
+    // Insert all documents into the backup collection
+    const result = await db.collection('backup').insertMany(docs)
 
     console.log(
-      `Inserted ${result.insertedCount} documents into email-link-data-dev`
+      `Inserted ${result.insertedCount} documents into backup`
     )
 
-    res.send('Cloned collection successfully')
+    res.send('Collection backed up successfully')
   } catch (err) {
     console.error(err)
-    res.status(500).send('Failed to clone collection')
+    res.status(500).send('Failed to backup collection')
   }
 })
+
 
 recordRoutes.route('/record').get(async function (req, res) {
   console.log(
@@ -43,6 +48,58 @@ recordRoutes.route('/record').get(async function (req, res) {
     })
     .catch((e) => console.log(e))
 })
+
+recordRoutes.route('/record/open').get(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
+  let db_connect = dbo.getDb()
+
+
+  db_connect
+    .collection(collection)
+    .find({
+      $and: [
+        {
+          dateModified: {
+            $gte: new Date('2023-03-07').toISOString(),
+            $lte: new Date('2023-03-21').toISOString() 
+          } 
+        },
+        {
+          $or: [
+            { status1: 'open' },
+            // { status1: 'applied' },
+            // { status1: 'uncertain' }
+          ],
+          status2: { $ne: 'closed' },
+          status3: { $ne: 'closed' }
+
+        },
+        // {
+        //   $or: [
+        //     { 'extraData.jobDescriptionText': { $exists: false } },
+        //     { 'extraData.jobDescriptionText': null }
+        //   ]
+        // },
+        {
+          url: { $regex: 'indeed.com', $options: 'i' }
+        }
+      ]
+    })
+  
+  .toArray()
+  .then((data) => {
+    console.log(`${data.length} open records retrieved`)
+    res.json(data)
+  })
+  .catch((e) => console.log(e))
+
+
+})
+
 
 recordRoutes.route('/record/:id').get(async function (req, res) {
   let db_connect = dbo.getDb()
