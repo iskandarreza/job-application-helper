@@ -125,7 +125,8 @@ export const AddRowForm = () => {
       }
     }
 
-    const newRow = { ...row, id }
+    const now = new Date().toISOString()
+    const newRow = { ...row, id, dateAdded: now, dateModified: now }
 
     dispatch(insertRecord(newRow)).then(() => {
       setRow(rowModel)

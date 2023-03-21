@@ -102,8 +102,7 @@ export const checkJobStatus = async (row) => {
   return axios
   .get(`http://localhost:5000/job-status/${hostname}/${id}`)
     .then((response) => {
-      // toast.info(`Record ID:${rowID} is ${response.data.status}`)
-      console.log(response)
+      console.log({response})
       return response.data
     })
     .catch((error) => {

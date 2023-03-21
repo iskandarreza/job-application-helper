@@ -43,14 +43,6 @@ const columns = [
     flex: 1,
     renderCell: RenderRoleCell,    
   },
-  // {
-  //   field: 'test',
-  //   renderCell: (params) => {
-
-  //     return <span>TEST</span>
-
-  //   }
-  // },
   {
     field: 'extraData',
     flex: 1,
@@ -64,8 +56,8 @@ const columns = [
     flex: 1,
     renderCell: (params) => {
       return (
-        <Tooltip title={params.row.org}>
-          <span>{params.row.org}</span>
+        <Tooltip title={params.row.location}>
+          <span>{params.row.location}</span>
         </Tooltip>
       )
     }

@@ -42,9 +42,13 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
       const pageTitle = await page.title()
       
       data.pageTitle = pageTitle
+      if (pageTitle.includes('Page Not Found')) {
+        redirected = true
+      }
       
-      if (!redirected || !pageTitle.includes('Page Not Found')) {
+      if (!redirected) {
 
+        console.log('Checking if job is stil open...')
         try {
           const selector =  '.jobsearch-JobComponent > .jobsearch-DesktopStickyContainer'
           const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -59,11 +63,57 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
             
         } catch (error) {
 
-          data.status = 'open'
+          data.status = 'closed'
           data.crawlStatus = JSON.stringify(error)
         }
 
         if (data.status === 'open') {
+          
+          console.log('Getting title of the role...')
+          try {
+            const selector = '.jobsearch-JobInfoHeader-title-container'
+            const element = await page.waitForSelector(selector, { timeout: 10000 })
+            
+            if (element) {
+              const text = await page.$eval(selector, (element) => element.innerText)
+              data.role = text
+            }
+  
+          } catch (error) {
+            console.log('Job title info unavailable')
+          }
+
+          console.log('Getting the organization name...')
+
+          try {
+            const selector = '.jobsearch-CompanyInfoWithoutHeaderImage > div > div > div:nth-child(1)'
+            const element = await page.waitForSelector(selector, { timeout: 10000 })
+            
+            if (element) {
+              const text = await page.$eval(selector, (element) => element.innerText)
+              data.org = text
+            }
+  
+          } catch (error) {
+            console.log('Organization info unavailable')
+          }
+
+          console.log('Getting the role location...')
+
+          try {
+            const selector = '.jobsearch-CompanyInfoWithoutHeaderImage > div > div > div:nth-child(2)'
+            const element = await page.waitForSelector(selector, { timeout: 10000 })
+            
+            if (element) {
+              const text = await page.$eval(selector, (element) => element.innerText)
+              data.location = text
+            }
+  
+          } catch (error) {
+            console.log('Job location info unavailable')
+          }
+
+          console.log('Getting salary info and job type...')
           try {
             const selector = '[id="salaryInfoAndJobType"]'
             const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -74,9 +124,10 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
             }
   
           } catch (error) {
-
+            console.log('Job salary info unavailable')
           }
   
+          console.log('Getting the role qualifications...')
           try {
             const selector = '[id="qualificationsSection"]'
             const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -87,9 +138,10 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
             }
   
           } catch (error) {
-
+            console.log('Job qualification info unavailable')
           }
   
+          console.log('Getting the job summary...')
           try {
             const selector = '[id="jobDetailsSection"]'
             const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -100,9 +152,10 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
             }
   
           } catch (error) {
-
+            console.log('Job summary info unavailable')
           }
   
+          console.log('Getting the full job description...')
           try {
             const selector = '[id="jobDescriptionText"]'
             const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -113,7 +166,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
             }
   
           } catch (error) {
-
+            console.log('Job description info unavailable')
           }
   
         }
@@ -130,6 +183,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
 
       if (!redirected) {
 
+        console.log('Checking if job is stil open...')
         try {
           const selector = '.top-card-layout__entity-info-container'
           const element = await page.waitForSelector(selector, { timeout: 10000 })
@@ -149,6 +203,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
 
         if (data.status === 'open') {
           
+          console.log('Getting the full job description...')
           try {
             const showMore = '.core-section-container > .core-section-container__content > .description__text > .show-more-less-html > .show-more-less-html__button--more'
             await page.waitForSelector(showMore, { timeout: 10000 })
@@ -165,6 +220,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
           } catch (error) {
             await page.screenshot({ path: `screenshot-linkedin-${jobId}.png` })
             data.crawlStatus = JSON.stringify(error)
+            console.log('Job description info unavailable')
           }
         }
         

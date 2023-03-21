@@ -49,15 +49,26 @@ dialog {
 	height: 60vh;
 	overflow-y: auto;
 
-	.close {
-		position: fixed;
-    transform: translate(140%, 10%);
-    top: 22%;
-    right: 22%;
-    border: 1px solid grey;
+	@mixin button-style {
+		border: 1px solid grey;
     border-radius: 5%;
     background-color: #fff;
     padding: 5px;
+	}
+
+	button {
+		@include button-style()
+	}
+
+	.close {
+		// position: fixed;
+    // transform: translate(140%, 10%);
+    // top: 22%;
+    // right: 22%;
+    // border: 1px solid grey;
+    // border-radius: 5%;
+    // background-color: #fff;
+    // padding: 5px;
     text-decoration: none;
 	}
 
