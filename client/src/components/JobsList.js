@@ -33,7 +33,7 @@ const columns = [
     renderCell: (params) => {
       const details = async () => {
         const { row } = params
-        console.info({row})
+        console.info({ row })
       }
 
       return (
@@ -46,7 +46,7 @@ const columns = [
   {
     field: 'role',
     flex: 1,
-    renderCell: RenderRoleCell,    
+    renderCell: RenderRoleCell,
   },
   {
     field: 'location',
@@ -110,7 +110,7 @@ const columns = [
   },
   {
     field: 'notes',
-    headerAlign:'center',
+    headerAlign: 'center',
     flex: 1,
     editable: true,
   },
@@ -122,23 +122,55 @@ const JobsDataGrid = () => {
   const dispatch = useDispatch()
 
   const openJobsFilterModel = {
-    items: [{ id: 1, field: 'status1', operator: 'contains', value: 'open' }],
+    items: [{ id: 1, field: 'status1', operator: 'isAnyOf', value: ['open'] }],
   }
   const [filterModel, setFilterModel] = useState(openJobsFilterModel)
+  const [isFiltering, setIsFiltering] = useState(true)
+  const [filterAction, setFilterAction] = useState('open')
+
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
   })
 
+  const resetFilters = () => {
+    setFilterModel({ items: [] })
+    setIsFiltering(false)
+  }
+
   const handleShowAppliedJobsClick = () => {
-    setFilterModel({
+    const model = {
       items: [
         { id: 1, field: 'status1', operator: 'isAnyOf', value: ['applied', 'uncertain'] },
       ],
-    })
+    }
+
+    if (!isFiltering) {
+      setFilterModel(model)
+      setIsFiltering(true)
+    } else {
+      if (filterAction === 'open') {
+        setFilterModel(model)
+        setFilterAction('applied')
+      } else {
+        resetFilters()
+      }
+    }
   }
+
   const handleShowOpenJobsClick = () => {
-    setFilterModel(openJobsFilterModel)
+    if (!isFiltering) {
+      setFilterModel(openJobsFilterModel)
+      setIsFiltering(true)
+    } else {
+      if (filterAction === 'applied') {
+        setFilterModel(openJobsFilterModel)
+        setFilterAction('open')
+        console.log(filterModel.items)
+      } else {
+        resetFilters()
+      }
+    }
   }
 
   const fetchData = useCallback(async () => {
@@ -172,6 +204,8 @@ const JobsDataGrid = () => {
       components={{
         Toolbar: () => (
           <CustomToolbar
+            isFiltering={isFiltering}
+            filterAction={filterAction}
             handleShowOpenJobsClick={handleShowOpenJobsClick}
             handleShowAppliedJobsClick={handleShowAppliedJobsClick}
             fetchNewJobs={fetchNewJobsFromAPI}
