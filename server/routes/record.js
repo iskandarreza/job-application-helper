@@ -3,30 +3,34 @@ const recordRoutes = express.Router()
 const dbo = require('../db/conn')
 const ObjectId = require('mongodb').ObjectId
 
+const devData = 'email-link-data-dev'
+// const collection = devData
 const collection = 'email-link-data'
+const backup = 'backup'
+// const backup = devData
 
 recordRoutes.route('/backup').get(async function (req, res) {
   const db = dbo.getDb()
 
   try {
     // Delete all documents in the backup collection
-    const deleteResult = await db.collection('backup').deleteMany({})
-    console.log(`Deleted ${deleteResult.deletedCount} documents from backup`)
+    const deleteResult = await db.collection(backup).deleteMany({})
+    console.log(`Deleted ${deleteResult.deletedCount} documents from ${backup}`)
 
     // Find all documents in the email-link-data collection
-    const docs = await db.collection('email-link-data').find().toArray()
+    const docs = await db.collection(collection).find().toArray()
 
     // Insert all documents into the backup collection
-    const result = await db.collection('backup').insertMany(docs)
+    const result = await db.collection(backup).insertMany(docs)
 
     console.log(
-      `Inserted ${result.insertedCount} documents into backup`
+      `Inserted ${result.insertedCount} documents into ${backup}`
     )
 
-    res.send('Collection backed up successfully')
+    res.send(`${collection} backed up successfully`)
   } catch (err) {
     console.error(err)
-    res.status(500).send('Failed to backup collection')
+    res.status(500).send(`Failed to backup ${collection}`)
   }
 })
 
@@ -42,6 +46,22 @@ recordRoutes.route('/record').get(async function (req, res) {
   db_connect
     .collection(collection)
     .find({})
+    
+    // .aggregate([
+    //   {
+    //     $match: {
+    //       $expr: {
+    //         $eq: [
+    //           { $toDate: "$dateAdded" },
+    //           { $toDate: "$dateModified" }
+    //         ]
+    //       },
+    //       status1: "open",
+    //       extraData: { $exists: false },
+    //     }
+    //   }
+    // ])
+
     .toArray()
     .then((data) => {
       res.json(data)
@@ -60,43 +80,57 @@ recordRoutes.route('/record/open').get(async function (req, res) {
 
   db_connect
     .collection(collection)
-    .find({
-      $and: [
-        {
-          dateModified: {
-            $gte: new Date('2023-03-07').toISOString(),
-            $lte: new Date('2023-03-21').toISOString() 
-          } 
-        },
-        {
-          $or: [
-            { status1: 'open' },
-            // { status1: 'applied' },
-            // { status1: 'uncertain' }
-          ],
-          status2: { $ne: 'closed' },
-          status3: { $ne: 'closed' }
+    // .find({
+    //   $and: [
+    //     {
+    //       dateModified: {
+    //         $gte: new Date('2023-03-07').toISOString(),
+    //         $lte: new Date('2023-03-21').toISOString() 
+    //       } 
+    //     },
+    //     {
+    //       $or: [
+    //         { status1: 'open' },
+    //         { status1: 'applied' },
+    //         { status1: 'uncertain' }
+    //       ],
+    //       status2: { $ne: 'closed' },
+    //       status3: { $ne: 'closed' }
 
-        },
-        // {
-        //   $or: [
-        //     { 'extraData.jobDescriptionText': { $exists: false } },
-        //     { 'extraData.jobDescriptionText': null }
-        //   ]
-        // },
-        {
-          url: { $regex: 'indeed.com', $options: 'i' }
+    //     },
+    //     // {
+    //     //   $or: [
+    //     //     { 'extraData.jobDescriptionText': { $exists: false } },
+    //     //     { 'extraData.jobDescriptionText': null }
+    //     //   ]
+    //     // },
+    //     {
+    //       url: { $regex: 'indeed.com', $options: 'i' }
+    //     }
+    //   ]
+    // })
+
+    .aggregate([
+      {
+        $match: {
+          $expr: {
+            $eq: [
+              { $toDate: "$dateAdded" },
+              { $toDate: "$dateModified" }
+            ]
+          },
+          status1: "open",
+          extraData: { $exists: false },
         }
-      ]
+      }
+    ])
+    
+    .toArray()
+    .then((data) => {
+      console.log(`${data.length} open records retrieved`)
+      res.json(data)
     })
-  
-  .toArray()
-  .then((data) => {
-    console.log(`${data.length} open records retrieved`)
-    res.json(data)
-  })
-  .catch((e) => console.log(e))
-
+    .catch((e) => console.log(e))
 
 })
 

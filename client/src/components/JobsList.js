@@ -13,11 +13,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchJobs,
   fetchNewJobs,
-  filterOpenJobs,
   updateRecord,
 } from '../redux/actions/jobActions'
 import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
 import { RenderRoleCell } from './atoms/RenderRoleCell'
+import { JobDescriptionDialog } from './atoms/JobDescriptionDialog'
 
 const columns = [
   { field: '_id', flex: 1 },
@@ -31,8 +31,13 @@ const columns = [
     field: 'org',
     flex: 1,
     renderCell: (params) => {
+      const details = async () => {
+        const { row } = params
+        console.info({row})
+      }
+
       return (
-        <Tooltip title={params.row.org}>
+        <Tooltip onClick={() => details()} title={params.row.org}>
           <span>{params.row.org}</span>
         </Tooltip>
       )
@@ -42,14 +47,6 @@ const columns = [
     field: 'role',
     flex: 1,
     renderCell: RenderRoleCell,    
-  },
-  {
-    field: 'extraData',
-    flex: 1,
-    renderCell: (params) => {
-      let text = params.row?.extraData ? JSON.stringify(params.row?.extraData) : ''
-      return <p>{text}</p>
-    }
   },
   {
     field: 'location',
@@ -123,14 +120,26 @@ const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
   const dispatch = useDispatch()
+
+  const openJobsFilterModel = {
+    items: [{ id: 1, field: 'status1', operator: 'contains', value: 'open' }],
+  }
+  const [filterModel, setFilterModel] = useState(openJobsFilterModel)
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
   })
 
-  const handleFilterClick = useCallback(() => {
-    dispatch(filterOpenJobs())
-  }, [dispatch])
+  const handleShowAppliedJobsClick = () => {
+    setFilterModel({
+      items: [
+        { id: 1, field: 'status1', operator: 'isAnyOf', value: ['applied', 'uncertain'] },
+      ],
+    })
+  }
+  const handleShowOpenJobsClick = () => {
+    setFilterModel(openJobsFilterModel)
+  }
 
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
@@ -155,16 +164,16 @@ const JobsDataGrid = () => {
   return (
     <DataGrid
       getRowId={(row) => row._id}
+      filterModel={filterModel}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
-      // rows={tableData}
       rows={jobs}
       columns={columns}
       components={{
         Toolbar: () => (
           <CustomToolbar
-            handleFilterClick={handleFilterClick}
-            fetchData={fetchData}
+            handleShowOpenJobsClick={handleShowOpenJobsClick}
+            handleShowAppliedJobsClick={handleShowAppliedJobsClick}
             fetchNewJobs={fetchNewJobsFromAPI}
           />
         ),
@@ -174,7 +183,6 @@ const JobsDataGrid = () => {
           columnVisibilityModel: {
             _id: false,
             id: false,
-            extraData: false
           },
         },
         sorting: {
@@ -193,6 +201,7 @@ const JobsDataGrid = () => {
 }
 
 export const JobsList = () => {
+
   return (
     <div style={{ padding: '5px 20px' }}>
       <h1>Job Postings</h1>
@@ -202,6 +211,7 @@ export const JobsList = () => {
       <Box>
         <AddRowForm />
       </Box>
+      <JobDescriptionDialog />
     </div>
   )
 }

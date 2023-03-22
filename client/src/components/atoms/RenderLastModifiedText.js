@@ -1,11 +1,6 @@
-import { checkJobStatus } from "../../utils/api"
 
 export const RenderLastModifiedText = (params) => {
-  const details = async () => {
-    const { row } = params
-    console.info({row})
-  }
-  function timeDifferenceFromNow(dateString) {
+  const timeDifferenceFromNow = (dateString) => {
     const date = new Date(dateString)
     const now = new Date()
     const diff = now.getTime() - date.getTime()
@@ -26,8 +21,10 @@ export const RenderLastModifiedText = (params) => {
   }
 
   return (
-    <span onClick={() => details()}>{`${timeDifferenceFromNow(
-      params.row?.dateModified
-    )} ago`}</span>
+    <>
+      <span style={{ width: '1px', opacity: '0%' }}>{params.row?.dateModified}</span>
+      <span>{`${timeDifferenceFromNow(params.row?.dateModified)} ago`}</span>
+    </>
+    
   )
 }

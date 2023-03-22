@@ -12,6 +12,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
   const jobId = req.params.jobId
   const hostdomain = req.params.hostdomain
 
+  console.log('')
   console.log(`Received status request for job ID: ${jobId} for ${hostdomain}`)
 
   const browser = await puppeteer.launch({ headless: true })

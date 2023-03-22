@@ -122,12 +122,18 @@ export const fetchNewJobs = () => {
 }
 
 export const updateRecord = (row, newValue) => async (dispatch) => {
-  console.log({newValue})
+ 
+  const payload = { 
+    ...newValue, 
+    dateModified: new Date().toISOString(), 
+  }
+  console.log('updateRecord', {payload})
+  
   try {
-    const response = await updateRecordByID(row, newValue)
+    const response = await updateRecordByID(row, payload)
     const { modifiedCount } = response
     if (modifiedCount) {
-      dispatch(updateRecordSuccess({ ...row, ...newValue }))
+      dispatch(updateRecordSuccess({ ...row, ...payload }))
     }
   } catch (error) {
     console.error(error)
@@ -149,6 +155,7 @@ export const insertRecord = (row) => async (dispatch) => {
   }
 }
 
+// unused
 export const filterOpenJobs = () => async (dispatch, getState) => {
   const { jobs: rows } = getState().jobRecords
 
@@ -175,6 +182,7 @@ export const filterOpenJobs = () => async (dispatch, getState) => {
 
 }
 
+// unused
 export const highlightJob = (id) => async (dispatch, getState) => {
   const { jobs: rows } = getState().jobRecords
   const index = rows?.findIndex((existingRow) => existingRow.id === id)

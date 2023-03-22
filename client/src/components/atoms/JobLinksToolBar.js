@@ -1,14 +1,13 @@
 import React from 'react'
 import {
   GridToolbarContainer,
-  GridToolbarDensitySelector,
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid'
 import { Button } from '@mui/material'
 
 export const CustomToolbar = ({
-  handleFilterClick,
-  fetchData,
+  handleShowOpenJobsClick,
+  handleShowAppliedJobsClick,
   fetchNewJobs,
 }) => {
   return (
@@ -25,16 +24,19 @@ export const CustomToolbar = ({
           gap: '10px',
         }}
       >
-        <GridToolbarDensitySelector />
         <Button
           variant="contained"
           color="primary"
-          onClick={() => handleFilterClick()}
+          onClick={() => handleShowAppliedJobsClick()}
         >
-          Filter Open Jobs
+          Show Applied Jobs
         </Button>
-        <Button variant="contained" color="primary" onClick={() => fetchData()}>
-          Restore Data
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => handleShowOpenJobsClick()}
+        >
+          Show Open Jobs
         </Button>
         <Button
           variant="contained"

@@ -47,7 +47,6 @@ const failureAction = (state, payload) => ({
 })
 
 const jobsReducer = (state = initialState, action) => {
-  console.log({ ...action, state })
   switch (action.type) {
     case FETCH_JOBS_BEGIN:
       return beginAction(state)
