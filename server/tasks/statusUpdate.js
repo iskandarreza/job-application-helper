@@ -49,34 +49,44 @@ const runTask = async () => {
 
     let jobsProcessed = 0
     for (const result of results) {
-      const { id, status , extraData} = result
+      const { id, status, extraData, redirected } = result
+      let payload = {}
+      payload.extraData = { redirected }
+      payload.crawlDate = new Date()
 
       if (status === 'closed') {
         const job = jobChunk.find((job) => job._id === id)
+        const { status1, status2, status3 } = job
 
-        if (job.status1 !== 'applied' || job.status1 !== 'uncertain') {
-          await axios.post(`http://localhost:5000/update/${id}`, {
-            status1: 'closed', 
-          })
+
+        if ((status1 === 'applied' || status1 === 'uncertain') && status2 === 'closed') {
+          if ((status2 !== 'null' || status2 !== '') && status3 === 'closed') {
+            if (status3 === 'null' || status3 === '') {
+              console.log('status3 closed')
+              payload.status3 = 'closed'
+
+              await axios.post(`http://localhost:5000/update/${id}`, payload)
+            }
+            // end check status3
+          } else {
+            console.log('status2 closed')
+            payload.status2 = 'closed'
+
+            await axios.post(`http://localhost:5000/update/${id}`, payload)
+          } // end check status2
 
         } else {
-          if (job.status2) {
-            await axios.post(`http://localhost:5000/update/${id}`, {
-              status3: 'closed',
-            })
-          } else {
-            await axios.post(`http://localhost:5000/update/${id}`, {
-              status2: 'closed',
-            })
-          }
-        }
+          console.log('status1 closed')
+          payload.status2 = 'closed'
+
+          await axios.post(`http://localhost:5000/update/${id}`, payload)
+        } // end check status1
 
         console.log(`Closed job ${id}`)
+
       } else {
-        await axios.post(`http://localhost:5000/update/${id}`, {
-          extraData,
-          crawlDate: new Date(),
-        })
+        payload.extraData = { ...extraData, redirected }
+        await axios.post(`http://localhost:5000/update/${id}`, payload)
       }
       jobsProcessed++
       totalJobsProcessed++

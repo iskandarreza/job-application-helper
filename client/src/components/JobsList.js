@@ -230,6 +230,14 @@ const JobsDataGrid = () => {
 
         dispatch(updateRecord(row, newValue))
       }}
+      onFilterModelChange={(model) => {
+        if (model.quickFilterValues) {
+          setFilterModel({
+            items: [],
+            quickFilterValues: model.quickFilterValues
+          })
+        }
+      }}
     />
   )
 }

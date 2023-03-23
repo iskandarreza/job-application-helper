@@ -25,6 +25,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
   const data = {}
   let status = 'open'
   let redirected = false
+  data.redirected = false
   data.status = 'open'
   page.on('request', (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
