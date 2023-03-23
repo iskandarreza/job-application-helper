@@ -53,34 +53,14 @@ const runTask = async () => {
       let payload = {}
       payload.extraData = { redirected }
       payload.crawlDate = new Date()
+      payload.positionStatus = 'open'
+
 
       if (status === 'closed') {
         const job = jobChunk.find((job) => job._id === id)
-        const { status1, status2, status3 } = job
 
-
-        if ((status1 === 'applied' || status1 === 'uncertain') && status2 === 'closed') {
-          if ((status2 !== 'null' || status2 !== '') && status3 === 'closed') {
-            if (status3 === 'null' || status3 === '') {
-              console.log('status3 closed')
-              payload.status3 = 'closed'
-
-              await axios.post(`http://localhost:5000/update/${id}`, payload)
-            }
-            // end check status3
-          } else {
-            console.log('status2 closed')
-            payload.status2 = 'closed'
-
-            await axios.post(`http://localhost:5000/update/${id}`, payload)
-          } // end check status2
-
-        } else {
-          console.log('status1 closed')
-          payload.status2 = 'closed'
-
-          await axios.post(`http://localhost:5000/update/${id}`, payload)
-        } // end check status1
+        payload.positionStatus = 'closed'
+        await axios.post(`http://localhost:5000/update/${id}`, payload)
 
         console.log(`Closed job ${id}`)
 

@@ -42,34 +42,23 @@ export const JobDescriptionDialog = () => {
       crawlDate: new Date().toISOString()
     }
 
-    if (data.status === 'closed') {
-      if (rowData.status1 === 'applied' || rowData.status1 === 'uncertain') {
-        if (rowData.status2) {
-          newValue.status3 = data.status
-        } else {
-          newValue.status2 = data.status
-        }
-      } else {
-        newValue.status1 = data.status
-      }
+    const { status, org, role, location } = data;
+    if (status === 'closed') {
+      newValue.positionStatus = status;
     }
-
-    if (data.org) {
-      newValue.org = data.org
+    if (org) {
+      newValue.org = org;
     }
-
-    if (data.role) {
-      newValue.role = data.role
+    if (role) {
+      newValue.role = role;
     }
-
-    if (data.location) {
-      newValue.location = data.location
+    if (location) {
+      newValue.location = location;
     }
 
     dispatch(updateRecord(rowData, newValue))
-  }
+}
 
-  
   const handleUpdateData = () => {
     toast.info(`Update data for ${rowData.role} at ${rowData.org} will be completed in the background`)
     handleClose()

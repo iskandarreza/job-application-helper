@@ -1,16 +1,46 @@
 const express = require('express')
+const axios = require("axios")
 const recordRoutes = express.Router()
 const dbo = require('../db/conn')
 const ObjectId = require('mongodb').ObjectId
 
 const devData = 'email-link-data-dev'
-// const collection = devData
 const collection = 'email-link-data'
-// const collection = 'backup'
-// const backup = 'email-link-data'
 
 const backup = 'backup'
-// const backup = devData
+const linkContentData = 'link-content-data'
+
+
+recordRoutes.get('/populate-collection', async (req, res) => {
+  let db_connect = dbo.getDb()
+  try {
+    const result = await db_connect.collection(collection).aggregate([
+      {
+        $project: {
+          _id: 0,
+          id: '$id',
+          extraData: { $objectToArray: '$extraData' }
+        }
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              { id: '$id' },
+              { $arrayToObject: '$extraData' }
+            ]
+          }
+        }
+      },
+      { $out: linkContentData }    ]).toArray()
+
+    res.send(`Successfully populated ${result.length} documents to ${linkContentData} collection.`)
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+})
+
 
 recordRoutes.route('/backup').get(async function (req, res) {
   const db = dbo.getDb()
@@ -37,23 +67,79 @@ recordRoutes.route('/backup').get(async function (req, res) {
   }
 })
 
-
 recordRoutes.route('/record').get(async function (req, res) {
   console.log(
-    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
-    req.body
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.query: `,
+    req.query
   )
 
   let db_connect = dbo.getDb()
 
+  let query = {}
+  let options = {}
+
+  if (req.query.filter === 'id_only') {
+    options = { projection: {
+      org: 0,
+      role: 0,
+      location: 0,
+      url: 0,
+      positionStatus: 0,
+      status1: 0,
+      status2: 0,
+      status3: 0,
+      notes: 0,
+      extraData: 0,
+      dateAdded: 0,
+      dateModified: 0,
+      crawlDate: 0,
+      fieldsModified: 0
+    }}
+  } else if (req.query.filter === 'no_filter') {
+    // no filtering needed
+  } else {
+    query = {
+      positionStatus: 'open',
+      $and: [
+        { status1: { $ne: 'declined' } },
+        { status1: { $ne: 'applied' } },
+        { status1: { $ne: 'uncertain' } }
+      ],
+    }
+  }
+
+  console.log({ query, options })
   db_connect
     .collection(collection)
-    .find({})
+    .find(query, options)
     .toArray()
     .then((data) => {
       res.json(data)
     })
     .catch((e) => console.log(e))
+})
+
+recordRoutes.route('/record/new').get(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
+  const recordIds = await axios.get('http://localhost:5000/record?filter=id_only')
+    .then((response) => { return response.data })
+
+  const newData = await axios.get('http://localhost:5000/data')
+    .then((response) => { return response.data })
+
+  const filteredObjects = await newData.filter((newRecord) => {
+    return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
+  })
+
+  const recordNoun = filteredObjects.length > 1 ? 'records' : 'record'
+
+  console.log(`${filteredObjects.length} new ${recordNoun} fetched`)
+
+  res.json(filteredObjects)
 })
 
 recordRoutes.route('/record/open').get(async function (req, res) {
@@ -63,40 +149,21 @@ recordRoutes.route('/record/open').get(async function (req, res) {
   )
 
   let db_connect = dbo.getDb()
-  let startDate = new Date().setHours(new Date().getHours() - 24 * 2) // one day ago
-  let endDate = new Date().setHours(new Date().getHours() - 24 * 7) // a week ago
 
   db_connect
     .collection(collection)
     .find({
       $and: [
         {
-          dateModified: {
-            $lte: new Date(startDate).toISOString(),
-            $gte: new Date(endDate).toISOString(),
-          }
+          positionStatus: 'open'
         },
         {
-          $or: [
-            { status1: 'open' },
-            { status1: 'applied' },
-            { status1: 'uncertain' }
-          ],
-          status2: { $ne: 'closed' },
-          status3: { $ne: 'closed' }
-
+          status1: { $ne: 'declined' },
+          status1: { $ne: 'applied' },
+          status1: { $ne: 'uncertain' }
         },
-        // {
-        //   $or: [
-        //     { 'extraData.jobDescriptionText': { $exists: false } },
-        //     { 'extraData.jobDescriptionText': null }
-        //   ]
-        // },
-        // {
-        //   url: { $regex: 'linkedin.com', $options: 'i' }
-        // }
       ]
-    })    
+    })
     .toArray()
     .then((data) => {
       console.log(`${data.length} open records retrieved`)
@@ -105,46 +172,6 @@ recordRoutes.route('/record/open').get(async function (req, res) {
     .catch((e) => console.log(e))
 
 })
-
-recordRoutes.route('/record/new').get(async function (req, res) {
-  console.log(
-    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
-    req.body
-  )
-
-  let db_connect = dbo.getDb()
-
-  db_connect
-    .collection(collection)
-    .aggregate([
-      {
-        $match: {
-          // $expr: {
-          //   $eq: [
-          //     { $toDate: "$dateAdded" },
-          //     { $toDate: "$dateModified" }
-          //   ]
-          // },
-          $or: [
-            { status1: 'open' },
-            { status1: 'applied' },
-            { status1: 'uncertain' }
-          ],
-          status2: { $ne: 'closed' },
-          status3: { $ne: 'closed' },
-          extraData: { $exists: false },
-        }
-      }
-    ])    
-    .toArray()
-    .then((data) => {
-      console.log(`${data.length} new records retrieved`)
-      res.json(data)
-    })
-    .catch((e) => console.log(e))
-
-})
-
 
 recordRoutes.route('/record/:id').get(async function (req, res) {
   let db_connect = dbo.getDb()
@@ -190,61 +217,8 @@ recordRoutes.route('/record/addbulk').post(function (req, res) {
   const db_connect = dbo.getDb()
   const bulk = db_connect.collection(collection).initializeUnorderedBulkOp()
   const now = new Date()
-  // const priorityLocation = 'remote' // replace with your actual priority location
-
-  // const uniqueDocs = new Map()
-  // req.body.forEach((doc) => {
-  //   const existingDoc = uniqueDocs.get(doc.id)
-  //   if (existingDoc) {
-  //     // check if the duplicates are exactly alike, if yes, ignore the new one
-  //     if (JSON.stringify(existingDoc) === JSON.stringify(doc)) {
-  //       return
-  //     }
-
-  //     // check if the location property string contains the priority location, delete the one without
-  //     const existingLocation = existingDoc.location
-  //     const newLocation = doc.location
-  //     if (
-  //       existingLocation.includes(priorityLocation) &&
-  //       !newLocation.includes(priorityLocation)
-  //     ) {
-  //       return
-  //     }
-  //     if (
-  //       newLocation.includes(priorityLocation) &&
-  //       !existingLocation.includes(priorityLocation)
-  //     ) {
-  //       uniqueDocs.set(doc.id, doc)
-  //       return
-  //     }
-
-  //     // if they both have location property string === priorityLocation, delete the older record (check dateModified)
-  //     if (existingLocation === newLocation) {
-  //       if (existingDoc.dateModified > doc.dateModified) {
-  //         return
-  //       }
-  //       if (doc.dateModified > existingDoc.dateModified) {
-  //         uniqueDocs.set(doc.id, doc)
-  //         return
-  //       }
-  //     }
-
-  //     // if they have identical dateModified, pick the bigger one and delete the other
-  //     if (existingDoc.dateModified === doc.dateModified) {
-  //       if (existingDoc.size > doc.size) {
-  //         return
-  //       }
-  //       if (doc.size > existingDoc.size) {
-  //         uniqueDocs.set(doc.id, doc)
-  //         return
-  //       }
-  //     }
-  //   } else {
-  //     uniqueDocs.set(doc.id, doc)
-  //   }
-  // })
-
   const uniqueDocs = new Map()
+
   req.body.forEach((doc) => {
     // check for duplicate ids
     if (uniqueDocs.has(doc.id)) {
@@ -320,9 +294,9 @@ recordRoutes.route('/update/:id').post(function (req, res) {
 
   let updateFields = {};
   let fieldsModified = [];
-  
+
   Object.keys(req.body).forEach((key) => {
-    if (['status1', 'status2', 'status3', 'notes'].includes(key)) {
+    if (['positionStatus', 'status1', 'status2', 'status3', 'notes'].includes(key)) {
       fieldsModified.push({ field: key, dateModified: new Date() });
     }
     if (key !== '_id' && key !== 'dateModified' && key !== 'fieldsModified') {
@@ -338,7 +312,7 @@ recordRoutes.route('/update/:id').post(function (req, res) {
   if (fieldsModified.length > 0) {
     newvalues.$push = { fieldsModified: { $each: fieldsModified } };
   }
-  
+
   db_connect
     .collection(collection)
     .findOne(myquery)
@@ -379,5 +353,34 @@ recordRoutes.route('/delete/:id').delete((req, res) => {
     .catch((e) => console.log(e))
 })
 
+recordRoutes.route('/record/linkdata/:id').get(async function (req, res) {
+  let db_connect = dbo.getDb()
+  let myquery = { id: req.params.id }
+
+  db_connect
+    .collection(linkContentData)
+    .findOne(myquery)
+    .then((data) => {
+      res.json(data)
+    })
+    .catch((e) => console.log(e))
+})
+
+recordRoutes.route('/runquery').get((req, res) => {
+  let db_connect = dbo.getDb()
+  db_connect.collection(collection)
+    .updateMany(
+      { },
+      { $unset: { extraData: "" } }
+    )
+    .then(() => {
+      return db_connect.collection(collection).find().toArray()
+    })
+    .then((data) => {
+      res.json(data)
+    })
+    .catch((e) => console.log(e))
+
+})
 module.exports = recordRoutes
 

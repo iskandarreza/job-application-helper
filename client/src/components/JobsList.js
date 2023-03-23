@@ -64,7 +64,7 @@ const columns = [
     renderCell: JobLinkButtonRenderer,
   },
   {
-    field: 'status1',
+    field: 'positionStatus',
     headerAlign: 'center',
     align: 'left',
     width: 140,
@@ -74,7 +74,21 @@ const columns = [
         menuOptions={[
           'open',
           'closed',
-          'removed',
+        ]}
+      />
+    ),
+    editable: true,
+  },
+  {
+    field: 'status1',
+    headerAlign: 'center',
+    align: 'left',
+    width: 140,
+    renderCell: (params) => (
+      <RenderSelectMenu
+        params={params}
+        menuOptions={[
+          'pending',
           'applied',
           'uncertain',
           'declined',
@@ -95,7 +109,6 @@ const columns = [
           'app viewed',
           'test requested',
           'test taken',
-          'closed',
           'rejected',
         ]}
       />
@@ -122,7 +135,7 @@ const JobsDataGrid = () => {
   const dispatch = useDispatch()
 
   const openJobsFilterModel = {
-    items: [{ id: 1, field: 'status1', operator: 'isAnyOf', value: ['open'] }],
+    items: [{ id: 1, field: 'positionStatus', operator: 'isAnyOf', value: ['open'] }],
   }
   const [filterModel, setFilterModel] = useState(openJobsFilterModel)
   const [isFiltering, setIsFiltering] = useState(true)
@@ -235,6 +248,10 @@ const JobsDataGrid = () => {
           setFilterModel({
             items: [],
             quickFilterValues: model.quickFilterValues
+          })
+        } else {
+          setFilterModel({
+            items: model.items
           })
         }
       }}
