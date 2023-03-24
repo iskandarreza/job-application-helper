@@ -420,20 +420,84 @@ recordRoutes.route('/record/linkdata/:id').post(async function (req, res) {
 })
 
 recordRoutes.route('/runquery').get((req, res) => {
-  let db_connect = dbo.getDb()
-  db_connect.collection(collection)
-    .updateMany(
-      { },
-      { $unset: { extraData: "" } }
-    )
-    .then(() => {
-      return db_connect.collection(collection).find().toArray()
+  let db_connect = dbo.getDb();
+
+  async function updateCollections(dbo) {
+    const collectionA = dbo.collection(collection);
+    const collectionB = dbo.collection(linkContentData);
+
+    let docs = []
+
+    await collectionB.find().forEach((docB) => {
+      collectionA
+        .findOne({
+          $or: [
+            { id: { $eq: docB.id } },
+            { id: { $eq: String(docB.id) } }
+          ]
+        })
+        .then(() => {
+          const data = {
+            id: docB.id,
+          }
+          const { org, role, location } = docB
+
+          if (org || role || location) {
+            if (org) {
+              data.org  = org
+            }
+            if (role) {
+              data.role = role
+            }
+            if (location) {
+              data.location = location
+            }
+  
+            docs.push(data)
+          }
+          
+        })
+
     })
+
+    // docs.forEach(async (item) => {
+
+    //   let updateFields = {}
+
+    //   Object.keys(item).forEach((key) => {
+    //     if (key !== '_id' && key !== 'id') {
+    //       updateFields[key] = item[key]
+    //     }
+    //   })
+
+    //   let newvalues = {};
+    //   if (Object.keys(updateFields).length > 0) {
+    //     newvalues.$set = updateFields
+    //     // newvalues.$set.dateModified = new Date().toISOString()
+    //   }
+
+    //   await collectionA
+    //     .updateOne({ id: { $eq: item.id } }, newvalues)
+    //     .then((data) => {
+    //       console.log(data)
+    //     })
+
+    // })
+    
+    console.log(docs.length)
+    return docs
+  }
+  
+
+  updateCollections(db_connect)
     .then((data) => {
-      res.json(data)
+      res.json(data);
     })
-    .catch((e) => console.log(e))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('An error occurred while updating collections.');
+    });
+});
 
-})
+
 module.exports = recordRoutes
-

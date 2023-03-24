@@ -40,7 +40,7 @@ const chunkObjects = (data, size) => {
 
 const runTask = async () => {
   const { data } = await axios.get('http://localhost:5000/record/open')
-  const jobChunks = chunkObjects(data.slice(0, 36), 12)
+  const jobChunks = chunkObjects(data, 12)
 
   let totalJobsProcessed = 0
   const totalJobs = data.length
@@ -51,22 +51,24 @@ const runTask = async () => {
     for (const result of results) {
       const { _id, id, status, extraData, redirected } = result
       let payload = { ...extraData }
-      payload.id
-      payload.redirected = redirected
-      payload.crawlDate = new Date()
-
+      payload.id = id
+      payload.redirected = redirected === true ? true : false
+      payload.crawlDate = new Date().toISOString()
 
       if (status === 'closed') {
         await axios.post(`http://localhost:5000/record/linkdata/${id}`, payload)
         console.log(`Closed job ${id}`)
 
       } else {
-        await axios.post(`http://localhost:5000//record/linkdata/${id}`, payload)
+        await axios.post(`http://localhost:5000/record/linkdata/${id}`, payload)
       }
 
-      await axios.post(`http://localhost:5000/record/update/${_id}`, {
-        crawlDate,
-        positionStatus: status
+      await axios.post(`http://localhost:5000/update/${_id}`, {
+        crawlDate: payload.crawlDate,
+        positionStatus: status,
+        org: payload.org,
+        role: payload.role,
+        location: payload.location
       })
 
       jobsProcessed++
