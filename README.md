@@ -1,24 +1,41 @@
 # Job Application Tracker + Helper
+A little app that connects to an API served out of Google Apps Script to get job post info `[‘url’, ‘org’, ‘role’, ‘location’]` from messages under a specified label from a Gmail account then saves that data in MongoDB, then serves it out of an API from a NodeJs Express server, to be displayed and edited on a React frontend using Material UI X DataGrid. 
 
-### Motivation:
-The last time I was job hunting, I must have sent over 300 applications. It was a pain in the butt. That being said, I didn't optimzie it in anyway, I didn't bother with any keyword matching and I definitely did not write a cover letter. Well maybe I should have. And maybe I should keep track of all those things for analysis. So that's what I'm gonna do.
-### The Plan: 
-An app that can pull data job posting data from alert emails sent to Gmail, then present the data to the user to take action. Proposed actions include: 
-* sumarize the job description
-* listing the tech stack
-* comparing the user's resume against the full job description
-* set the status of the application [pending, expired, rejected, applied, resume viewed, interview set, etc]
+It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText’]` (open/closed, the job description) by using Puppeteer in headless mode, then update the record for that link in the database.
+
+### What it can do right now: 
+* through Google Apps Script 
+  * it can log into Gmail and read emails under a specified label and scrape data from the email messages with Cheerio on a specific schedule
+  * fill that data into Google Sheets
+  * serve that data from Google Sheets through an API endpoint with Google Apps Script
+* with Express Server
+  * act as a proxy to retrieve data from an API and serve that data from the server endpoint
+  * connect to a database (MongoDB right now) and process/serve basic CRUD requests through server endpoints
+  * run Puppeteer to collect publicly available extra data from the job posting on the source website and then update the record on the database
+* with React + Redux
+  * present that data using MUI X DataGrid 
+  * filter/edit that data, then save it to the connected database in the server backend
+  * manually trigger Puppeteer on the Express server to check the open/expired/closed status of the job and update the database
+  
+### Still in development:
+* Host it somewhere where it can run on schedule? Or leave it local and on-demand? 
+* comparing the user's resume keywords against the full job description
 * generate a cover letter based on the user's resume and the job description
+* some pretty charts and/or graphs
 
-### Tech to be used:
-* React frontend
+### Tech used or to be used:
+* Node.js backend
+* MongoDB database
 * Express server
+* React frontend
+* Google Apps Script external API source
+* Puppeteer for data scraping
 * [OpenAI API](https://platform.openai.com/docs/introduction)
 * [JSON Resume](https://jsonresume.org/)
-* Google Apps Script
 
 ### Progress report:
 * Google Apps Script to pull data into a Google Sheet completed
 * Google Apps Script to serve pulled data to an API endpoint completed
-* React frontend in progress
-* Express server backend in progress
+* React frontend serving data using Material UI X DataGrid
+* Express server backend serving data from MongoDB Atlas Cloud and Google Apps Script API
+* Puppeteer script to collect publicly viewable data from Indeed and/or LinkedIn completed

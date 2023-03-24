@@ -1,0 +1,59 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap");
+
+* {
+	font-family: "Space Grotesk", sans-serif;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+.open-cell .MuiSelect-select{
+	color: blue;
+}
+
+.applied-cell .MuiSelect-select{
+	color: darkgreen;
+}
+
+.uncertain-cell .MuiSelect-select {
+	color: orange;
+}
+
+.declined-cell .MuiSelect-select {
+	color: palevioletred;
+}
+
+.closed-cell .MuiSelect-select {
+	color: darkgray;
+}
+
+.removed-cell .MuiSelect-select {
+	color: lightgray;
+}
+
+.makeStyles-formControl-1 fieldset{
+	border: none;
+}
+
+[data-field="status1"], [data-field="status1"] {
+	padding: 0;
+}
+
+.jobDescriptionDialog { 
+
+	& div > p {
+		margin-top: 20px;
+	}
+
+	ul, ol {
+		margin-left: 20px;
+	}
+	
+	img {
+		max-width: 20%;
+	}
+
+	.show-more-less-html__button {
+		opacity: 0;
+	}
+}

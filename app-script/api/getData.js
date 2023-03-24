@@ -16,25 +16,43 @@ function doGet(e) {
     var columnIndex = headers.indexOf("Key");
     for (var i = 0; i < data.length; i++) {
       if (data[i][columnIndex] == key) {
-        result.push(data[i]);
+        var row = {};
+        for (var j = 0; j < headers.length; j++) {
+          row[headers[j]] = data[i][j];
+        }
+        result.push(row);
       }
     }
   } else if (before) {
     var columnIndex = headers.indexOf("Key");
     for (var i = 0; i < data.length; i++) {
       if (data[i][columnIndex] < before) {
-        result.push(data[i]);
+        var row = {};
+        for (var j = 0; j < headers.length; j++) {
+          row[headers[j]] = data[i][j];
+        }
+        result.push(row);
       }
     }
   } else if (after) {
     var columnIndex = headers.indexOf("Key");
     for (var i = 0; i < data.length; i++) {
       if (data[i][columnIndex] > after) {
-        result.push(data[i]);
+        var row = {};
+        for (var j = 0; j < headers.length; j++) {
+          row[headers[j]] = data[i][j];
+        }
+        result.push(row);
       }
     }
   } else {
-    result = data;
+    for (var i = 0; i < data.length; i++) {
+      var row = {};
+      for (var j = 0; j < headers.length; j++) {
+        row[headers[j]] = data[i][j];
+      }
+      result.push(row);
+    }
   }
   
   var output = JSON.stringify(result);
