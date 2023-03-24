@@ -162,6 +162,9 @@ recordRoutes.route('/record/open').get(async function (req, res) {
           status1: { $ne: 'applied' },
           status1: { $ne: 'uncertain' }
         },
+        {
+          url: { $regex: 'linkedin.com', $options: 'i' }
+        },
       ]
     })
     .toArray()
@@ -354,8 +357,19 @@ recordRoutes.route('/delete/:id').delete((req, res) => {
 })
 
 recordRoutes.route('/record/linkdata/:id').get(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
   let db_connect = dbo.getDb()
-  let myquery = { id: req.params.id }
+  let myquery = { id: {$eq: req.params.id} }
+  let id = req.params.id
+  if (isNaN(id)) {
+    myquery = { id: { $eq: String(req.params.id) } }
+  } else {
+    myquery = { id: parseInt(id) }
+  }
 
   db_connect
     .collection(linkContentData)
@@ -373,8 +387,14 @@ recordRoutes.route('/record/linkdata/:id').post(async function (req, res) {
   )
 
   let db_connect = dbo.getDb()
-  let myquery = { id: req.params.id }
-  // let myquery = { _id: new ObjectId(req.params.id) }
+  let myquery = { id: {$eq: req.params.id} }
+  let id = req.params.id
+  if (isNaN(id)) {
+    myquery = { id: { $eq: String(req.params.id) } }
+  } else {
+    myquery = { id: parseInt(id) }
+  }
+
   let record = req.body
 
   let updateFields = {}
@@ -429,16 +449,22 @@ recordRoutes.route('/runquery').get((req, res) => {
     let docs = []
 
     await collectionB.find().forEach((docB) => {
+      let query
+      if (isNaN(docB.id)) {
+        query = { id: { $eq: String(docB.id) } }
+      } else {
+        query = { id: parseInt(docB.id) }
+      }
       collectionA
-        .findOne({
-          $or: [
-            { id: { $eq: docB.id } },
-            { id: { $eq: String(docB.id) } }
-          ]
-        })
+        .findOne(query)
         .then(() => {
           const data = {
             id: docB.id,
+          }
+
+          if(!isNaN(docB.id)){
+            console.log(docB)
+
           }
           const { org, role, location } = docB
 
@@ -463,6 +489,12 @@ recordRoutes.route('/runquery').get((req, res) => {
     // docs.forEach(async (item) => {
 
     //   let updateFields = {}
+    //   let query
+    //   if (isNaN(item.id)) {
+    //     query = { id: { $eq: String(item.id) } }
+    //   } else {
+    //     query = { id: parseInt(item.id) }
+    //   }
 
     //   Object.keys(item).forEach((key) => {
     //     if (key !== '_id' && key !== 'id') {
@@ -473,11 +505,10 @@ recordRoutes.route('/runquery').get((req, res) => {
     //   let newvalues = {};
     //   if (Object.keys(updateFields).length > 0) {
     //     newvalues.$set = updateFields
-    //     // newvalues.$set.dateModified = new Date().toISOString()
     //   }
 
     //   await collectionA
-    //     .updateOne({ id: { $eq: item.id } }, newvalues)
+    //     .updateOne(query, newvalues)
     //     .then((data) => {
     //       console.log(data)
     //     })
