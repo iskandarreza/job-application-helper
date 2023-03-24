@@ -18,7 +18,7 @@ const checkJobStatuses = async (jobs) => {
 
       return axios.get(
         `http://localhost:5000/job-status/${hostname}/${id}`
-      ).then(({ data }) => ({ id: _id, status: data.status, extraData: data }))
+      ).then(({ data }) => ({ _id, id, status: data.status, extraData: data }))
     })
 
     const chunkResults = await Promise.all(promises)
@@ -40,7 +40,7 @@ const chunkObjects = (data, size) => {
 
 const runTask = async () => {
   const { data } = await axios.get('http://localhost:5000/record/open')
-  const jobChunks = chunkObjects(data, 12)
+  const jobChunks = chunkObjects(data.slice(0, 36), 12)
 
   let totalJobsProcessed = 0
   const totalJobs = data.length
@@ -49,25 +49,26 @@ const runTask = async () => {
 
     let jobsProcessed = 0
     for (const result of results) {
-      const { id, status, extraData, redirected } = result
-      let payload = {}
-      payload.extraData = { redirected }
+      const { _id, id, status, extraData, redirected } = result
+      let payload = { ...extraData }
+      payload.id
+      payload.redirected = redirected
       payload.crawlDate = new Date()
-      payload.positionStatus = 'open'
 
 
       if (status === 'closed') {
-        const job = jobChunk.find((job) => job._id === id)
-
-        payload.positionStatus = 'closed'
-        await axios.post(`http://localhost:5000/update/${id}`, payload)
-
+        await axios.post(`http://localhost:5000/record/linkdata/${id}`, payload)
         console.log(`Closed job ${id}`)
 
       } else {
-        payload.extraData = { ...extraData, redirected }
-        await axios.post(`http://localhost:5000/update/${id}`, payload)
+        await axios.post(`http://localhost:5000//record/linkdata/${id}`, payload)
       }
+
+      await axios.post(`http://localhost:5000/record/update/${_id}`, {
+        crawlDate,
+        positionStatus: status
+      })
+
       jobsProcessed++
       totalJobsProcessed++
       console.log(`Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`)

@@ -95,7 +95,7 @@ recordRoutes.route('/record').get(async function (req, res) {
       crawlDate: 0,
       fieldsModified: 0
     }}
-  } else if (req.query.filter === 'no_filter') {
+  } else if (req.query.filter === 'none') {
     // no filtering needed
   } else {
     query = {
@@ -362,6 +362,59 @@ recordRoutes.route('/record/linkdata/:id').get(async function (req, res) {
     .findOne(myquery)
     .then((data) => {
       res.json(data)
+    })
+    .catch((e) => console.log(e))
+})
+
+recordRoutes.route('/record/linkdata/:id').post(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
+  let db_connect = dbo.getDb()
+  let myquery = { id: req.params.id }
+  // let myquery = { _id: new ObjectId(req.params.id) }
+  let record = req.body
+
+  let updateFields = {}
+
+  Object.keys(record).forEach((key) => {
+    if (key !== '_id' && key !== 'id') {
+      updateFields[key] = record[key]
+    }
+  })
+
+  let newvalues = {};
+  if (Object.keys(updateFields).length > 0) {
+    newvalues.$set = updateFields
+    newvalues.$set.dateModified = new Date().toISOString()
+  }
+
+  db_connect
+    .collection(linkContentData)
+    .findOne(myquery)
+    .then((doc) => {
+      if (doc) {
+          db_connect
+            .collection(linkContentData)
+            .updateOne(myquery, newvalues)
+            .then((data) => {
+              data.query = myquery
+              data.updateValue = newvalues
+              res.json(data)
+              console.log(data)
+            })
+            .catch((e) => console.log(e))
+      } else {
+        db_connect
+          .collection(linkContentData)
+          .insertOne(record)
+          .then((data) => {
+            res.json(data)
+          })
+          .catch((e) => console.log(e))
+      }
     })
     .catch((e) => console.log(e))
 })

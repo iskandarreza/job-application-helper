@@ -27,7 +27,7 @@ export const getData = async () => {
   toast.info('Getting data from db...')
 
   return axios
-    .get('http://localhost:5000/record')
+    .get('http://localhost:5000/record?filter=none')
     .then((response) => {
       numRowsRetrieved(response)
       return response.data
@@ -91,21 +91,13 @@ export const deleteRecordByID = async (rowID) => {
     })
 }
 
-export const checkJobStatus = async (row) => {
-  const { id, url } = row
-  let hostname
-  if (url.includes('indeed')) {
-    hostname = 'indeed'
-  } else if (url.includes('linkedin')) {
-    hostname = 'linkedin'
-  }
+export const getLinkData = async (id) => {
+  toast.info('Getting data from db...')
+
   return axios
-  .get(`http://localhost:5000/job-status/${hostname}/${id}`)
+    .get('http://localhost:5000/record/linkdata/' + id)
     .then((response) => {
-      console.log({response})
       return response.data
     })
-    .catch((error) => {
-      console.error(error)
-    })
+    .catch((error) => console.error(error))
 }
