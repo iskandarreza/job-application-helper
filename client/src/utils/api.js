@@ -27,7 +27,7 @@ export const getData = async () => {
   toast.info('Getting data from db...')
 
   return axios
-    .get('http://localhost:5000/record?filter=none')
+    .get('http://localhost:5000/record')
     .then((response) => {
       numRowsRetrieved(response)
       return response.data

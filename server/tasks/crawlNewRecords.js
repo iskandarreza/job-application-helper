@@ -1,3 +1,5 @@
+const express = require('express')
+const taskRoutes = express.Router()
 const { default: axios } = require('axios')
 
 const checkJobStatuses = async (jobs) => {
@@ -37,18 +39,20 @@ const chunkObjects = (data, size) => {
   return chunks
 }
 
-const runTask = async () => {
-  const { data } = await axios.get('http://localhost:5000/record/open')
+const fetchAndInsertNewRecords = async () => {
+  const { data } = await axios.get('http://localhost:5000/record/new')
   const jobChunks = chunkObjects(data, 12)
 
   let totalJobsProcessed = 0
+  let response
   const totalJobs = data.length
   for (const [index, jobChunk] of jobChunks.entries()) {
     const results = await checkJobStatuses(jobChunk)
 
     let jobsProcessed = 0
     for (const result of results) {
-      const { _id, id, status, extraData, redirected } = result
+      const { id, status, extraData, redirected } = result
+      let record = jobChunk[index]
       let crawlData = { ...extraData }
       crawlData.id = id
       crawlData.redirected = redirected === true ? true : false
@@ -62,22 +66,30 @@ const runTask = async () => {
         await axios.post(`http://localhost:5000/record/linkdata/${id}`, crawlData)
       }
 
-      await axios.post(`http://localhost:5000/update/${_id}`, {
-        crawlDate: crawlData.crawlDate,
+      await axios.post(`http://localhost:5000/record/add`, {
+        ...record,
+        ...crawlData,
         positionStatus: status,
-        org: crawlData.org,
-        role: crawlData.role,
-        location: crawlData.location,
         externalSource: crawlData.externalSource
       })
 
       jobsProcessed++
       totalJobsProcessed++
-      console.log(`Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`)
+      response = `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`
+      console.log(response)
     }
 
     await new Promise((resolve) => setTimeout(resolve, 5000))
   }
+
+  return response
 }
 
-runTask()
+taskRoutes.get('/pull-new-data', (req, res) => {
+  fetchAndInsertNewRecords().then((data) => {
+    res.send(data)
+    console.log(data)
+  }).catch((e) => console.log(e))
+})
+
+module.exports = taskRoutes

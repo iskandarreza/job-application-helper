@@ -86,14 +86,14 @@ export const fetchNewJobs = () => {
       const newDataArray = await getUpdatedData()
 
       const newDataToInsert = newDataArray.filter(
-        (newData) => !jobs.some((tableDatum) => tableDatum.url === newData.url)
+        (newData) => !jobs.some((tableDatum) => (tableDatum.id).toString() === (newData.id).toString())
       )
 
       console.log({ newDataToInsert })
 
       const newDataWithOpenStatus = newDataToInsert.map((newData) => {
         if (newData.status1 === '') {
-          return { ...newData, status1: 'open' }
+          return { ...newData, positionStatus: 'open' }
         } else {
           return newData
         }

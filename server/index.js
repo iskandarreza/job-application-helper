@@ -25,7 +25,9 @@ app.use(
 app.use(require("./routes/puppeteer"))
 
 app.use(require("./routes/record"))
- 
+
+app.use(require("./tasks/crawlNewRecords"))
+
 app.get('/data', (req, res) => {
   axios.get(process.env.API_DATA_SOURCE)
     .then((response) => res.send(response.data))

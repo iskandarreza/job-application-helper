@@ -26,6 +26,7 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
   let status = 'open'
   let redirected = false
   data.redirected = false
+  data.externalSource = false
   data.status = 'open'
   page.on('request', (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
@@ -70,8 +71,27 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
         }
 
         if (data.status === 'open') {
-          
+         
+          console.log('Checking for external link...')
+
+          try {
+            const selector = '#viewJobButtonLinkContainer > #applyButtonLinkContainer'
+            const element = await page.waitForSelector(selector, { timeout: 10000 })
+            
+            if (element) {
+              const text = await page.$eval(selector, (element) => element.innerText)
+              
+              if (text.includes('Apply on company site')) {
+                data.externalSource = true
+              }
+            }
+  
+          } catch (error) {
+            console.log('Job title info unavailable')
+          }
+
           console.log('Getting title of the role...')
+
           try {
             const selector = '.jobsearch-JobInfoHeader-title-container'
             const element = await page.waitForSelector(selector, { timeout: 10000 })

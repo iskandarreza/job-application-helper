@@ -67,6 +67,28 @@ recordRoutes.route('/backup').get(async function (req, res) {
   }
 })
 
+recordRoutes.route('/restore').get(async function (req, res) {
+  const db = dbo.getDb()
+
+  try {
+    const deleteResult = await db.collection(collection).deleteMany({})
+    console.log(`Deleted ${deleteResult.deletedCount} documents from ${collection}`)
+
+    const docs = await db.collection(backup).find().toArray()
+
+    const result = await db.collection(collection).insertMany(docs)
+
+    console.log(
+      `Inserted ${result.insertedCount} documents into ${backup}`
+    )
+
+    res.send(`${backup} restored successfully`)
+  } catch (err) {
+    console.error(err)
+    res.status(500).send(`Failed to restore ${backup}`)
+  }
+})
+
 recordRoutes.route('/record').get(async function (req, res) {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.query: `,
@@ -135,8 +157,9 @@ recordRoutes.route('/record/new').get(async function (req, res) {
     return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
   })
 
-  const recordNoun = filteredObjects.length > 1 ? 'records' : 'record'
-
+  const recordNoun = filteredObjects.length > 1 ? 'records' :
+    filteredObjects.length === 0 ? recordNoun = 'no' : 'record'
+  
   console.log(`${filteredObjects.length} new ${recordNoun} fetched`)
 
   res.json(filteredObjects)
@@ -149,11 +172,19 @@ recordRoutes.route('/record/open').get(async function (req, res) {
   )
 
   let db_connect = dbo.getDb()
+  let startDate = new Date().setHours(new Date().getHours() - 12) 
+  let endDate = new Date().setHours(new Date().getHours() - 24 * 7)
 
   db_connect
     .collection(collection)
     .find({
       $and: [
+        {
+          dateModified: {
+            $lte: new Date(startDate).toISOString(),
+            $gte: new Date(endDate).toISOString(),
+          }
+        },
         {
           positionStatus: 'open'
         },
@@ -163,7 +194,7 @@ recordRoutes.route('/record/open').get(async function (req, res) {
           status1: { $ne: 'uncertain' }
         },
         {
-          url: { $regex: 'linkedin.com', $options: 'i' }
+          url: { $regex: 'indeed.com', $options: 'i' }
         },
       ]
     })

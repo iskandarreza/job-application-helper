@@ -40,7 +40,8 @@ const updateLinkDataAction = async (client, payload) => {
           positionStatus: data.status,
           org: data.org,
           role: data.role,
-          location: data.location
+          location: data.location,
+          externalSource: data.externalSource
         }
 
         // Insert updated linkdata directly to link-content-data collection
@@ -101,12 +102,17 @@ const taskReducer = async (task) => {
       break;
   }
 }
-
 self.addEventListener('message', (event) => {
-  const { data, source: client } = event
-  taskQueue.push({ data, client })
-  processQueue()
+  try {
+    const { data, source: client } = event
+    socket.emit('message', data);
+    taskQueue.push({ data, client })
+    processQueue()
+  } catch (error) {
+    console.error('Error sending message:', error);
+  }
 })
+
 
 async function processQueue() {
   // If queue is not empty, process the next task

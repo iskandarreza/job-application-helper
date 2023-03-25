@@ -3,13 +3,14 @@ import { IconButton } from '@mui/material'
 import { Link } from '@material-ui/icons'
 
 export const JobLinkButtonRenderer = (params) => {
-  const isIndeed = params.row.url?.includes('indeed.com')
+  const { id, url, externalSource} = params.row
+  const isIndeed = url?.includes('indeed.com')
   const handleClickLink = () => {
-    window.open(params.row.url, '_blank')
+    window.open(url, '_blank')
   }
   const handleClickSource = () => {
     window.open(
-      `${'https://www.indeed.com/rc/clk/dl?jk=' + params.row.id}`,
+      `${'https://www.indeed.com/rc/clk/dl?jk=' + id}`,
       '_blank'
     )
   }
@@ -30,7 +31,7 @@ export const JobLinkButtonRenderer = (params) => {
           <IconButton
             onClick={handleClickSource}
             size="small"
-            color="secondary"
+            color={externalSource ? 'warning' : 'secondary'}
           >
             <Link>Source</Link>
           </IconButton>
