@@ -1,4 +1,4 @@
-let taskQueue = []
+
 
 const checkJobStatus = async (row) => {
   const { id, url } = row
@@ -96,33 +96,73 @@ const taskReducer = async (task) => {
   switch (action) {
     case 'UPDATE_LINK_DATA':
       return updateLinkDataAction(client, payload)
-      break;
 
     default:
       break;
   }
 }
-self.addEventListener('message', (event) => {
-  try {
-    const { data, source: client } = event
-    socket.emit('message', data);
-    taskQueue.push({ data, client })
-    processQueue()
-  } catch (error) {
-    console.error('Error sending message:', error);
-  }
-})
 
-
-async function processQueue() {
+let taskQueue = []
+const processQueue = async () => {
   // If queue is not empty, process the next task
   if (taskQueue.length > 0) {
     let task = taskQueue.shift()
     const { client } = task
     const response = await taskReducer(task)
+    console.log({ response })
 
     // Process task
     client.postMessage({ data: response, action: 'UPDATE_LINK_DATA_COMPLETE' })
     processQueue()
   }
 }
+
+const self = this;
+let wSocket;
+
+const initWebWorker = async () => {
+  const ws = initWebSocket();
+
+  ws.onopen = function (event) {
+    console.log('WebSocket connection established');
+    ws.send(JSON.stringify({message: 'Hello, server!'}));
+    wSocket = ws;
+    isSocketReady = true;
+
+  }
+  
+  self.addEventListener('message', (event) => {
+    const { data, source: client } = event;
+    taskQueue.push({ data, client });
+    processQueue();
+    wSocket.send(JSON.stringify({ message: 'Task added to queue for processing', data }));
+  })
+
+}
+
+// WebSocket init
+const initWebSocket = () => {
+  const socket = new WebSocket('ws://localhost:5001');
+
+  socket.addEventListener('open', (event) => {
+    console.log('WebSocket connection opened!');
+  });
+
+  socket.addEventListener('message', (event) => {
+    console.log('WebSocket WebWorker received message:', event.data);
+  });
+
+  socket.addEventListener('error', (event) => {
+    console.error('WebSocket error:', event);
+  });
+
+  socket.addEventListener('close', (event) => {
+    console.log('WebSocket connection closed');
+    wSocket = null;
+    isSocketReady = false;
+  });
+
+  return socket;
+};
+
+initWebWorker();

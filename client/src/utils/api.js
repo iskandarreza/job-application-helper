@@ -23,7 +23,7 @@ export const getUpdatedData = async () => {
   }
 }
 
-export const getData = async () => {
+export const getRecords = async () => {
   toast.info('Getting data from db...')
 
   return axios
@@ -61,6 +61,17 @@ export const addRecord = async (row) => {
     .catch((error) => {
       console.error(error)
     })
+}
+
+export const getRecordById = async (id) => {
+  toast.info('Getting data from db...')
+
+  return axios
+    .get('http://localhost:5000/record/' + id)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => console.error(error))
 }
 
 export const updateRecordByID = async (row, newValue) => {

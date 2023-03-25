@@ -26,12 +26,15 @@ const serviceWorkerMiddleware = (store) => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       const { data } = event;
+      console.log({ data })
       store.dispatch({ type: 'RECEIVE_FROM_SERVICE_WORKER', payload: { data } });
     });
 
-    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
-      serviceWorker = registration.active;
-      store.dispatch({ type: 'SERVICE_WORKER_REGISTERED', payload: { registration } });
+    navigator.serviceWorker.register('/script/service-worker.js').then((registration) => {
+      setTimeout(() => {
+        serviceWorker = registration.active;
+        store.dispatch({ type: 'SERVICE_WORKER_REGISTERED', payload: { registration } });
+      }, 1000)
     });
   }
 

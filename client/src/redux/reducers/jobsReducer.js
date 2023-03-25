@@ -5,6 +5,7 @@ import {
   FETCH_NEW_JOBS_BEGIN,
   FETCH_NEW_JOBS_SUCCESS,
   FETCH_NEW_JOBS_FAILURE,
+  REFRESH_SINGLE_RECORD,
   INSERT_RECORD_BEGIN,
   INSERT_RECORD_SUCCESS,
   INSERT_RECORD_FAILURE,
@@ -60,6 +61,17 @@ const jobsReducer = (state = initialState, action) => {
       return successAction(state, action.payload)
     case FETCH_NEW_JOBS_FAILURE:
       return failureAction(state, action.payload)
+    case REFRESH_SINGLE_RECORD:
+      const { payload } = action
+      const { _id } = payload
+      const index = state.jobs.findIndex((job) => job._id === _id)
+      const newArray = [...state.jobs]
+      newArray.splice(index, 1, payload)
+
+      return {
+        ...state,
+        jobs: [...newArray]        
+      }
     case INSERT_RECORD_BEGIN:
       return beginAction(state)
     case INSERT_RECORD_SUCCESS:

@@ -1,12 +1,25 @@
+require("dotenv").config({ path: "./config.env" })
+const setupWebSocketServer = require("./websocket")
 const express = require("express")
 const axios = require("axios")
 const cors = require("cors")
 const app = express()
 
-require("dotenv").config({ path: "./config.env" })
-const PORT = process.env.PORT || 5000
-// get driver connection
+// get MongoDB driver connection
 const dbo = require("./db/conn")
+
+const PORT = process.env.PORT || 5000
+
+const wss = setupWebSocketServer()
+
+wss.broadcast = function broadcast(data) {
+  console.log(wss.clients)
+  wss.clients?.forEach(function each(client) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+};
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ limit: '10mb', extended: true }))
@@ -33,6 +46,8 @@ app.get('/data', (req, res) => {
     .then((response) => res.send(response.data))
     .catch((error) => console.error(error))
 })
+
+wss.broadcast(`Server restarted ${new Date()}`)
 
 app.listen(PORT, async () => {
   // perform a database connection when server starts

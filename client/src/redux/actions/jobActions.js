@@ -1,10 +1,11 @@
 import { toast } from 'react-toastify'
 import {
-  getData,
+  getRecords,
   updateRecordByID,
   addRecord,
   getUpdatedData,
   saveData,
+  getRecordById,
 } from '../../utils/api'
 
 // Define action types
@@ -14,6 +15,9 @@ export const FETCH_JOBS_FAILURE = 'FETCH_JOBS_FAILURE'
 export const FETCH_NEW_JOBS_BEGIN = 'FETCH_NEW_JOBS_BEGIN'
 export const FETCH_NEW_JOBS_SUCCESS = 'FETCH_NEW_JOBS_SUCCESS'
 export const FETCH_NEW_JOBS_FAILURE = 'FETCH_NEW_JOBS_FAILURE'
+
+export const REFRESH_SINGLE_RECORD = 'REFRESH_SINGLE_RECORD'
+
 export const UPDATE_RECORD_BEGIN = 'UPDATE_RECORD_BEGIN'
 export const UPDATE_RECORD_SUCCESS = 'UPDATE_RECORD_SUCCESS'
 export const UPDATE_RECORD_FAILURE = 'UPDATE_RECORD_FAILURE'
@@ -44,6 +48,9 @@ export const fetchJobsFailure = createPayloadAction(FETCH_JOBS_FAILURE)
 export const fetchNewJobsBegin = createAction(FETCH_NEW_JOBS_BEGIN)
 export const fetchNewJobsSuccess = createPayloadAction(FETCH_NEW_JOBS_SUCCESS)
 export const fetchNewJobsFailure = createPayloadAction(FETCH_NEW_JOBS_FAILURE)
+
+export const refreshSingleRecord = createPayloadAction(REFRESH_SINGLE_RECORD)
+
 export const updateRecordBegin = createAction(UPDATE_RECORD_BEGIN)
 export const updateRecordSuccess = createPayloadAction(UPDATE_RECORD_SUCCESS)
 export const updateRecordFailure = createPayloadAction(UPDATE_RECORD_FAILURE)
@@ -68,7 +75,7 @@ export const fetchJobs = () => {
     } else {
       dispatch(fetchJobsBegin())
       try {
-        const jobs = await getData()
+        const jobs = await getRecords()
         dispatch(fetchJobsSuccess(jobs))
       } catch (error) {
         dispatch(fetchJobsFailure(error))
@@ -120,6 +127,11 @@ export const fetchNewJobs = () => {
     }
   }
 }
+
+export const refreshRecord = (id) => async (dispatch) => {
+  const record = await getRecordById(id)
+  dispatch(refreshSingleRecord(record))
+} 
 
 export const updateRecord = (row, newValue) => async (dispatch) => {
  

@@ -1,7 +1,9 @@
+import { refreshRecord } from "../actions/jobActions"
 import { 
   RECEIVE_FROM_SERVICE_WORKER, 
   SEND_TO_SERVICE_WORKER 
 } from "../actions/serviceWorkerActions"
+import store from "../store"
 
 const initialServiceWorkerState = {
   loading: false,
@@ -18,6 +20,7 @@ const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload)
       return { ... state, loading: true }, payload
     case 'UPDATE_LINK_DATA_SUCCESS':
       console.log('service worker successfully completed an update', {state, ...payload})
+      store.dispatch(refreshRecord(state._id))
       return state, payload
 
     case 'UPDATE_LINK_DATA_WIND_DOWN':
@@ -32,8 +35,12 @@ const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload)
 const dataFromServiceWorkerReducer = (state = initialServiceWorkerState, action) => {  
   switch (action.type) {
     case SEND_TO_SERVICE_WORKER:
+      console.log({dataFromServiceWorkerReducer: action})
+
       return state, action.payload.data
     case RECEIVE_FROM_SERVICE_WORKER:
+      console.log({dataFromServiceWorkerReducer: action})
+
       serviceWorkerActionsReducer(state, action.payload.data)
     default:
       return state
