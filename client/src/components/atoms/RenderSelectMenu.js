@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { makeStyles } from '@material-ui/core/styles'
+import makeStyles from '@mui/styles/makeStyles';
 import { MenuItem, Select } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { updateRecord } from '../../redux/actions/jobActions'

@@ -26,7 +26,6 @@ const serviceWorkerMiddleware = (store) => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       const { data } = event;
-      console.log({ data })
       store.dispatch({ type: 'RECEIVE_FROM_SERVICE_WORKER', payload: { data } });
     });
 

@@ -1,4 +1,3 @@
-import { toast } from 'react-toastify'
 import {
   getRecords,
   updateRecordByID,
@@ -7,6 +6,7 @@ import {
   saveData,
   getRecordById,
 } from '../../utils/api'
+import { showSnackbar } from './uiActions'
 
 // Define action types
 export const FETCH_JOBS_BEGIN = 'FETCH_JOBS_BEGIN'
@@ -70,14 +70,17 @@ export const fetchJobs = () => {
     // Check if data is cached
     if (lastFetch && Date.now() - lastFetch < 1000 * 15 * 1) {
       // 1 minute
-      toast.info('Data is still fresh, slow down...')
       dispatch(fetchJobsSuccess(jobs))
     } else {
       dispatch(fetchJobsBegin())
       try {
         const jobs = await getRecords()
+        if (jobs.length > 0){
+          dispatch(showSnackbar(`${jobs.length} rows retrieved`, 'info'))
+        }
         dispatch(fetchJobsSuccess(jobs))
       } catch (error) {
+        dispatch(showSnackbar(`Error retrieving records`, 'error'))
         dispatch(fetchJobsFailure(error))
       }
     }
@@ -115,12 +118,12 @@ export const fetchNewJobs = () => {
         dispatch(fetchNewJobsSuccess(response))
 
         if (response.length === 1) {
-          toast.success('1 new record added')
+          // toast.success('1 new record added')
         } else if (response.length > 1) {
-          toast.success(`${response.length} new records added`)
+          // toast.success(`${response.length} new records added`)
         }
       } else {
-        toast.info('No new records added since last update')
+        // toast.info('No new records added since last update')
       }
     } catch (error) {
       dispatch(fetchNewJobsFailure(error.message))
@@ -139,17 +142,18 @@ export const updateRecord = (row, newValue) => async (dispatch) => {
     ...newValue, 
     dateModified: new Date().toISOString(), 
   }
-  console.log('updateRecord', {payload})
-  
+    
   try {
     const response = await updateRecordByID(row, payload)
     const { modifiedCount } = response
     if (modifiedCount) {
       dispatch(updateRecordSuccess({ ...row, ...payload }))
+      dispatch(showSnackbar('Record updated!', 'success'))
     }
   } catch (error) {
     console.error(error)
     dispatch(updateRecordFailure(error.message))
+    dispatch(showSnackbar(`Error retrieving records`, 'error'))
   }
 }
 
@@ -158,12 +162,13 @@ export const insertRecord = (row) => async (dispatch) => {
     const response = await addRecord(row)
     const { insertedId } = response
     const insertedRow = {...row, _id: insertedId}
-
     dispatch(insertRecordSuccess(insertedRow))
+    dispatch(showSnackbar('Record added to db'))
     return insertedRow
   } catch (error) {
     console.error(error)
     dispatch(insertRecordFailure(error.message))
+    dispatch(showSnackbar(`Failed to add record to db`), 'error', true)
   }
 }
 
@@ -178,11 +183,11 @@ export const filterOpenJobs = () => async (dispatch, getState) => {
     const filterResults = filteredRows.filter(
       (row) => !['closed', 'rejected'].includes(row.status2)
     ) 
-    const filteredOutRows = rows.length - filterResults.length
+    // const filteredOutRows = rows.length - filterResults.length
     
-    toast.info(
-      `${filteredOutRows} rows filtered out, ${filterResults.length} rows remaining`
-    )
+    // toast.info(
+    //   `${filteredOutRows} rows filtered out, ${filterResults.length} rows remaining`
+    // )
 
    dispatch(filterJobsSuccess(filterResults))
    return filterResults

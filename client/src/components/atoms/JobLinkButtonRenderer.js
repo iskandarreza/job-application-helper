@@ -1,6 +1,6 @@
 import React from 'react'
 import { IconButton } from '@mui/material'
-import { Link } from '@material-ui/icons'
+import { Link } from '@mui/icons-material'
 
 export const JobLinkButtonRenderer = (params) => {
   const { id, url, externalSource} = params.row

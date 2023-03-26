@@ -126,8 +126,6 @@ const initWebWorker = async () => {
   ws.onopen = function (event) {
     console.log('WebSocket connection established');
     ws.send(JSON.stringify({message: 'Hello, server!'}));
-    wSocket = ws;
-    isSocketReady = true;
 
   }
   
@@ -146,10 +144,12 @@ const initWebSocket = () => {
 
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!');
+    wSocket = socket
+    isSocketReady = true
   });
 
   socket.addEventListener('message', (event) => {
-    console.log('WebSocket WebWorker received message:', event.data);
+    console.log('WebSocket WebWorker received message:', event?.data);
   });
 
   socket.addEventListener('error', (event) => {

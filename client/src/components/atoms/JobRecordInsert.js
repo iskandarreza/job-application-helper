@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Box, TextField, Button } from '@mui/material'
-import { Add } from '@material-ui/icons'
+import { Add } from '@mui/icons-material'
 import { highlightJob, insertRecord } from '../../redux/actions/jobActions'
 import { useDispatch, useSelector } from 'react-redux'
 import CustomSelect from './CustomSelect'
