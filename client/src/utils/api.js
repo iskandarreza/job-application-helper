@@ -1,28 +1,4 @@
 import axios from 'axios'
-// import { toast } from 'react-toastify'
-// import 'react-toastify/dist/ReactToastify.css'
-
-// const numRowsRetrieved = (response) => {
-//   if (response?.data?.length >= 0) {
-
-//     // toast.success(`${response.data.length} rows retrieved.`)
-//   } else {
-//     // toast.error(`Oops! Something went wrong.`)
-//     // console.log(`... something went wrong.`, { response })
-//   }
-// }
-
-export const getUpdatedData = async () => {
-  // toast.info('Getting data from Google Apps Script API...')
-
-  try {
-    const response = await axios.get('http://localhost:5000/data')
-    // numRowsRetrieved(response)
-    return response.data
-  } catch (error) {
-    console.error(error)
-  }
-}
 
 export const getRecords = async () => {
   return axios
@@ -33,24 +9,9 @@ export const getRecords = async () => {
     .catch((error) => console.error(error))
 }
 
-export const saveData = async (tableData) => {
-  // toast.info('Saving data to db...')
-
-  return axios
-    .post('http://localhost:5000/record/addbulk', tableData)
-    .then((response) => {
-      // toast.success('Records saved to db')
-      console.log(response)
-      return response.data
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-}
-
 export const addRecord = async (row) => {
   return axios
-    .post('http://localhost:5000/record/add', row)
+    .post('http://localhost:5000/record/new', row)
     .then((response) => {
       return response.data
     })
@@ -71,7 +32,7 @@ export const getRecordById = async (id) => {
 export const updateRecordByID = async (row, newValue) => {
   const { _id } = row
   return axios
-    .post('http://localhost:5000/update/' + _id, newValue)
+    .put('http://localhost:5000/record/' + _id, newValue)
     .then((response) => {
       return response.data
     })
@@ -82,7 +43,7 @@ export const updateRecordByID = async (row, newValue) => {
 
 export const deleteRecordByID = async (rowID) => {
   return axios
-    .delete('http://localhost:5000/delete/' + rowID)
+    .delete('http://localhost:5000/record/' + rowID)
     .then((response) => {
       // toast.success(`Record ID:${rowID} deleted`)
       return response.data
@@ -96,7 +57,7 @@ export const getLinkData = async (id) => {
   // toast.info('Getting data from db...')
 
   return axios
-    .get('http://localhost:5000/record/linkdata/' + id)
+    .get(`http://localhost:5000/record/${id}/linkdata`)
     .then((response) => {
       return response.data
     })

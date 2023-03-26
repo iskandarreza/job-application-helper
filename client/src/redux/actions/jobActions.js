@@ -2,8 +2,6 @@ import {
   getRecords,
   updateRecordByID,
   addRecord,
-  getUpdatedData,
-  saveData,
   getRecordById,
 } from '../../utils/api'
 import { showSnackbar } from './uiActions'
@@ -12,15 +10,13 @@ import { showSnackbar } from './uiActions'
 export const FETCH_JOBS_BEGIN = 'FETCH_JOBS_BEGIN'
 export const FETCH_JOBS_SUCCESS = 'FETCH_JOBS_SUCCESS'
 export const FETCH_JOBS_FAILURE = 'FETCH_JOBS_FAILURE'
-export const FETCH_NEW_JOBS_BEGIN = 'FETCH_NEW_JOBS_BEGIN'
-export const FETCH_NEW_JOBS_SUCCESS = 'FETCH_NEW_JOBS_SUCCESS'
-export const FETCH_NEW_JOBS_FAILURE = 'FETCH_NEW_JOBS_FAILURE'
 
 export const REFRESH_SINGLE_RECORD = 'REFRESH_SINGLE_RECORD'
 
 export const UPDATE_RECORD_BEGIN = 'UPDATE_RECORD_BEGIN'
 export const UPDATE_RECORD_SUCCESS = 'UPDATE_RECORD_SUCCESS'
 export const UPDATE_RECORD_FAILURE = 'UPDATE_RECORD_FAILURE'
+
 export const INSERT_RECORD_BEGIN = 'INSERT_RECORD_BEGIN'
 export const INSERT_RECORD_SUCCESS = 'INSERT_RECORD_SUCCESS'
 export const INSERT_RECORD_FAILURE = 'INSERT_RECORD_FAILURE'
@@ -45,15 +41,13 @@ const createPayloadAction = (type) => (payload) => ({
 export const fetchJobsBegin = createAction(FETCH_JOBS_BEGIN)
 export const fetchJobsSuccess = createPayloadAction(FETCH_JOBS_SUCCESS)
 export const fetchJobsFailure = createPayloadAction(FETCH_JOBS_FAILURE)
-export const fetchNewJobsBegin = createAction(FETCH_NEW_JOBS_BEGIN)
-export const fetchNewJobsSuccess = createPayloadAction(FETCH_NEW_JOBS_SUCCESS)
-export const fetchNewJobsFailure = createPayloadAction(FETCH_NEW_JOBS_FAILURE)
 
 export const refreshSingleRecord = createPayloadAction(REFRESH_SINGLE_RECORD)
 
 export const updateRecordBegin = createAction(UPDATE_RECORD_BEGIN)
 export const updateRecordSuccess = createPayloadAction(UPDATE_RECORD_SUCCESS)
 export const updateRecordFailure = createPayloadAction(UPDATE_RECORD_FAILURE)
+
 export const insertRecordBegin = createAction(INSERT_RECORD_BEGIN)
 export const insertRecordSuccess = createPayloadAction(INSERT_RECORD_SUCCESS)
 export const insertRecordFailure = createPayloadAction(INSERT_RECORD_FAILURE)
@@ -83,50 +77,6 @@ export const fetchJobs = () => {
         dispatch(showSnackbar(`Error retrieving records`, 'error'))
         dispatch(fetchJobsFailure(error))
       }
-    }
-  }
-}
-
-export const fetchNewJobs = () => {
-  return async (dispatch, getState) => {
-    const { jobs } = getState().jobRecords
-    console.log(jobs)
-    dispatch(fetchNewJobsBegin())
-    try {
-      const newDataArray = await getUpdatedData()
-
-      const newDataToInsert = newDataArray.filter(
-        (newData) => !jobs.some((tableDatum) => (tableDatum.id).toString() === (newData.id).toString())
-      )
-
-      console.log({ newDataToInsert })
-
-      const newDataWithOpenStatus = newDataToInsert.map((newData) => {
-        if (newData.status1 === '') {
-          return { ...newData, positionStatus: 'open' }
-        } else {
-          return newData
-        }
-      })
-
-      console.log({ newDataWithOpenStatus })
-
-      if (newDataWithOpenStatus.length > 0) {
-        const response = await saveData(newDataWithOpenStatus)
-        console.log({ response })
-
-        dispatch(fetchNewJobsSuccess(response))
-
-        if (response.length === 1) {
-          // toast.success('1 new record added')
-        } else if (response.length > 1) {
-          // toast.success(`${response.length} new records added`)
-        }
-      } else {
-        // toast.info('No new records added since last update')
-      }
-    } catch (error) {
-      dispatch(fetchNewJobsFailure(error.message))
     }
   }
 }

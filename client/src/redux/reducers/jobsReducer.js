@@ -2,9 +2,6 @@ import {
   FETCH_JOBS_BEGIN,
   FETCH_JOBS_SUCCESS,
   FETCH_JOBS_FAILURE,
-  FETCH_NEW_JOBS_BEGIN,
-  FETCH_NEW_JOBS_SUCCESS,
-  FETCH_NEW_JOBS_FAILURE,
   REFRESH_SINGLE_RECORD,
   INSERT_RECORD_BEGIN,
   INSERT_RECORD_SUCCESS,
@@ -55,12 +52,7 @@ const jobsReducer = (state = initialState, action) => {
       return successAction(state, action.payload, true)
     case FETCH_JOBS_FAILURE:
       return failureAction(state, action.payload)
-    case FETCH_NEW_JOBS_BEGIN:
-      return beginAction(state)
-    case FETCH_NEW_JOBS_SUCCESS:
-      return successAction(state, action.payload)
-    case FETCH_NEW_JOBS_FAILURE:
-      return failureAction(state, action.payload)
+
     case REFRESH_SINGLE_RECORD:
       const { payload } = action
       const { _id } = payload
@@ -72,6 +64,7 @@ const jobsReducer = (state = initialState, action) => {
         ...state,
         jobs: [...newArray]        
       }
+
     case INSERT_RECORD_BEGIN:
       return beginAction(state)
     case INSERT_RECORD_SUCCESS:
@@ -82,6 +75,7 @@ const jobsReducer = (state = initialState, action) => {
       }
     case INSERT_RECORD_FAILURE:
       return failureAction(state, action.payload)
+
     case UPDATE_RECORD_BEGIN:
       return beginAction(state)
     case UPDATE_RECORD_SUCCESS:

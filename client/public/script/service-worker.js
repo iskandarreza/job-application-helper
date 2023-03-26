@@ -1,5 +1,12 @@
+const self = this;
+let wSocket;
+let taskQueue = []
 
-
+/**
+ * It takes a row from a table, and returns the status of a job posting.
+ * @param row - { id: '12345', url: 'https://www.indeed.com/viewjob?jk=12345' }
+ * @returns An array of promises.
+ */
 const checkJobStatus = async (row) => {
   const { id, url } = row
   let hostname
@@ -15,19 +22,33 @@ const checkJobStatus = async (row) => {
     .catch((error) => { console.error(error) })
 }
 
+/**
+ * It takes an _id and a payload, and then it makes a PUT request to the server with the _id and
+ * payload.
+ * @param _id - the id of the record to be updated
+ * @param payload - { crawlDate, positionStatus, org?, role?, location?, externalSource }
+ * @returns The data from the database.
+ */
 const updateLinkData = async (_id, payload) => {
 
-  return fetch(`http://localhost:5000/update/${_id}`, {
+  return fetch(`http://localhost:5000/record/${_id}`, {
     headers: {
       "Content-Type": "application/json",
     },
-    method: 'POST',
+    method: 'PUT',
     body: JSON.stringify(payload)
   }).then((response) => response.json())
     .then((data) => { return data })
     .catch((error) => { console.log(error) })
 }
 
+/**
+ * It checks the status of a job posting, and if the job is still open, it updates the
+ * link-content-data collection with the new data, and then updates the main collection with the new
+ * data.
+ * @param client - the worker client
+ * @param payload - { id, url }
+ */
 const updateLinkDataAction = async (client, payload) => {
   const { _id, id } = payload
   const promise1 = checkJobStatus(payload)
@@ -45,7 +66,7 @@ const updateLinkDataAction = async (client, payload) => {
         }
 
         // Insert updated linkdata directly to link-content-data collection
-        const updateRecord1 = fetch(`http://localhost:5000/record/linkdata/${id}`, {
+        const updateRecord1 = fetch(`http://localhost:5000/record/${id}/linkdata`, {
           headers: {
             "Content-Type": "application/json",
           },
@@ -87,82 +108,126 @@ const updateLinkDataAction = async (client, payload) => {
   const promise2 = client.postMessage({ action: 'UPDATE_LINK_DATA_BEGIN', payload: new Date().toISOString() })
 
   await Promise.race([promise1, promise2])
+  client.postMessage({ action: 'UPDATE_LINK_DATA_COMPLETE' })
 }
 
 const taskReducer = async (task) => {
   const { data, client } = task
   const { action, data: payload } = data
 
+  console.log('taskReducer: ', {action, payload})
   switch (action) {
     case 'UPDATE_LINK_DATA':
       return updateLinkDataAction(client, payload)
-
     default:
-      break;
+      break
   }
 }
 
-let taskQueue = []
 const processQueue = async () => {
   // If queue is not empty, process the next task
   if (taskQueue.length > 0) {
     let task = taskQueue.shift()
-    const { client } = task
-    const response = await taskReducer(task)
-    console.log({ response })
+
+    console.log('processQueue: ', {task})
+    wSocket.send(JSON.stringify({ message: 'Task added to queue for processing', task }));
+
+    await taskReducer(task)
 
     // Process task
-    client.postMessage({ data: response, action: 'UPDATE_LINK_DATA_COMPLETE' })
     processQueue()
   }
 }
 
-const self = this;
-let wSocket;
-
+/**
+ * It's a function that initializes a WebSocket connection and listens for messages from the client. 
+ * 
+ * When the client sends a message, the function pushes the message to a queue and calls a function to
+ * process the queue. 
+ * 
+ * The function also listens for a message from the client that indicates the service worker has been
+ * registered. When it receives this message, it sends a message to the server. 
+ * 
+ * The function is called in the service worker's install event listener.
+ */
 const initWebWorker = async () => {
   const ws = initWebSocket();
 
   ws.onopen = function (event) {
-    console.log('WebSocket connection established');
-    ws.send(JSON.stringify({message: 'Hello, server!'}));
-
+    console.log('WebSocket connection established')
+    ws.send(JSON.stringify({message: 'Hello, server!'}))
   }
   
   self.addEventListener('message', (event) => {
-    const { data, source: client } = event;
-    taskQueue.push({ data, client });
-    processQueue();
-    wSocket.send(JSON.stringify({ message: 'Task added to queue for processing', data }));
+    /**
+     * The function is called when the service worker receives a message from the client. The message
+     * is then added to a queue and the queue is processed.
+     */
+    const { data, source: client } = event
+    console.log('Service worker received postMessage: ', { data, client })
+
+    if (data.action === 'SERVICE_WORKER_REGISTERED') {
+      const registered = JSON.stringify({ message: 'Service worker registered' })
+      try {
+        wSocket.send(registered)
+      } catch (error) {
+        console.log(error)
+        if (wSocket) {
+          setTimeout(function () {
+            wSocket.send(registered)
+          }, 5000)
+        }
+      }
+    } else {
+      try {
+        taskQueue.push({ data, client })
+        processQueue()
+      } catch (error) {
+        console.log(error)
+      }
+    }
   })
 
 }
 
 // WebSocket init
 const initWebSocket = () => {
-  const socket = new WebSocket('ws://localhost:5001');
+  const socket = new WebSocket('ws://localhost:5001')
 
   socket.addEventListener('open', (event) => {
-    console.log('WebSocket connection opened!');
+    console.log('WebSocket connection opened!')
     wSocket = socket
-    isSocketReady = true
-  });
+  })
 
   socket.addEventListener('message', (event) => {
-    console.log('WebSocket WebWorker received message:', event?.data);
+    if (event?.data) {
+      const data = JSON.parse(event.data)
+      const { receiver, message } = data
+      if (receiver === 'webworker') {
+        console.log('WebSocket WebWorker received message:', message)
+      }
+    }
   });
 
   socket.addEventListener('error', (event) => {
-    console.error('WebSocket error:', event);
-  });
+    console.error('WebSocket error:', event)
+    socket.close()
+  })
 
   socket.addEventListener('close', (event) => {
-    console.log('WebSocket connection closed');
+    console.log('WebSocket connection closed')
     wSocket = null;
-    isSocketReady = false;
-  });
+    reconnectWS()
+  })
 
-  return socket;
-};
+  return socket
+}
 
-initWebWorker();
+const reconnectWS = () => {
+  console.log('Attempting to reconnect to WebSocket server in 5 seconds...')
+  setTimeout(function () {
+    initWebSocket()
+  }, 5000)
+}
+
+initWebWorker()

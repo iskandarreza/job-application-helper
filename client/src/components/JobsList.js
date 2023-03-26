@@ -12,7 +12,6 @@ import '../index.scss'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchJobs,
-  fetchNewJobs,
   updateRecord,
 } from '../redux/actions/jobActions'
 import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
@@ -192,11 +191,6 @@ const JobsDataGrid = () => {
     }
   }, [jobsLoading, dispatch])
 
-  const fetchNewJobsFromAPI = useCallback(async () => {
-    if (!jobsLoading) {
-      dispatch(fetchNewJobs())
-    }
-  }, [jobsLoading, dispatch])
 
   useEffect(() => {
     fetchData()
@@ -221,7 +215,6 @@ const JobsDataGrid = () => {
             filterAction={filterAction}
             handleShowOpenJobsClick={handleShowOpenJobsClick}
             handleShowAppliedJobsClick={handleShowAppliedJobsClick}
-            fetchNewJobs={fetchNewJobsFromAPI}
           />
         ),
       }}

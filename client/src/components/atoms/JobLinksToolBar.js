@@ -10,7 +10,6 @@ export const CustomToolbar = ({
   filterAction,
   handleShowOpenJobsClick,
   handleShowAppliedJobsClick,
-  fetchNewJobs,
 }) => {
   const appliedFilterBtnLabel = () => {
     if (isFiltering) {
@@ -62,13 +61,6 @@ export const CustomToolbar = ({
           onClick={() => handleShowOpenJobsClick()}
         >
           {openFilterBtnLabel()} Jobs
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => fetchNewJobs()}
-        >
-          Get New Data
         </Button>
       </div>
     </GridToolbarContainer>

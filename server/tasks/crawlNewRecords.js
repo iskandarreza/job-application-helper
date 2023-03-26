@@ -2,10 +2,16 @@ const express = require('express')
 const taskRoutes = express.Router()
 const { default: axios } = require('axios')
 
+/**
+ * It takes an array of objects, chunks them into arrays of 3, and then makes an axios request for each
+ * object in the chunk.
+ * @param jobs - an array of objects that look like this:
+ * @returns An array of objects.
+ */
 const checkJobStatuses = async (jobs) => {
   const results = []
 
-  const chunks = chunkObjects(jobs, 1)
+  const chunks = chunkObjects(jobs, 3)
 
   for (const chunk of chunks) {
     const promises = chunk.map((job) => {
@@ -31,6 +37,13 @@ const checkJobStatuses = async (jobs) => {
   return results
 }
 
+/**
+ * It takes an array and a number, and returns an array of arrays, each of which is the size of the
+ * number.
+ * @param data - The array of objects you want to chunk
+ * @param size - The number of items you want in each chunk.
+ * @returns An array of arrays.
+ */
 const chunkObjects = (data, size) => {
   const chunks = []
   for (let i = 0; i < data.length; i += size) {
@@ -39,8 +52,15 @@ const chunkObjects = (data, size) => {
   return chunks
 }
 
-const fetchAndInsertNewRecords = async () => {
-  const { data } = await axios.get('http://localhost:5000/record/new')
+/**
+ * It takes an array of objects, chunks it into smaller arrays of objects, then sends each chunk to a
+ * function that checks the status of each object in the chunk, and then sends the data to an API
+ * endpoint.
+ * @param ws - websocket connection
+ * @param data - an array of objects
+ * @returns The response is being returned.
+ */
+const fetchAndInsertNewRecords = async (ws, data) => {
   const jobChunks = chunkObjects(data, 12)
 
   let totalJobsProcessed = 0
@@ -59,14 +79,14 @@ const fetchAndInsertNewRecords = async () => {
       crawlData.crawlDate = new Date().toISOString()
 
       if (status === 'closed') {
-        await axios.post(`http://localhost:5000/record/linkdata/${id}`, crawlData)
+        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
         console.log(`Closed job ${id}`)
 
       } else {
-        await axios.post(`http://localhost:5000/record/linkdata/${id}`, crawlData)
+        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
       }
 
-      await axios.post(`http://localhost:5000/record/add`, {
+      await axios.post(`http://localhost:5000/record/new`, {
         ...record,
         ...crawlData,
         positionStatus: status,
@@ -77,6 +97,7 @@ const fetchAndInsertNewRecords = async () => {
       totalJobsProcessed++
       response = `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`
       console.log(response)
+      require('../websocket/sendMessage')(ws, response)
     }
 
     await new Promise((resolve) => setTimeout(resolve, 5000))
@@ -85,11 +106,4 @@ const fetchAndInsertNewRecords = async () => {
   return response
 }
 
-taskRoutes.get('/pull-new-data', (req, res) => {
-  fetchAndInsertNewRecords().then((data) => {
-    res.send(data)
-    console.log(data)
-  }).catch((e) => console.log(e))
-})
-
-module.exports = taskRoutes
+module.exports = fetchAndInsertNewRecords
