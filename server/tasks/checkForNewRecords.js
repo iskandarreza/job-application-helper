@@ -18,20 +18,20 @@ const checkForNewRecords = async (ws) => {
       })
   
     if (hasNewRecords){
-      const recordNoun = newData.length > 1 ? 'records' :
+      let recordNoun = newData.length > 1 ? 'records' :
         newData.length === 0 ? recordNoun = 'no' : 'record'
       const message1 = `${newData.length} new ${recordNoun} queued`
-      const message2 = `Content will be fetched in the background`
-      const message3 = 'New content has been fetched'
-      const crawlNewRecords = require("./crawlNewRecords")
-  
+      const message2 = `{action: 'FETCH_NEW_RECORDS_BEGIN', data: 'Content will be fetched in the background'}`
+      const fetchPagesData = require("./fetchPagesData")
+
       sendMessage(ws, message1)
       sendMessage(ws, message2)
-  
-      await crawlNewRecords(ws, newData)
+
+      let result = await fetchPagesData(ws, newData)
+      const message3 = `{action: 'FETCH_NEW_RECORDS_SUCCESS', data: '${result} new records fetched'}`
       sendMessage(ws, message3)
     } else {
-      sendMessage(ws, 'No new records since last connection')
+      sendMessage(ws, {action: 'NO_NEW_RECORDS', data: 'No new records since last connection'})
     }
   } catch (error) {
     console.log(error)

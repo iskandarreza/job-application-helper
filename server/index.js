@@ -15,14 +15,20 @@ const PORT = process.env.PORT || 5000
 const wss = setupWebSocketServer()
 const checkForNewRecords = require("./tasks/checkForNewRecords")
 const sendMessage = require("./websocket/sendMessage")
+const checkAppiedStatus = require("./tasks/checkAppliedStatus")
 
 wss.on('connection', async (ws) => {
   let lastFetch
+  let lastCheck
   ws.on('message', async (data) => {
     const {message} = JSON.parse(data)
     if (message === 'Check for new records') {
       await checkForNewRecords(ws)
       lastFetch = new Date().toISOString()
+    }
+    if (message === 'Check applied postings status') {
+      await checkAppiedStatus(ws, lastCheck)
+      lastCheck = new Date().toISOString()
     }
   })
 

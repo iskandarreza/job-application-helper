@@ -89,7 +89,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
             }
   
           } catch (error) {
-            console.log('Job title info unavailable')
+            console.log('External link unavailable')
           }
 
           console.log('Getting title of the role...')
@@ -229,7 +229,6 @@ const crawlJobPage = async (jobId, hostdomain) => {
 
         if (data.status === 'open') {
 
-          // ('.top-card-layout__cta-container > .sign-up-modal__outlet > .lazy-loaded > #Layer_1 > path')
           console.log('Checking for external link...')
 
           try {
@@ -237,15 +236,11 @@ const crawlJobPage = async (jobId, hostdomain) => {
             const element = await page.waitForSelector(selector, { timeout: 10000 })
 
             if (element) {
-              // const text = await page.$eval(selector, (element) => element.innerText)
-
-              // if (text.includes('Apply on company site')) {
-                data.externalSource = true
-              // }
+              data.externalSource = true
             }
 
           } catch (error) {
-            console.log('Job title info unavailable')
+            console.log('External link unavailable')
           }
           
           

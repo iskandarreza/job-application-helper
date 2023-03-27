@@ -33,8 +33,6 @@ const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload)
 const dataFromServiceWorkerReducer = (state = initialServiceWorkerState, action) => {  
   switch (action.type) {
     case SEND_TO_SERVICE_WORKER:
-      // console.log({dataFromServiceWorkerReducer: action})
-
       return {
         state, 
         payload: action.payload.data

@@ -1,5 +1,3 @@
-const express = require('express')
-const taskRoutes = express.Router()
 const { default: axios } = require('axios')
 
 /**
@@ -24,9 +22,15 @@ const checkJobStatuses = async (jobs) => {
         hostname = 'linkedin'
       }
 
-      return axios.get(
-        `http://localhost:5000/job-status/${hostname}/${id}`
-      ).then(({ data }) => ({ _id, id, status: data.status, extraData: data }))
+      try {
+        return axios.get(
+          `http://localhost:5000/job-status/${hostname}/${id}`
+        ).then(({ data }) => ({ _id, id, status: data.status, extraData: data }))
+          
+      } catch (error) {
+        console.log(error)        
+      }
+
     })
 
     const chunkResults = await Promise.all(promises)
@@ -60,19 +64,40 @@ const chunkObjects = (data, size) => {
  * @param data - an array of objects
  * @returns The response is being returned.
  */
-const fetchAndInsertNewRecords = async (ws, data) => {
-  const jobChunks = chunkObjects(data, 12)
+const fetchPagesData = async (ws, data) => {
+  const filtered = data.filter((datum) => {
+
+    if (!datum.crawlDate) {
+      return datum
+    } else {
+      const now = new Date()
+      const lastDate = new Date(datum.crawlDate)
+      const diff = Math.abs(now - lastDate) / 36e5
+
+      console.log(`Record last crawled ${diff} hours ago`)
+      if (diff > 24 && datum.positionStatus !== 'closed') {
+        return datum
+      }
+    }
+  })
+
+  console.log(`${filtered.length} records will be checked`)
+  const jobChunks = chunkObjects(filtered, 12)
 
   let totalJobsProcessed = 0
+  let upserted = 0
   let response
   const totalJobs = data.length
+
   for (const [index, jobChunk] of jobChunks.entries()) {
     const results = await checkJobStatuses(jobChunk)
-
     let jobsProcessed = 0
+
     for (const result of results) {
+      const record = [...filtered].filter((record) => record.id === result.id).shift()
+
+      const isNew = result._id  ? false : true
       const { id, status, extraData, redirected } = result
-      let record = jobChunk[index]
       let crawlData = { ...extraData }
       crawlData.id = id
       crawlData.redirected = redirected === true ? true : false
@@ -80,30 +105,47 @@ const fetchAndInsertNewRecords = async (ws, data) => {
 
       if (status === 'closed') {
         await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
+
+        if (!isNew) {
+          await axios.put(`http://localhost:5000/record/${result._id}`, {
+            positionStatus: status,
+            crawlDate: crawlData.crawlDate
+          })
+        }
+
+        upserted++
         console.log(`Closed job ${id}`)
 
       } else {
-        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
-      }
+        const recordUpdate = {
+          ...record,
+          positionStatus: status,
+          externalSource: crawlData.externalSource,
+          crawlDate: crawlData.crawlDate
+        }
 
-      await axios.post(`http://localhost:5000/record/new`, {
-        ...record,
-        ...crawlData,
-        positionStatus: status,
-        externalSource: crawlData.externalSource
-      })
+        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
+
+        if (!isNew) {
+          await axios.put(`http://localhost:5000/record/${result._id}`, {...recordUpdate})
+        } else {
+          await axios.post(`http://localhost:5000/record/new`, {...recordUpdate})
+        }
+
+        upserted++
+      }
 
       jobsProcessed++
       totalJobsProcessed++
       response = `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`
-      console.log(response)
       require('../websocket/sendMessage')(ws, response)
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 5000))
+    await new Promise((resolve) => setTimeout(resolve, 3000))
   }
 
-  return response
+  return upserted
+  
 }
 
-module.exports = fetchAndInsertNewRecords
+module.exports = fetchPagesData

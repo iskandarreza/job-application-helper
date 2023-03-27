@@ -10,96 +10,85 @@ const collection = 'email-link-data'
 const backup = 'backup'
 const linkContentData = 'link-content-data'
 
+const linkContentDataBackup = 'link-content-data-backup'
+
+
 recordRoutes.route('/runquery').get((req, res) => {
   let db_connect = dbo.getDb();
 
-  async function updateCollections(dbo) {
-    const collectionA = dbo.collection(collection);
-    const collectionB = dbo.collection(linkContentData);
-
-    let docs = []
-
-    await collectionB.find().forEach((docB) => {
-      let query
-      if (isNaN(docB.id)) {
-        query = { id: { $eq: String(docB.id) } }
-      } else {
-        query = { id: parseInt(docB.id) }
-      }
-      collectionA
-        .findOne(query)
-        .then(() => {
-          const data = {
-            id: docB.id,
-          }
-
-          if(!isNaN(docB.id)){
-            console.log(docB)
-
-          }
-          const { org, role, location } = docB
-
-          if (org || role || location) {
-            if (org) {
-              data.org  = org
-            }
-            if (role) {
-              data.role = role
-            }
-            if (location) {
-              data.location = location
-            }
-  
-            docs.push(data)
-          }
+  var docs
+  var bulkOps = []
+  db_connect
+    .collection('email-link-data')
+    .aggregate([
+      {
+        $lookup: {
+          from: "link-content-data",
+          localField: "id",
+          foreignField: "id",
+          as: "matches"
+        }
+      },
+      {
+        $unwind: "$matches"
+      },
+      {
+        $sort: {
+          "matches.dateModified": -1
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          id: { $first: "$id" },
+          match: { $first: "$matches" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          id: 1,
+          match: 1,
           
-        })
+        }
+      }
+    ])
 
-    })
 
-    // docs.forEach(async (item) => {
-
-    //   let updateFields = {}
-    //   let query
-    //   if (isNaN(item.id)) {
-    //     query = { id: { $eq: String(item.id) } }
-    //   } else {
-    //     query = { id: parseInt(item.id) }
-    //   }
-
-    //   Object.keys(item).forEach((key) => {
-    //     if (key !== '_id' && key !== 'id') {
-    //       updateFields[key] = item[key]
-    //     }
-    //   })
-
-    //   let newvalues = {};
-    //   if (Object.keys(updateFields).length > 0) {
-    //     newvalues.$set = updateFields
-    //   }
-
-    //   await collectionA
-    //     .updateOne(query, newvalues)
-    //     .then((data) => {
-    //       console.log(data)
-    //     })
-
+    // .toArray()
+    // .then((data) => {
+    //   docs = data
+    //   let filtered = [...data].filter((doc) => doc._id !== doc.match._id)
+    //   console.log([data[0], data[1], data[3]])
+    //   console.log([filtered[0], filtered[1], filtered[3]])
+    //   console.log(data.length)
+    //   console.log(filtered.length)
+    //   res.json(data)
     // })
-    
-    console.log(docs.length)
-    return docs
-  }
-  
 
-  updateCollections(db_connect)
-    .then((data) => {
-      res.json(data);
+
+
+    .forEach(function (doc) {
+      bulkOps.push({
+        updateMany: {
+          filter: {
+            id: doc.id,
+            _id: { $ne: doc.match._id }
+          },
+          update: {
+            $set: { deleted: true }
+          }
+        }
+      })
+    
     })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).send('An error occurred while updating collections.');
-    });
-});
+    
+    if (bulkOps.length > 0) {
+      let ops = bulkOps.slice(0, 20)
+      console.log(ops)
+      db_connect.collection('link-content-data').bulkWrite(ops)
+    }
+})
 
 recordRoutes.get('/populate-collection', async (req, res) => {
   let db_connect = dbo.getDb()
@@ -189,7 +178,30 @@ recordRoutes.route('/record').get(async function (req, res) {
   let query = {}
   let options = {}
 
-  if (req.query.filter === 'id_only') {
+  if (req.query.filter === 'none') {
+    // no filtering needed
+    query = {}
+
+  } else if (req.query.filter === 'applied') {
+    query = {
+      positionStatus: 'open',
+      $or: [
+        { status1: 'applied' },
+        { status1: 'uncertain' }
+      ],
+    }
+
+  } else if (req.query.filter === 'unapplied') {
+    query = {
+      positionStatus: 'open',
+      $and: [
+        { status1: { $ne: 'applied' } },
+        { status1: { $ne: 'uncertain' } }
+      ],
+    }
+  }
+
+  if (req.query.id_only === 'true') {
     options = { projection: {
       org: 0,
       role: 0,
@@ -206,17 +218,6 @@ recordRoutes.route('/record').get(async function (req, res) {
       crawlDate: 0,
       fieldsModified: 0
     }}
-  } else if (req.query.filter === 'none') {
-    // no filtering needed
-  } else {
-    query = {
-      positionStatus: 'open',
-      $and: [
-        { status1: { $ne: 'declined' } },
-        { status1: { $ne: 'applied' } },
-        { status1: { $ne: 'uncertain' } }
-      ],
-    }
   }
 
   db_connect
@@ -235,7 +236,7 @@ recordRoutes.route('/record/new').get(async function (req, res) {
     req.body
   )
 
-  const recordIds = await axios.get('http://localhost:5000/record?filter=id_only')
+  const recordIds = await axios.get('http://localhost:5000/record?filter=none&id_only=true')
     .then((response) => { return response.data })
 
   const newData = await axios.get('http://localhost:5000/data')
@@ -334,7 +335,6 @@ recordRoutes.route('/record/:id').put(function (req, res) {
               data.query = myquery
               data.updateValue = newvalues
               res.json(data)
-              console.log(data)
             })
             .catch((e) => console.log(e))
       } else {
@@ -356,7 +356,6 @@ recordRoutes.route('/record/:id').delete((req, res) => {
     .collection(collection)
     .deleteOne(myquery)
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -429,7 +428,6 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
               data.query = myquery
               data.updateValue = newvalues
               res.json(data)
-              console.log(data)
             })
             .catch((e) => console.log(e))
       } else {

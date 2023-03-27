@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { fetchJobDescription, openJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { useTheme } from '@emotion/react'
 
 export const RenderRoleCell = (params) => {
   const { row } = params
@@ -19,6 +20,8 @@ export const RenderRoleCell = (params) => {
     dispatch(openJobDescriptionDialog())
   }
 
+  const theme = useTheme()
+
   return (
     <>
       {crawlDate ?
@@ -27,7 +30,7 @@ export const RenderRoleCell = (params) => {
           onClick={handleClick}
         >
           <span style={{
-            color: 'darkblue',
+            color: theme.palette.primary.main,
             cursor: 'pointer'
           }}
           >

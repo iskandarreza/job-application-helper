@@ -128,9 +128,11 @@ const processQueue = async () => {
   // If queue is not empty, process the next task
   if (taskQueue.length > 0) {
     let task = taskQueue.shift()
+    let { client } = task 
 
     console.log('processQueue: ', {task})
-    wSocket.send(JSON.stringify({ message: 'Task added to queue for processing', task }));
+    client.postMessage(JSON.stringify({ message: 'Task added to queue for processing', task }))
+    wSocket.send(JSON.stringify({ message: 'Task added to queue for processing', task }))
 
     await taskReducer(task)
 
@@ -216,8 +218,21 @@ const messageListener = (event) => {
       } catch (error) {
         console.error(error)
         if (wSocket) {
-          setTimeout(function () {
+          setTimeout(() => {
             wSocket.send(checkForNewRecords)
+          }, 5000)
+        }
+      }
+    } 
+    if (action === 'NO_NEW_RECORDS') {
+      const checkApplied = JSON.stringify({ message: 'Check applied postings status' })
+      try {
+        wSocket.send(checkApplied)
+      } catch (error) {
+        console.error(error)
+        if (wSocket) {
+          setTimeout(() => {
+            wSocket.send(checkApplied)
           }, 5000)
         }
       }

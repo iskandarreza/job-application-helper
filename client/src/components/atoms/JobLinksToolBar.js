@@ -3,36 +3,9 @@ import {
   GridToolbarContainer,
   GridToolbarQuickFilter,
 } from '@mui/x-data-grid'
-import { Button } from '@mui/material'
+// import { Button } from '@mui/material'
 
-export const CustomToolbar = ({
-  isFiltering,
-  filterAction,
-  handleShowOpenJobsClick,
-  handleShowAppliedJobsClick,
-}) => {
-  const appliedFilterBtnLabel = () => {
-    if (isFiltering) {
-      if (filterAction === 'applied') {
-        return 'Hide Applied'
-      } else {
-        return 'Show Applied'
-      }
-    }
-    return 'Show Applied'
-  }
-
-  const openFilterBtnLabel = () => {
-    if (isFiltering) {
-      if (filterAction === 'open') {
-        return 'Show All'
-      } else {
-        return 'Show Open'
-      }
-    }
-
-    return 'Show Open'
-  }
+export const CustomToolbar = () => {
 
   return (
     <GridToolbarContainer
@@ -48,7 +21,7 @@ export const CustomToolbar = ({
           gap: '10px',
         }}
       >
-        <Button
+        {/* <Button
           variant="contained"
           color="primary"
           onClick={() => handleShowAppliedJobsClick()}
@@ -61,7 +34,7 @@ export const CustomToolbar = ({
           onClick={() => handleShowOpenJobsClick()}
         >
           {openFilterBtnLabel()} Jobs
-        </Button>
+        </Button> */}
       </div>
     </GridToolbarContainer>
   )

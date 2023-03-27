@@ -18,6 +18,9 @@ import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
 import { RenderRoleCell } from './atoms/RenderRoleCell'
 import { JobDescriptionDialog } from './atoms/JobDescriptionDialog'
 
+import { toast } from 'react-toastify'
+import { useTheme } from '@emotion/react'
+
 const columns = [
   { field: '_id', flex: 1 },
   { field: 'id', flex: 1 },
@@ -133,57 +136,57 @@ const JobsDataGrid = () => {
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
   const dispatch = useDispatch()
 
-  const openJobsFilterModel = {
-    items: [{ id: 1, field: 'positionStatus', operator: 'isAnyOf', value: ['open'] }],
-  }
-  const [filterModel, setFilterModel] = useState(openJobsFilterModel)
-  const [isFiltering, setIsFiltering] = useState(true)
-  const [filterAction, setFilterAction] = useState('open')
+  // const openJobsFilterModel = {
+  //   items: [{ id: 1, field: 'positionStatus', operator: 'isAnyOf', value: ['open'] }],
+  // }
+  // const [filterModel, setFilterModel] = useState(openJobsFilterModel)
+  // const [isFiltering, setIsFiltering] = useState(true)
+  // const [filterAction, setFilterAction] = useState('open')
 
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
   })
 
-  const resetFilters = () => {
-    setFilterModel({ items: [] })
-    setIsFiltering(false)
-  }
+  // const resetFilters = () => {
+  //   setFilterModel({ items: [] })
+  //   setIsFiltering(false)
+  // }
 
-  const handleShowAppliedJobsClick = () => {
-    const model = {
-      items: [
-        { id: 1, field: 'status1', operator: 'isAnyOf', value: ['applied', 'uncertain'] },
-      ],
-    }
+  // const handleShowAppliedJobsClick = () => {
+  //   const model = {
+  //     items: [
+  //       { id: 1, field: 'status1', operator: 'isAnyOf', value: ['applied', 'uncertain'] },
+  //     ],
+  //   }
 
-    if (!isFiltering) {
-      setFilterModel(model)
-      setIsFiltering(true)
-    } else {
-      if (filterAction === 'open') {
-        setFilterModel(model)
-        setFilterAction('applied')
-      } else {
-        resetFilters()
-      }
-    }
-  }
+  //   if (!isFiltering) {
+  //     setFilterModel(model)
+  //     setIsFiltering(true)
+  //   } else {
+  //     if (filterAction === 'open') {
+  //       setFilterModel(model)
+  //       setFilterAction('applied')
+  //     } else {
+  //       resetFilters()
+  //     }
+  //   }
+  // }
 
-  const handleShowOpenJobsClick = () => {
-    if (!isFiltering) {
-      setFilterModel(openJobsFilterModel)
-      setIsFiltering(true)
-    } else {
-      if (filterAction === 'applied') {
-        setFilterModel(openJobsFilterModel)
-        setFilterAction('open')
-        console.log(filterModel.items)
-      } else {
-        resetFilters()
-      }
-    }
-  }
+  // const handleShowOpenJobsClick = () => {
+  //   if (!isFiltering) {
+  //     setFilterModel(openJobsFilterModel)
+  //     setIsFiltering(true)
+  //   } else {
+  //     if (filterAction === 'applied') {
+  //       setFilterModel(openJobsFilterModel)
+  //       setFilterAction('open')
+  //       console.log(filterModel.items)
+  //     } else {
+  //       resetFilters()
+  //     }
+  //   }
+  // }
 
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
@@ -191,6 +194,29 @@ const JobsDataGrid = () => {
     }
   }, [jobsLoading, dispatch])
 
+  const theme = useTheme()
+  
+  useEffect(() => {
+    if (jobs?.length > 0) {
+      const appliedJobs = [...jobs].filter((job) => job.status1 === 'applied' || job.status1 === 'uncertain')
+      const stillOpen = [...appliedJobs].filter((job) => job.positionStatus === 'open')
+      const open = [...jobs].filter((job) => job.positionStatus === 'open')
+      toast(() => {
+        return (
+          <div>
+            <p>
+              <span style={{ color: theme.palette.success.main }}>{stillOpen.length}</span>
+              <strong>/{appliedJobs.length}</strong> jobs applied still open
+            </p>
+            <p>
+              <span style={{color: theme.palette.success.main}}>{open.length}</span>
+              <strong>/{jobs.length}</strong> jobs in record still open
+            </p>
+          </div>
+        )
+      }, {position: toast.POSITION.BOTTOM_RIGHT})
+    }
+  }, [jobs])
 
   useEffect(() => {
     fetchData()
@@ -203,19 +229,13 @@ const JobsDataGrid = () => {
   return (
     <DataGrid
       getRowId={(row) => row._id}
-      filterModel={filterModel}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
       rows={jobs}
       columns={columns}
       components={{
         Toolbar: () => (
-          <CustomToolbar
-            isFiltering={isFiltering}
-            filterAction={filterAction}
-            handleShowOpenJobsClick={handleShowOpenJobsClick}
-            handleShowAppliedJobsClick={handleShowAppliedJobsClick}
-          />
+          <CustomToolbar />
         ),
       }}
       initialState={{
@@ -235,18 +255,6 @@ const JobsDataGrid = () => {
         const newValue = { [field]: value }
 
         dispatch(updateRecord(row, newValue))
-      }}
-      onFilterModelChange={(model) => {
-        if (model.quickFilterValues) {
-          setFilterModel({
-            items: [],
-            quickFilterValues: model.quickFilterValues
-          })
-        } else {
-          setFilterModel({
-            items: model.items
-          })
-        }
       }}
     />
   )
