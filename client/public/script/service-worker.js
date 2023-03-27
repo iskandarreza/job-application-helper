@@ -151,11 +151,20 @@ const processQueue = async () => {
  * The function is called in the service worker's install event listener.
  */
 const initWebWorker = async () => {
-  const ws = initWebSocket();
+  const ws = reconnectWS()
 
   ws.onopen = function (event) {
     console.log('WebSocket connection established')
-    ws.send(JSON.stringify({message: 'Hello, server!'}))
+    
+    try {
+      if (wSocket) {
+        setTimeout(function () {
+          wSocket.send(checkForNewRecords)
+        }, 5 * 1000)
+      } 
+    } catch (error) {
+      
+    }
   }
   
   self.addEventListener('message', (event) => {
@@ -167,14 +176,13 @@ const initWebWorker = async () => {
     console.log('Service worker received postMessage: ', { data, client })
 
     if (data.action === 'SERVICE_WORKER_REGISTERED') {
-      const registered = JSON.stringify({ message: 'Service worker registered' })
       try {
-        wSocket.send(registered)
+        wSocket.send(checkForNewRecords)
       } catch (error) {
-        console.log(error)
+        console.error(error)
         if (wSocket) {
           setTimeout(function () {
-            wSocket.send(registered)
+            wSocket.send(checkForNewRecords)
           }, 5000)
         }
       }
@@ -190,8 +198,35 @@ const initWebWorker = async () => {
 
 }
 
+const checkForNewRecords = JSON.stringify({ message: 'Check for new records' })
+
+const messageListener = (event) => {
+  return (() => {
+    const eventData = JSON.parse(event.data)
+    const { receiver, message } = eventData
+    const { action, data } = message
+
+    if (receiver === 'webworker') {
+      console.log('WebSocket WebWorker received message:', message)
+    }
+
+    if (action === 'LAST_FETCH_FALSE') {
+      try {
+        wSocket.send(checkForNewRecords)
+      } catch (error) {
+        console.error(error)
+        if (wSocket) {
+          setTimeout(function () {
+            wSocket.send(checkForNewRecords)
+          }, 5000)
+        }
+      }
+    }
+  })()
+}
+
 // WebSocket init
-const initWebSocket = () => {
+const initWebSocket =  () => {
   const socket = new WebSocket('ws://localhost:5001')
 
   socket.addEventListener('open', (event) => {
@@ -199,33 +234,33 @@ const initWebSocket = () => {
     wSocket = socket
   })
 
-  socket.addEventListener('message', (event) => {
-    if (event?.data) {
-      const data = JSON.parse(event.data)
-      const { receiver, message } = data
-      if (receiver === 'webworker') {
-        console.log('WebSocket WebWorker received message:', message)
-      }
-    }
-  });
+  socket.addEventListener('message', messageListener)
 
   socket.addEventListener('error', (event) => {
     console.error('WebSocket error:', event)
-    socket.close()
+    if (wSocket) {
+      wSocket.removeEventListener('message', messageListener)
+      wSocket.close()
+      wSocket = null;
+    }
   })
 
   socket.addEventListener('close', (event) => {
-    console.log('WebSocket connection closed')
-    wSocket = null;
+    console.log('WebSocket connection closed', event)
+    if (wSocket) {
+      wSocket.removeEventListener('message', messageListener)
+      wSocket.close()
+      wSocket = null;
+    }
     reconnectWS()
   })
 
   return socket
 }
 
-const reconnectWS = () => {
+const reconnectWS = async () => {
   console.log('Attempting to reconnect to WebSocket server in 5 seconds...')
-  setTimeout(function () {
+  setTimeout(async () => {
     initWebSocket()
   }, 5000)
 }

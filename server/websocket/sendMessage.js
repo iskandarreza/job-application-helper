@@ -7,7 +7,9 @@
  */
 const sendMessage = (ws, message, recipient) => {
   const receiver = !recipient ? 'webworker' : recipient  
-  ws.send(JSON.stringify({ receiver, message }))
+  const payload = JSON.stringify({ receiver, message })
+  ws.send(payload)
+  console.log({sendMessage: message})
 }
 
 module.exports = sendMessage

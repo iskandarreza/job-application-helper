@@ -14,27 +14,25 @@ const PORT = process.env.PORT || 5000
 
 const wss = setupWebSocketServer()
 const checkForNewRecords = require("./tasks/checkForNewRecords")
-
-/* A method that sends a message to all connected clients. */
-wss.broadcast = function broadcast(data) {
-  console.log('WebSocket broadcast method ready')
-  wss.clients?.forEach(function each(client) {
-    console.log({client, data})
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(data)
-    }
-  })
-}
+const sendMessage = require("./websocket/sendMessage")
 
 wss.on('connection', async (ws) => {
-
+  let lastFetch
   ws.on('message', async (data) => {
     const {message} = JSON.parse(data)
-    if (message === 'Service worker registered') {
-      checkForNewRecords(ws)
+    if (message === 'Check for new records') {
+      await checkForNewRecords(ws)
+      lastFetch = new Date().toISOString()
     }
   })
+
+  if (!lastFetch) {
+    const data = { lastFetch: false }
+    const payload = { action: 'LAST_FETCH_FALSE', data }
+    sendMessage(ws, payload)
+  }
 })
+
 
 // Middleware to handle incoming requests while server is restarting
 let serverReady = false
@@ -70,15 +68,14 @@ app.get('/data', (req, res) => {
     .catch((error) => console.error(error))
 })
 
-wss.broadcast(`Server restarted ${new Date()}`)
-
 const server = http.createServer(app)
 
 server.listen(PORT, async () => {
   // perform a database connection when server starts
-  await dbo.connectToServer(function (err) {
-    // if (err) console.error(err)
-    console.log('error connecting to MongoDB')
+  await dbo.connectToServer((err) => {
+    if (err) {
+      console.log('Error connecting to MongoDB', err)
+    }
 
   })
   console.log(`Server listening on ${PORT}`)

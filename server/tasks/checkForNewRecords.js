@@ -23,7 +23,7 @@ const checkForNewRecords = async (ws) => {
       const message1 = `${newData.length} new ${recordNoun} queued`
       const message2 = `Content will be fetched in the background`
       const message3 = 'New content has been fetched'
-      const crawlNewRecords = require("./tasks/crawlNewRecords")
+      const crawlNewRecords = require("./crawlNewRecords")
   
       sendMessage(ws, message1)
       sendMessage(ws, message2)
