@@ -33,7 +33,7 @@ export const JobLinkButtonRenderer = (params) => {
             <IconButton
               onClick={handleClickSource}
               size="small"
-              color={externalSource ? 'warning' : 'secondary'}
+              color={externalSource === 'true' ? 'warning' : 'secondary'}
             >
               <Link>Source</Link>
             </IconButton>
@@ -42,7 +42,7 @@ export const JobLinkButtonRenderer = (params) => {
           <IconButton
             onClick={handleClickLink}
             size="small"
-            color={externalSource ? 'warning' : 'primary'}
+            color={externalSource === 'true' ? 'warning' : 'primary'}
           >
             <Link />
           </IconButton>

@@ -1,4 +1,5 @@
 const { default: axios } = require("axios")
+const sendMessage = require("../websocket/sendMessage")
 const fetchPagesData = require("./fetchPagesData")
 
 const checkAppiedStatus = async (ws, lastCheck) => {
@@ -9,16 +10,21 @@ const checkAppiedStatus = async (ws, lastCheck) => {
 
   console.log({ numOfHoursAgo: numOfHoursAgo.toString(), lastCheck })
 
-  if (numOfHoursAgo > 24) {
+  if (numOfHoursAgo > 4) {
     const records = await axios.get('http://localhost:5000/record?filter=applied')
-      .then((response) => {
-        return response.data
-      })
-      .catch((error) => console.error(error))
-    const result = await fetchPagesData(ws, records)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => console.error(error))
 
-    console.log(`${result} records updated`)
+  let result = await fetchPagesData(meta(records), ws)
+
+  sendMessage(ws, { action: 'CHECK_APPLIED_COMPLETE', data: result })
+
+} else {
+    sendMessage(ws, { action: 'CHECK_APPLIED_INCOMPLETE', data: { numOfHoursAgo } })
   }
+
 }
 
 module.exports = checkAppiedStatus

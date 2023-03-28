@@ -1,4 +1,5 @@
 const axios = require("axios")
+const meta = require("../meta")
 const sendMessage = require("../websocket/sendMessage")
 
 /**
@@ -8,12 +9,12 @@ const sendMessage = require("../websocket/sendMessage")
  */
 const checkForNewRecords = async (ws) => {
   try {
-    let newData
+    let newData = []
     
     const hasNewRecords = await axios
       .get('http://localhost:5000/record/new')
       .then(({ data }) => {
-        newData = data
+        newData = [...meta(data)]
         return data.length > 0
       })
   
@@ -21,14 +22,14 @@ const checkForNewRecords = async (ws) => {
       let recordNoun = newData.length > 1 ? 'records' :
         newData.length === 0 ? recordNoun = 'no' : 'record'
       const message1 = `${newData.length} new ${recordNoun} queued`
-      const message2 = `{action: 'FETCH_NEW_RECORDS_BEGIN', data: 'Content will be fetched in the background'}`
+      const message2 = {action: 'FETCH_NEW_RECORDS_BEGIN', data: 'Content will be fetched in the background'}
       const fetchPagesData = require("./fetchPagesData")
 
       sendMessage(ws, message1)
       sendMessage(ws, message2)
 
-      let result = await fetchPagesData(ws, newData)
-      const message3 = `{action: 'FETCH_NEW_RECORDS_SUCCESS', data: '${result} new records fetched'}`
+      let result = await fetchPagesData(newData, ws)
+      const message3 = {action: 'FETCH_NEW_RECORDS_SUCCESS', data: `${result} new records fetched`}
       sendMessage(ws, message3)
     } else {
       sendMessage(ws, {action: 'NO_NEW_RECORDS', data: 'No new records since last connection'})

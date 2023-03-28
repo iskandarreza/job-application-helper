@@ -1,5 +1,16 @@
 import axios from 'axios'
 
+export const runQuery = async (query) => {
+  return axios
+    .post('http://localhost:5000/runquery/dateModified/1', query)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+}
+
 export const getRecords = async () => {
   return axios
     .get('http://localhost:5000/record')

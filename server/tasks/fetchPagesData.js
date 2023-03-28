@@ -57,27 +57,20 @@ const chunkObjects = (data, size) => {
 }
 
 /**
- * It takes an array of objects, chunks it into smaller arrays of objects, then sends each chunk to a
- * function that checks the status of each object in the chunk, and then sends the data to an API
- * endpoint.
+ * It takes a list of job records, checks the status of each job, and updates the database with the new
+ * status
  * @param ws - websocket connection
- * @param data - an array of objects
- * @returns The response is being returned.
+ * @param data - an array of objects, each object has an id property
+ * @returns The return value is the number of records that were updated.
  */
-const fetchPagesData = async (ws, data) => {
+const fetchPagesData = async (data, ws) => {
   const filtered = data.filter((datum) => {
-
     if (!datum.crawlDate) {
       return datum
     } else {
-      const now = new Date()
-      const lastDate = new Date(datum.crawlDate)
-      const diff = Math.abs(now - lastDate) / 36e5
-
+      const diff = Math.abs(new Date() - new Date(datum.crawlDate)) / 36e5
       console.log(`Record last crawled ${diff} hours ago`)
-      if (diff > 24 && datum.positionStatus !== 'closed') {
-        return datum
-      }
+      return diff > 24 && datum.positionStatus !== 'closed' ? datum : false
     }
   })
 
@@ -87,65 +80,61 @@ const fetchPagesData = async (ws, data) => {
   let totalJobsProcessed = 0
   let upserted = 0
   let response
-  const totalJobs = data.length
+  const totalJobs = filtered.length
 
   for (const [index, jobChunk] of jobChunks.entries()) {
     const results = await checkJobStatuses(jobChunk)
     let jobsProcessed = 0
 
     for (const result of results) {
-      const record = [...filtered].filter((record) => record.id === result.id).shift()
+      const record = filtered.find(({id}) => id === result.id)
+      const isNew = !record._id
+      const { id, status, org, role, location, extraData, redirected } = result
+      const crawlData = { ...extraData, id, redirected: redirected === true ? true : false, crawlDate: new Date().toISOString() }
 
-      const isNew = result._id  ? false : true
-      const { id, status, extraData, redirected } = result
-      let crawlData = { ...extraData }
-      crawlData.id = id
-      crawlData.redirected = redirected === true ? true : false
-      crawlData.crawlDate = new Date().toISOString()
+      await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
 
-      if (status === 'closed') {
-        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
-
-        if (!isNew) {
-          await axios.put(`http://localhost:5000/record/${result._id}`, {
-            positionStatus: status,
-            crawlDate: crawlData.crawlDate
-          })
-        }
-
-        upserted++
-        console.log(`Closed job ${id}`)
-
-      } else {
-        const recordUpdate = {
-          ...record,
-          positionStatus: status,
-          externalSource: crawlData.externalSource,
-          crawlDate: crawlData.crawlDate
-        }
-
-        await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
-
-        if (!isNew) {
-          await axios.put(`http://localhost:5000/record/${result._id}`, {...recordUpdate})
-        } else {
-          await axios.post(`http://localhost:5000/record/new`, {...recordUpdate})
-        }
-
-        upserted++
+      const url = isNew ? 'http://localhost:5000/record/new' : `http://localhost:5000/record/${result._id}`
+      const method = isNew ? 'post' : 'put'
+      const body = {
+        crawlDate: crawlData.crawlDate,
+        externalSource: crawlData.externalSource,
+        ...record,
+        org: org || crawlData.org,
+        role: role || crawlData.role,
+        location: location || crawlData.location
       }
 
+      delete body.status1
+      delete body.status2
+      delete body.status3
+      delete body.fieldsModified
+      
+      if (status !== record.positionStatus) {
+        body.positionStatus = status
+      }
+      
+      await axios[method](url, body)
+      
+      upserted++
       jobsProcessed++
       totalJobsProcessed++
-      response = `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`
-      require('../websocket/sendMessage')(ws, response)
+      response = {
+        action: 'JOB_REFRESHED',
+        data: {
+          message: `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`,
+          job: body
+        }
+      }
+      if (ws) {
+        require('../websocket/sendMessage')(ws, response)
+      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 3000))
   }
 
   return upserted
-  
 }
 
 module.exports = fetchPagesData

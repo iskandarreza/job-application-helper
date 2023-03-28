@@ -2,6 +2,8 @@ const express = require('express')
 const axios = require("axios")
 const recordRoutes = express.Router()
 const dbo = require('../db/conn')
+const fetchPagesData = require('../tasks/fetchPagesData')
+const meta = require('../meta')
 const ObjectId = require('mongodb').ObjectId
 
 const devData = 'email-link-data-dev'
@@ -12,82 +14,31 @@ const linkContentData = 'link-content-data'
 
 const linkContentDataBackup = 'link-content-data-backup'
 
+recordRoutes.route('/runquery/:field/:order').post((req, res) => {
+  let db_connect = dbo.getDb()
+  let query = JSON.stringify(req.body)
 
-recordRoutes.route('/runquery').get((req, res) => {
-  let db_connect = dbo.getDb();
+  console.log({ query })
+  console.log({ params: req.params })
+  let response
 
-  var docs
-  var bulkOps = []
-  db_connect
-    .collection('email-link-data')
-    .aggregate([
-      {
-        $lookup: {
-          from: "link-content-data",
-          localField: "id",
-          foreignField: "id",
-          as: "matches"
-        }
-      },
-      {
-        $unwind: "$matches"
-      },
-      {
-        $sort: {
-          "matches.dateModified": -1
-        }
-      },
-      {
-        $group: {
-          _id: "$_id",
-          id: { $first: "$id" },
-          match: { $first: "$matches" }
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          id: 1,
-          match: 1,
-          
-        }
-      }
-    ])
+  let docs = db_connect
+    .collection(collection)
+    .find(JSON.parse(query))
 
+  if (req.params.field) {
+    let { field } = req.params
+    let order = req.params.order || 1
+    response = docs.sort({ [field]: order })
+  }
 
-    // .toArray()
-    // .then((data) => {
-    //   docs = data
-    //   let filtered = [...data].filter((doc) => doc._id !== doc.match._id)
-    //   console.log([data[0], data[1], data[3]])
-    //   console.log([filtered[0], filtered[1], filtered[3]])
-    //   console.log(data.length)
-    //   console.log(filtered.length)
-    //   res.json(data)
-    // })
-
-
-
-    .forEach(function (doc) {
-      bulkOps.push({
-        updateMany: {
-          filter: {
-            id: doc.id,
-            _id: { $ne: doc.match._id }
-          },
-          update: {
-            $set: { deleted: true }
-          }
-        }
-      })
-    
+  response
+    .toArray()
+    .then((data) => {
+      res.json(data)
     })
-    
-    if (bulkOps.length > 0) {
-      let ops = bulkOps.slice(0, 20)
-      console.log(ops)
-      db_connect.collection('link-content-data').bulkWrite(ops)
-    }
+    .catch((e) => console.log(e))
+
 })
 
 recordRoutes.get('/populate-collection', async (req, res) => {
@@ -111,7 +62,7 @@ recordRoutes.get('/populate-collection', async (req, res) => {
           }
         }
       },
-      { $out: linkContentData }    ]).toArray()
+      { $out: linkContentData }]).toArray()
 
     res.send(`Successfully populated ${result.length} documents to ${linkContentData} collection.`)
   } catch (err) {
@@ -120,8 +71,188 @@ recordRoutes.get('/populate-collection', async (req, res) => {
   }
 })
 
+recordRoutes.get('/get-duplicates', async (req, res) => {
+  const workingCollection = collection
+
+  const deleteRecords = false
+
+  let db_connect = dbo.getDb()
+  let results = []
+
+  let aggregateQuery =
+    [
+      {
+        $sort: {
+          dateModified: 1
+        }
+      },
+      {
+        $group: {
+          _id: {
+            id: "$id"
+          },
+          count: {
+            $sum: 1
+          },
+          duplicates: {
+            $push: "$_id"
+          },
+          latest: {
+            $last: "$_id"
+          }
+        }
+      },
+      {
+        $match: {
+          count: {
+            $gt: 1
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          duplicates: {
+            $slice: ["$duplicates", 0, {
+              $subtract: [{
+                $size: "$duplicates"
+              }, 1]
+            }]
+          }
+        }
+      }
+    ]
+
+  await db_connect
+    .collection(workingCollection)
+    .aggregate(aggregateQuery)
+    .toArray()
+    .then((data) => {
+      data.forEach(doc => {
+        results.push(...doc.duplicates)
+      })
+    })
+    .catch((e) => console.log(e))
+
+  let records = await db_connect
+    .collection(workingCollection)
+    .find({ _id: { $in: results } })
+    .toArray()
+    .catch((e) => console.log(e))
+
+  if (deleteRecords) {
+    let docs = meta(records)
+    console.log('records to be deleted', docs)
+
+    docs.forEach((doc) => {
+      let myquery = { _id: new ObjectId(doc._id) }
+
+      db_connect
+        .collection(workingCollection)
+        .deleteOne(myquery)
+        .then((data) => {
+          console.log({...data, ...doc })
+        })
+    })
+  }
+
+  console.log(`${records.length} duplicate records found`, meta(records))
+
+  res.json(meta(records))
+
+
+})
+
+recordRoutes.get('/fix-records', async (req, res) => {
+  let query = { org: { $exists: false } }
+  let db_connect = dbo.getDb()
+
+  let results = []
+
+  await db_connect
+    .collection(collection)
+    .find(query)
+    .toArray()
+    .then((data) => {
+      console.log(data)
+      console.log(`${data.length} records matching query: ${JSON.stringify(query)}`)
+
+      results.push(...data)
+
+      // res.json({resultIds})
+
+    })
+    .catch((e) => console.log(e))
+
+
+  // let records = await db_connect
+  // .collection(collection)
+  // .find({ _id: { $in: results } })
+  // .toArray()
+  // .catch((e) => console.log(e))
+
+  // console.log(`${records.length} duplicate records found`)
+
+  let resultIds = results.map((doc) => doc['_id'])
+
+
+  db_connect
+    .collection(collection)
+    .deleteMany({ _id: { $in: resultIds } })
+    .then((data) => {
+      console.log(data)
+      res.json(data)
+    })
+    .catch((e) => console.log(e))
+
+
+  // res.send(JSON.stringify(records, null, 4))
+
+})
+
+recordRoutes.route('/find-missing').get(async (req, res) => {
+  const linkData = linkContentData
+  const metaData = collection
+  let db_connect = dbo.getDb()
+
+  let results = []
+
+  await db_connect
+    .collection(linkData)
+    .find()
+    .toArray()
+    .then((data) => {
+
+      results.push(...data.map((doc) => doc.id.toString()))
+
+    })
+    .catch((e) => console.log(e))
+
+
+  let records = await db_connect
+    .collection(metaData)
+    .find({ id: { $not: { $in: results } } })
+    .toArray()
+    .catch((e) => console.log(e))
+
+
+  let mapped = [...meta(records)].map((x) => {
+    delete x.crawlDate
+    delete x.dateModified
+    return x
+  })
+
+  console.log(`${records.length} missing records found`, mapped)
+  console.log(fetchPagesData(mapped, null))
+
+  res.send(JSON.stringify(mapped, null, 4))
+
+})
+
 recordRoutes.route('/backup').get(async function (req, res) {
   const db = dbo.getDb()
+  // const collection = linkContentData
+  // const backup = linkContentDataBackup
 
   try {
     // Delete all documents in the backup collection
@@ -147,6 +278,8 @@ recordRoutes.route('/backup').get(async function (req, res) {
 
 recordRoutes.route('/restore').get(async function (req, res) {
   const db = dbo.getDb()
+  const collection = linkContentData
+  const backup = linkContentDataBackup
 
   try {
     const deleteResult = await db.collection(collection).deleteMany({})
@@ -202,22 +335,23 @@ recordRoutes.route('/record').get(async function (req, res) {
   }
 
   if (req.query.id_only === 'true') {
-    options = { projection: {
-      org: 0,
-      role: 0,
-      location: 0,
-      url: 0,
-      positionStatus: 0,
-      status1: 0,
-      status2: 0,
-      status3: 0,
-      notes: 0,
-      extraData: 0,
-      dateAdded: 0,
-      dateModified: 0,
-      crawlDate: 0,
-      fieldsModified: 0
-    }}
+    options = {
+      projection: {
+        org: 0,
+        role: 0,
+        location: 0,
+        positionStatus: 0,
+        status1: 0,
+        status2: 0,
+        status3: 0,
+        notes: 0,
+        extraData: 0,
+        dateAdded: 0,
+        dateModified: 0,
+        crawlDate: 0,
+        fieldsModified: 0
+      }
+    }
   }
 
   db_connect
@@ -246,8 +380,12 @@ recordRoutes.route('/record/new').get(async function (req, res) {
     return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
   })
 
+  const filterdResults = await filteredObjects.filter((obj) => {
+    return !recordIds.some((record) => { record.url === obj.url })
+  })
+
   try {
-    res.json(filteredObjects)
+    res.json(filterdResults)
   } catch (error) {
     console.log(error)
   }
@@ -266,13 +404,17 @@ recordRoutes.route('/record/new').post(function (req, res) {
   record.dateAdded = now
   record.dateModified = now
 
-  db_connect
-    .collection(collection)
-    .insertOne(record)
-    .then((data) => {
-      res.json(data)
-    })
-    .catch((e) => console.log(e))
+  try {
+    db_connect
+      .collection(collection)
+      .insertOne(record)
+      .then((data) => {
+        res.json(data)
+      })
+      .catch((e) => console.log(e))
+  } catch (error) {
+    console.log('error @/record/new POST:', { error, body: record })
+  }
 })
 
 recordRoutes.route('/record/:id').get(async function (req, res) {
@@ -307,7 +449,7 @@ recordRoutes.route('/record/:id').put(function (req, res) {
 
   Object.keys(req.body).forEach((key) => {
     if (['positionStatus', 'status1', 'status2', 'status3', 'notes'].includes(key)) {
-      fieldsModified.push({ field: key, dateModified: new Date() });
+      fieldsModified.push({ field: key, value: req.body[key], dateModified: new Date() });
     }
     if (key !== '_id' && key !== 'dateModified' && key !== 'fieldsModified') {
       updateFields[key] = req.body[key]
@@ -323,25 +465,30 @@ recordRoutes.route('/record/:id').put(function (req, res) {
     newvalues.$push = { fieldsModified: { $each: fieldsModified } };
   }
 
-  db_connect
-    .collection(collection)
-    .findOne(myquery)
-    .then((doc) => {
-      if (doc) {
+  try {
+    db_connect
+      .collection(collection)
+      .findOne(myquery)
+      .then((doc) => {
+        if (doc) {
           db_connect
             .collection(collection)
             .updateOne(myquery, newvalues)
             .then((data) => {
+              console.log({...data, newvalues})
               data.query = myquery
               data.updateValue = newvalues
               res.json(data)
             })
             .catch((e) => console.log(e))
-      } else {
-        res.status(404).json({ message: 'Record not found.' })
-      }
-    })
-    .catch((e) => console.log(e))
+        } else {
+          res.status(404).json({ message: 'Record not found.' })
+        }
+      })
+      .catch((e) => console.log(e))
+  } catch (error) {
+    console.log('error @/record/:id PUT:', { error, body: req.body })
+  }
 })
 
 recordRoutes.route('/record/:id').delete((req, res) => {
@@ -368,7 +515,7 @@ recordRoutes.route('/record/:id/linkdata').get(async function (req, res) {
   )
 
   let db_connect = dbo.getDb()
-  let myquery = { id: {$eq: req.params.id} }
+  let myquery = { id: { $eq: req.params.id } }
   let id = req.params.id
   if (isNaN(id)) {
     myquery = { id: { $eq: String(req.params.id) } }
@@ -392,7 +539,7 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
   )
 
   let db_connect = dbo.getDb()
-  let myquery = { id: {$eq: req.params.id} }
+  let myquery = { id: { $eq: req.params.id } }
   let id = req.params.id
   if (isNaN(id)) {
     myquery = { id: { $eq: String(req.params.id) } }
@@ -421,15 +568,15 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
     .findOne(myquery)
     .then((doc) => {
       if (doc) {
-          db_connect
-            .collection(linkContentData)
-            .updateOne(myquery, newvalues)
-            .then((data) => {
-              data.query = myquery
-              data.updateValue = newvalues
-              res.json(data)
-            })
-            .catch((e) => console.log(e))
+        db_connect
+          .collection(linkContentData)
+          .updateOne(myquery, newvalues)
+          .then((data) => {
+            data.query = myquery
+            data.updateValue = newvalues
+            res.json(data)
+          })
+          .catch((e) => console.log(e))
       } else {
         db_connect
           .collection(linkContentData)

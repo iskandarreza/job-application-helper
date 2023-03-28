@@ -27,15 +27,15 @@ const crawlJobPage = async (jobId, hostdomain) => {
   const data = {}
   let status = 'open'
   let redirected = false
-  data.redirected = false
-  data.externalSource = false
+  data.redirected = 'false'
+  data.externalSource = 'false'
   data.status = 'open'
   page.on('request', (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
       console.log(`Redirected to ${request.redirectChain()[0].url()}`)
       redirected = true
       console.log('Redirected')
-      data.redirected = true
+      data.redirected = 'true'
       data.status = 'closed'
     }
   })
@@ -84,7 +84,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
               const text = await page.$eval(selector, (element) => element.innerText)
               
               if (text.includes('Apply on company site')) {
-                data.externalSource = true
+                data.externalSource = 'true'
               }
             }
   
@@ -236,7 +236,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
             const element = await page.waitForSelector(selector, { timeout: 10000 })
 
             if (element) {
-              data.externalSource = true
+              data.externalSource = 'true'
             }
 
           } catch (error) {
