@@ -1,4 +1,5 @@
 const { default: axios } = require('axios')
+const chalk = require('chalk')
 
 /**
  * It takes an array of objects, chunks them into arrays of 3, and then makes an axios request for each
@@ -69,12 +70,12 @@ const fetchPagesData = async (data, ws) => {
       return datum
     } else {
       const diff = Math.abs(new Date() - new Date(datum.crawlDate)) / 36e5
-      console.log(`Record last crawled ${diff} hours ago`)
+      console.log(chalk.yellow(`Record last crawled ${diff} hours ago`))
       return diff >= 36 && datum.positionStatus === 'open' ? datum : false
     }
   })
 
-  console.log(`${filtered.length} records will be checked`)
+  console.log(chalk.bgWhite(`${filtered.length} records will be checked`))
   const jobChunks = chunkObjects(filtered, 24)
 
   let totalJobsProcessed = 0
