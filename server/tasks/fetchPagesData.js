@@ -70,12 +70,12 @@ const fetchPagesData = async (data, ws) => {
     } else {
       const diff = Math.abs(new Date() - new Date(datum.crawlDate)) / 36e5
       console.log(`Record last crawled ${diff} hours ago`)
-      return diff > 24 && datum.positionStatus !== 'closed' ? datum : false
+      return diff >= 36 && datum.positionStatus === 'open' ? datum : false
     }
   })
 
   console.log(`${filtered.length} records will be checked`)
-  const jobChunks = chunkObjects(filtered, 12)
+  const jobChunks = chunkObjects(filtered, 24)
 
   let totalJobsProcessed = 0
   let upserted = 0
@@ -109,6 +109,7 @@ const fetchPagesData = async (data, ws) => {
       delete body.status2
       delete body.status3
       delete body.fieldsModified
+      delete body.dateModified
       
       if (status !== record.positionStatus) {
         body.positionStatus = status

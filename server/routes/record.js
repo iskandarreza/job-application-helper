@@ -4,44 +4,86 @@ const recordRoutes = express.Router()
 const dbo = require('../db/conn')
 const fetchPagesData = require('../tasks/fetchPagesData')
 const meta = require('../meta')
+const { json } = require('express')
 const ObjectId = require('mongodb').ObjectId
 
-const devData = 'email-link-data-dev'
 const collection = 'email-link-data'
-
-const backup = 'backup'
 const linkContentData = 'link-content-data'
 
-const linkContentDataBackup = 'link-content-data-backup'
+recordRoutes.post('/records/:collection/', async (req, res) => {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, : ` ,
+    {body: req.body, query: req.query}
+  )
+  const dbCollection = req.params.collection
+  const { body, query } = req
+  const field = query.field || 'dateModified'
+  const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : 1
+  const idOnly = query.id_only == '' ? true : false
+  const newRecords = query.new === '' ? true : false
+  const queryObj = body
 
-recordRoutes.route('/runquery/:field/:order').post((req, res) => {
-  let db_connect = dbo.getDb()
-  let query = JSON.stringify(req.body)
+  const queryOpts = idOnly ? {
+    projection: {
+      org: 0,
+      role: 0,
+      location: 0,
+      positionStatus: 0,
+      status1: 0,
+      status2: 0,
+      status3: 0,
+      notes: 0,
+      extraData: 0,
+      dateAdded: 0,
+      dateModified: 0,
+      crawlDate: 0,
+      fieldsModified: 0
+    }
+  } : {}
 
-  console.log({ query })
-  console.log({ params: req.params })
-  let response
+  if (newRecords) {
+    
+    const recordIds = await axios.post('http://localhost:5000/records/email-link-data?id_only')
+      .then((response) => { return response.data })
+    
+    const newData = await axios.get('http://localhost:5000/data')
+      .then((response) => { return response.data })
 
-  let docs = db_connect
-    .collection(collection)
-    .find(JSON.parse(query))
+    const filteredObjects = await newData.filter((newRecord) => {
+      return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
+    })
 
-  if (req.params.field) {
-    let { field } = req.params
-    let order = req.params.order || 1
-    response = docs.sort({ [field]: order })
+    const filteredResults = await filteredObjects.filter((obj) => {
+      return !recordIds.some((record) => { record.url === obj.url })
+    })
+
+    res.json(filteredResults)
+
+  } else {
+    let db_connect = dbo.getDb()
+    let response
+    let docs = db_connect
+      .collection(dbCollection)
+      .find(queryObj, queryOpts)
+  
+    if (field && sort) {
+      console.log({field, sort})
+      response = docs.sort({ [field]: sort })
+    }
+  
+    response
+      .toArray()
+      .then((data) => {
+        res.json(data)
+      })
+      .catch((e) => console.log(e))
+  
   }
 
-  response
-    .toArray()
-    .then((data) => {
-      res.json(data)
-    })
-    .catch((e) => console.log(e))
-
+  
 })
 
-recordRoutes.get('/populate-collection', async (req, res) => {
+recordRoutes.get('/maintenance/populate-collection', async (req, res) => {
   let db_connect = dbo.getDb()
   try {
     const result = await db_connect.collection(collection).aggregate([
@@ -71,10 +113,10 @@ recordRoutes.get('/populate-collection', async (req, res) => {
   }
 })
 
-recordRoutes.get('/get-duplicates', async (req, res) => {
-  const workingCollection = collection
+recordRoutes.get('/maintenance/get-duplicates/:collection/:deleteRecords', async (req, res) => {
+  const workingCollection = req.params.collection
 
-  const deleteRecords = false
+  const deleteRecords = req.params.deleteRecords ? true : false
 
   let db_connect = dbo.getDb()
   let results = []
@@ -163,54 +205,51 @@ recordRoutes.get('/get-duplicates', async (req, res) => {
 
 })
 
-recordRoutes.get('/fix-records', async (req, res) => {
-  let query = { org: { $exists: false } }
+recordRoutes.get('/maintenance/fix-records', async (req, res) => {
+  const workingCollection = linkContentData
+
+  let query = { id: { $type: ["double", "int", "long", "decimal"] , $ne: null } }
   let db_connect = dbo.getDb()
 
   let results = []
 
   await db_connect
-    .collection(collection)
+    .collection(workingCollection)
     .find(query)
     .toArray()
     .then((data) => {
-      console.log(data)
       console.log(`${data.length} records matching query: ${JSON.stringify(query)}`)
-
       results.push(...data)
 
-      // res.json({resultIds})
-
     })
     .catch((e) => console.log(e))
 
+  res.json(meta(results))
 
-  // let records = await db_connect
-  // .collection(collection)
-  // .find({ _id: { $in: results } })
-  // .toArray()
-  // .catch((e) => console.log(e))
+  results.forEach(async (doc) => {
+    let myquery = { _id: new ObjectId(doc._id) }
+    let newvalues = {}
 
-  // console.log(`${records.length} duplicate records found`)
+    newvalues.$set = { id: doc.id.toString() }
 
-  let resultIds = results.map((doc) => doc['_id'])
+    try {
+      db_connect
+        .collection(workingCollection)
+        .updateOne(myquery, newvalues)
+        .then((data) => {
+          console.log({ ...data, newvalues })
+        })
+        .catch((e) => console.log(e))
+    } catch (error) {
+      console.log('error @/record/:id PUT:', { error, body: req.body })
+    }
 
+  })
 
-  db_connect
-    .collection(collection)
-    .deleteMany({ _id: { $in: resultIds } })
-    .then((data) => {
-      console.log(data)
-      res.json(data)
-    })
-    .catch((e) => console.log(e))
-
-
-  // res.send(JSON.stringify(records, null, 4))
 
 })
 
-recordRoutes.route('/find-missing').get(async (req, res) => {
+recordRoutes.route('/maintenance/find-missing').get(async (req, res) => {
   const linkData = linkContentData
   const metaData = collection
   let db_connect = dbo.getDb()
@@ -249,54 +288,32 @@ recordRoutes.route('/find-missing').get(async (req, res) => {
 
 })
 
-recordRoutes.route('/backup').get(async function (req, res) {
+recordRoutes.route('/maintenance/clone/:source/:target').get(async function (req, res) {
   const db = dbo.getDb()
-  // const collection = linkContentData
-  // const backup = linkContentDataBackup
+  console.log({...req.params})
+  const { source, target } = req.params
+  const report = []
 
   try {
-    // Delete all documents in the backup collection
-    const deleteResult = await db.collection(backup).deleteMany({})
-    console.log(`Deleted ${deleteResult.deletedCount} documents from ${backup}`)
+    // Delete all documents in the target collection
+    const deleteResult = await db.collection(target).deleteMany({})
+    report.push(`Deleted ${deleteResult.deletedCount} documents from ${target}`)
 
-    // Find all documents in the email-link-data collection
-    const docs = await db.collection(collection).find().toArray()
+    // Find all documents in the source collection
+    const docs = await db.collection(source).find().toArray()
 
-    // Insert all documents into the backup collection
-    const result = await db.collection(backup).insertMany(docs)
+    // Insert all documents into the target collection
+    const result = await db.collection(target).insertMany(docs)
 
-    console.log(
-      `Inserted ${result.insertedCount} documents into ${backup}`
-    )
+    report.push(`Inserted ${result.insertedCount} documents into ${target}`)
 
-    res.send(`${collection} backed up successfully`)
+    report.push(`${source} cloned into ${target} successfully`)
+
+    res.send(report)
+
   } catch (err) {
     console.error(err)
-    res.status(500).send(`Failed to backup ${collection}`)
-  }
-})
-
-recordRoutes.route('/restore').get(async function (req, res) {
-  const db = dbo.getDb()
-  const collection = linkContentData
-  const backup = linkContentDataBackup
-
-  try {
-    const deleteResult = await db.collection(collection).deleteMany({})
-    console.log(`Deleted ${deleteResult.deletedCount} documents from ${collection}`)
-
-    const docs = await db.collection(backup).find().toArray()
-
-    const result = await db.collection(collection).insertMany(docs)
-
-    console.log(
-      `Inserted ${result.insertedCount} documents into ${backup}`
-    )
-
-    res.send(`${backup} restored successfully`)
-  } catch (err) {
-    console.error(err)
-    res.status(500).send(`Failed to restore ${backup}`)
+    res.status(500).send(`Failed to clone ${source}`)
   }
 })
 
@@ -364,33 +381,6 @@ recordRoutes.route('/record').get(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-recordRoutes.route('/record/new').get(async function (req, res) {
-  console.log(
-    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
-    req.body
-  )
-
-  const recordIds = await axios.get('http://localhost:5000/record?filter=none&id_only=true')
-    .then((response) => { return response.data })
-
-  const newData = await axios.get('http://localhost:5000/data')
-    .then((response) => { return response.data })
-
-  const filteredObjects = await newData.filter((newRecord) => {
-    return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
-  })
-
-  const filterdResults = await filteredObjects.filter((obj) => {
-    return !recordIds.some((record) => { record.url === obj.url })
-  })
-
-  try {
-    res.json(filterdResults)
-  } catch (error) {
-    console.log(error)
-  }
-})
-
 recordRoutes.route('/record/new').post(function (req, res) {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
@@ -444,25 +434,25 @@ recordRoutes.route('/record/:id').put(function (req, res) {
   let db_connect = dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
-  let updateFields = {};
-  let fieldsModified = [];
+  let updateFields = {}
+  let fieldsModified = []
 
   Object.keys(req.body).forEach((key) => {
     if (['positionStatus', 'status1', 'status2', 'status3', 'notes'].includes(key)) {
-      fieldsModified.push({ field: key, value: req.body[key], dateModified: new Date() });
+      fieldsModified.push({ field: key, value: req.body[key], dateModified: new Date() })
     }
     if (key !== '_id' && key !== 'dateModified' && key !== 'fieldsModified') {
       updateFields[key] = req.body[key]
     }
-  });
+  })
 
-  let newvalues = {};
+  let newvalues = {}
   if (Object.keys(updateFields).length > 0) {
-    newvalues.$set = updateFields;
-    newvalues.$set.dateModified = new Date().toISOString();
+    newvalues.$set = updateFields
+    newvalues.$set.dateModified = new Date().toISOString()
   }
   if (fieldsModified.length > 0) {
-    newvalues.$push = { fieldsModified: { $each: fieldsModified } };
+    newvalues.$push = { fieldsModified: { $each: fieldsModified } }
   }
 
   try {
@@ -591,3 +581,57 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
 })
 
 module.exports = recordRoutes
+
+const processor = (data) => {
+  const doc = document.createElement('div')
+  doc.innerHTML = data
+  return doc.innerText
+}
+let fieldsToCheck = ['jobDescriptionText', 'salaryInfoAndJobType', 'qualificationsSection']
+let processed = []
+
+const process = async () => {
+  const shape = {
+    org,
+    role,
+    location,
+    jobDescriptionText, 
+    salaryInfoAndJobType,
+    qualificationsSection
+  }
+
+  const outputShape = {
+    summary: '', // summary of job description
+    skills: {
+      minimum: [], // minimum skills required
+      extras: [], // nice to haves but not mandatory
+    }, 
+    qualifications: {
+      minimum: [], // minimum qualifications required
+      extras: [], // nice to haves but not mandatory
+    },
+    salary: 0, // convert to hourly
+    workType: '' // remote, hybrid, on-site 
+  }
+
+  await fetch('http://localhost:5000/record/84234dfbaf28c10d/linkdata')
+  .then(data => data.json())
+  .then((response) => {
+    let obj = {}
+
+    fieldsToCheck.forEach((field) => {
+      if (response[field]) {
+        obj[field] = processor(response[field])
+      }
+    })
+
+    processed.dateModified = new Date().toISOString()
+    processed.push(obj)
+
+  })
+
+  console.log(processed)
+  return
+}
+
+// process()

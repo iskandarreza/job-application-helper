@@ -11,7 +11,9 @@ const checkAppiedStatus = async (ws, lastCheck) => {
   console.log({ numOfHoursAgo: numOfHoursAgo.toString(), lastCheck })
 
   if (numOfHoursAgo > 4) {
-    const records = await axios.get('http://localhost:5000/record?filter=applied')
+    const query = {}
+    const records = await axios.post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
+
     .then((response) => {
       return response.data
     })

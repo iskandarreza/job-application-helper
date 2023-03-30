@@ -38,19 +38,13 @@ wss.on('connection', async (ws) => {
         positionStatus: 'open'
       }
 
-      const records = await axios.post('http://localhost:5000/runquery/dateModified/1', query)
+      const records = await axios.post('http://localhost:5000/records/email-link-data/', query)
       .then((response) => {
         console.log(`${response.data.length} open records in total`)
         return response.data
       })
       .catch((error) => console.error(error))
   
-      // console.log([
-      //   ...meta(records.slice(0, 5)),
-      //   ['-----BREAK-----'], 
-      //   ...meta(records.slice(records.length - 5, records.length))
-      // ])
-
       let result = await fetchPagesData(meta(records.slice(0, 24)), ws)
       let payload = { 
         action: 'UPDATE_24_OLDEST_SUCCESS', 

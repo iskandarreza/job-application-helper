@@ -12,7 +12,7 @@ const checkForNewRecords = async (ws) => {
     let newData = []
     
     const hasNewRecords = await axios
-      .get('http://localhost:5000/record/new')
+      .post('http://localhost:5000/records/email-link-data/?new')
       .then(({ data }) => {
         newData = [...meta(data)]
         return data.length > 0

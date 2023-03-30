@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const runQuery = async (query) => {
   return axios
-    .post('http://localhost:5000/runquery/dateModified/1', query)
+    .post('http://localhost:5000/records/email-link-data/', query)
     .then((response) => {
       return response.data
     })
@@ -12,8 +12,9 @@ export const runQuery = async (query) => {
 }
 
 export const getRecords = async () => {
+  const query = {}
   return axios
-    .get('http://localhost:5000/record')
+    .post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
     .then((response) => {
       return response.data
     })
