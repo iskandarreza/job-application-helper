@@ -46,7 +46,7 @@ export const JobDescriptionDialog = () => {
   }
 
   const handleUpdateData = () => {
-    dispatch(sendToServiceWorker({ data: { _id, id, url }, action: 'UPDATE_LINK_DATA' }))
+    dispatch(sendToServiceWorker({ data: { _id, id, org, role, location, url }, action: 'UPDATE_LINK_DATA' }))
     handleClose()
   }
 
