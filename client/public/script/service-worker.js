@@ -1,7 +1,7 @@
 const self = this
 let wSocket
 let messageClient
-let taskQueue = []
+let clientMessageQueue = []
 
 const taskReducer = async (task) => {
   const { data, client } = task
@@ -15,15 +15,21 @@ const taskReducer = async (task) => {
         data: payload
       }))
       break
-    default:
+    case 'GENERATE_SUMMARY':
+      sendWS(JSON.stringify({
+        message: 'Generate summary',
+        data: payload
+      }))
+      break
+      default:
       break
   }
 }
 
 const processQueue = async () => {
   // If queue is not empty, process the next task
-  if (taskQueue.length > 0) {
-    let task = taskQueue.shift()
+  if (clientMessageQueue.length > 0) {
+    let task = clientMessageQueue.shift()
     let { client } = task 
 
     let dispatchMsg = JSON.stringify({ message: 'Task added to queue for processing', task })
@@ -109,7 +115,7 @@ const messageListener = (event) => {
         sendWS(checkForNewRecords)
       } else {
         try {
-          taskQueue.push({ data, client })
+          clientMessageQueue.push({ data, client })
           processQueue()
         } catch (error) {
           console.log(error)

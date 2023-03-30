@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { fetchJobDescription, openJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { fetchJobDescription, fetchJobSummary, openJobDescriptionDialog } from '../../redux/actions/uiActions'
 import { useTheme } from '@emotion/react'
 
 export const RenderRoleCell = (params) => {
@@ -17,6 +17,7 @@ export const RenderRoleCell = (params) => {
     const rowData = { ...row }
 
     dispatch(fetchJobDescription(rowData, crawlDate))
+    dispatch(fetchJobSummary(rowData.id))
     dispatch(openJobDescriptionDialog())
   }
 

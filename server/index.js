@@ -19,42 +19,60 @@ const checkAppiedStatus = require("./tasks/checkAppliedStatus")
 const fetchPagesData = require("./tasks/fetchPagesData")
 const meta = require("./meta")
 
+const generateChatPrompt = require("./chatgpt/generateChatPrompt")
+const sendPrompt = require("./chatgpt")
+const generateSummary = require("./tasks/generateSummary")
+
 wss.on('connection', async (ws) => {
   let lastFetch
   let lastCheck
   ws.on('message', async (data) => {
-    const {message} = JSON.parse(data)
-    if (message === 'Check for new records') {
-      await checkForNewRecords(ws)
-      lastFetch = new Date().toISOString()
-    }
-    if (message === 'Check applied postings status') {
-      await checkAppiedStatus(ws, lastCheck)
-      lastCheck = new Date().toISOString()
-    }
-    if (message === 'Check oldest 24 open records') {
-      const { default: axios } = require("axios")
-      const query = {
-        positionStatus: 'open'
+    const { message } = JSON.parse(data)
+    const startupCheck = false
+
+    if (startupCheck) {
+
+      if (message === 'Check for new records') {
+        await checkForNewRecords(ws)
+        lastFetch = new Date().toISOString()
       }
 
-      const records = await axios.post('http://localhost:5000/records/email-link-data/', query)
-      .then((response) => {
-        console.log(`${response.data.length} open records in total`)
-        return response.data
-      })
-      .catch((error) => console.error(error))
-  
-      let result = await fetchPagesData(meta(records.slice(0, 24)), ws)
-      let payload = { 
-        action: 'UPDATE_24_OLDEST_SUCCESS', 
-        data: { 
-          message: `${result} records refreshed`, 
-          timestamp: new Date().toISOString()
-        } 
+      if (message === 'Check applied postings status') {
+        await checkAppiedStatus(ws, lastCheck)
+        lastCheck = new Date().toISOString()
       }
-      sendMessage(ws, payload)
+
+      if (message === 'Check oldest 24 open records') {
+        const { default: axios } = require("axios")
+        const query = {
+          positionStatus: 'open'
+        }
+
+        const records = await axios.post('http://localhost:5000/records/email-link-data/', query)
+          .then((response) => {
+            console.log(`${response.data.length} open records in total`)
+            return response.data
+          })
+          .catch((error) => console.error(error))
+
+        let result = await fetchPagesData(meta(records.slice(0, 24)), ws)
+        let payload = {
+          action: 'UPDATE_24_OLDEST_SUCCESS',
+          data: {
+            message: `${result} records refreshed`,
+            timestamp: new Date().toISOString()
+          }
+        }
+        sendMessage(ws, payload)
+      }
+
     }
+
+    if (message === 'Generate summary') {
+      let { data: record } = JSON.parse(data)
+      await generateSummary(ws, record)
+    }
+
     if (message === 'Refresh single record') {
       let { data: record } = JSON.parse(data)
       await fetchPagesData(meta([record]), ws)

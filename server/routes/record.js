@@ -506,17 +506,12 @@ recordRoutes.route('/record/:id/linkdata').get(async function (req, res) {
 
   let db_connect = dbo.getDb()
   let myquery = { id: { $eq: req.params.id } }
-  let id = req.params.id
-  if (isNaN(id)) {
-    myquery = { id: { $eq: String(req.params.id) } }
-  } else {
-    myquery = { id: parseInt(id) }
-  }
 
   db_connect
     .collection(linkContentData)
     .findOne(myquery)
     .then((data) => {
+      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -580,58 +575,57 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-module.exports = recordRoutes
+recordRoutes.route('/record/:id/summary').post(async function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
 
-const processor = (data) => {
-  const doc = document.createElement('div')
-  doc.innerHTML = data
-  return doc.innerText
-}
-let fieldsToCheck = ['jobDescriptionText', 'salaryInfoAndJobType', 'qualificationsSection']
-let processed = []
+  let db_connect = dbo.getDb()
+  let myquery = { id: { $eq: req.params.id } }
 
-const process = async () => {
-  const shape = {
-    org,
-    role,
-    location,
-    jobDescriptionText, 
-    salaryInfoAndJobType,
-    qualificationsSection
-  }
+  let record = req.body
 
-  const outputShape = {
-    summary: '', // summary of job description
-    skills: {
-      minimum: [], // minimum skills required
-      extras: [], // nice to haves but not mandatory
-    }, 
-    qualifications: {
-      minimum: [], // minimum qualifications required
-      extras: [], // nice to haves but not mandatory
-    },
-    salary: 0, // convert to hourly
-    workType: '' // remote, hybrid, on-site 
-  }
+  let updateFields = {}
 
-  await fetch('http://localhost:5000/record/84234dfbaf28c10d/linkdata')
-  .then(data => data.json())
-  .then((response) => {
-    let obj = {}
-
-    fieldsToCheck.forEach((field) => {
-      if (response[field]) {
-        obj[field] = processor(response[field])
-      }
-    })
-
-    processed.dateModified = new Date().toISOString()
-    processed.push(obj)
-
+  Object.keys(record).forEach((key) => {
+    if (key !== '_id' && key !== 'id') {
+      updateFields[key] = record[key]
+    }
   })
 
-  console.log(processed)
-  return
-}
+  let newvalues = {};
+  if (Object.keys(updateFields).length > 0) {
+    newvalues.$set = updateFields
+    newvalues.$set.dateModified = new Date().toISOString()
+  }
 
-// process()
+  const chatgptSummary = 'chatgpt-summary-responses'
+  db_connect
+    .collection(chatgptSummary)
+    .findOne(myquery)
+    .then((doc) => {
+      if (doc) {
+        db_connect
+          .collection(chatgptSummary)
+          .updateOne(myquery, newvalues)
+          .then((data) => {
+            data.query = myquery
+            data.updateValue = newvalues
+            res.json(data)
+          })
+          .catch((e) => console.log(e))
+      } else {
+        db_connect
+          .collection(chatgptSummary)
+          .insertOne(record)
+          .then((data) => {
+            res.json(data)
+          })
+          .catch((e) => console.log(e))
+      }
+    })
+    .catch((e) => console.log(e))
+})
+
+module.exports = recordRoutes

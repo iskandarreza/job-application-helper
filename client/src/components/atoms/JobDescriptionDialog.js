@@ -31,6 +31,7 @@ export const JobDescriptionDialog = () => {
     qualificationsSection: '',
     crawlDate: 'N/A'
   }
+  const summary = useSelector((state) => state.uiStates.jobSummaryDialogContent) || null
   const dispatch = useDispatch()
   const {
     rowData, 
@@ -46,8 +47,27 @@ export const JobDescriptionDialog = () => {
   }
 
   const handleUpdateData = () => {
-    dispatch(sendToServiceWorker({ data: { _id, id, url }, action: 'UPDATE_LINK_DATA' }))
+    dispatch(sendToServiceWorker({ data: { _id, id, org, role, location, url, dialogData }, action: 'UPDATE_LINK_DATA' }))
     handleClose()
+  }
+
+  const handleGetSummary = () => {
+      const {id, role, org, location } = dialogData
+      const fieldsToCheck = ['jobDescriptionText', 'salaryInfoAndJobType', 'qualificationsSection']
+      let promptData = { id, role, org, location, url }
+
+      fieldsToCheck.forEach((field) => {
+        if (dialogData[field]) {
+          promptData[field] = dialogData[field]
+        }
+      })
+
+      dispatch(sendToServiceWorker({ data: { ...promptData }, action: 'GENERATE_SUMMARY' }))
+    handleClose()
+  }
+
+  const handleShowSummary = () => {
+    console.log(summary)
   }
 
   return (
@@ -84,7 +104,12 @@ export const JobDescriptionDialog = () => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button variant='outlined' onClick={handleUpdateData}>Update Data</Button>
+          <Button variant='outlined' onClick={handleUpdateData}>Fetch Page Data</Button>
+          {
+            !summary ?
+              <Button variant='outlined' onClick={handleGetSummary}>Generate Summary</Button>
+              : <Button variant='outlined' onClick={handleShowSummary}>Show Summary</Button>
+          }
           <Button variant='outlined' onClick={handleClose}>Close</Button>
         </DialogActions>
       </Container>
