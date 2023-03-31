@@ -15,7 +15,11 @@ const sendPrompt = async (prompt) => {
     model: "gpt-3.5-turbo",
     messages: prompt,
     temperature: 0.4,
+    // max_tokens: 1800
   }
+  console.log('----------------SENDING PROMPT TO OPENAI---------------------')
+  console.log('model: ' + chatInput.model)
+  console.log('----------------SENDING PROMPT TO OPENAI---------------------')
 
   const completion = await openai.createChatCompletion(chatInput)
 

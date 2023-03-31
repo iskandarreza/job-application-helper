@@ -509,7 +509,6 @@ recordRoutes.route('/record/:id/linkdata').get(async function (req, res) {
     .collection(linkContentData)
     .findOne(myquery)
     .then((data) => {
-      console.log(data)
       res.json(data)
     })
     .catch((e) => console.log(e))
@@ -625,5 +624,31 @@ recordRoutes.route('/record/:id/summary').post(async function (req, res) {
     })
     .catch((e) => console.log(e))
 })
+
+recordRoutes.route('/logging/chatgpt-error-log').post(function (req, res) {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
+  const now = new Date()
+  let db_connect = dbo.getDb()
+  let record = req.body
+
+  record.dateAdded = now
+
+  try {
+    db_connect
+      .collection('chatgpt-error-log')
+      .insertOne(record)
+      .then((data) => {
+        res.json(data)
+      })
+      .catch((e) => console.log(e))
+  } catch (error) {
+    console.log('error @/logging/chatgpt-error-log POST:', { error, body: record })
+  }
+})
+
 
 module.exports = recordRoutes

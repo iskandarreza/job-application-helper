@@ -19,8 +19,6 @@ const checkAppiedStatus = require("./tasks/checkAppliedStatus")
 const fetchPagesData = require("./tasks/fetchPagesData")
 const meta = require("./meta")
 
-const generateChatPrompt = require("./chatgpt/generateChatPrompt")
-const sendPrompt = require("./chatgpt")
 const generateSummary = require("./tasks/generateSummary")
 
 wss.on('connection', async (ws) => {
@@ -28,7 +26,7 @@ wss.on('connection', async (ws) => {
 
   ws.on('message', async (data) => {
     const { message } = JSON.parse(data)
-    const startupCheck = true
+    const startupCheck = false
     const checkNew = true
     const checkApplied = true
     const checkOld = true
@@ -96,6 +94,105 @@ wss.on('connection', async (ws) => {
     const data = { lastFetch: false }
     const payload = { action: 'LAST_FETCH_FALSE', data }
     sendMessage(ws, payload)
+
+    const query = {
+      "$and": [
+        {
+          "positionStatus": "open"
+        },
+        {
+          "externalSource": "true"
+        },
+        {
+          "status1": {
+            "$ne": "applied"
+          }
+        },
+        {
+          "status1": {
+            "$ne": "uncertain"
+          }
+        },
+        {
+          "status1": {
+            "$ne": "declined"
+          }
+        }
+      ]
+    }
+
+    let records = []
+    await axios
+      .post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
+      .then(({ data }) => {
+        records = [...meta(data)]
+        return data
+      })
+
+sendMessage(ws, {
+  message: `${records.length} RECORDS MATCHED`,
+  data: records
+})
+
+    for (const record of records) {
+      const { id } = record
+      let result
+      await axios.post('http://localhost:5000/records/chatgpt-summary-responses/', { id })
+        .then(async ({ data }) => {
+          // check if record already exist, replace only if summary is malformed
+          if (data.length >= 1) {
+            try {
+              result = JSON.parse(data[0].response.result)
+              // sendMessage(ws, {
+              //   message: 'SUMMARY_PARSE_SUCCESS',
+              //   data: data,
+              //   parsed: result 
+              // })
+            } catch (error) {
+              let test = data[0].response.result
+
+              try {
+                if (test.hasOwnProperty('summary')) {
+                  summary = data[0].response.result
+
+                }
+              } catch (error) {
+
+                await axios
+                .post('http://localhost:5000/logging/chatgpt-error-log', {
+                  type: 'SUMMARY_PARSE_ERROR',
+                  data: data,
+                  parsed: result
+                })
+                .catch((error) => {
+                  console.error(error)
+                })
+
+                sendMessage(ws, {
+                  message: 'SUMMARY_PARSE_ERROR',
+                  data: data,
+                  parsed: result
+                })
+              }
+
+            }
+
+            if (result?.summary === '') {
+              await initPromptSetup(record, ws)
+            } else {
+              
+            }
+
+          } else {
+            await initPromptSetup(record, ws)
+
+          } 
+          
+        })
+
+
+
+      }
   }
 })
 
@@ -157,3 +254,34 @@ process.on('SIGINT', function () {
     process.exit(0)
   })
 })
+
+const initPromptSetup = async (record, ws, skipRecord) => {
+  if (!skipRecord) {
+    const { id, role } = record
+    const fieldsToCheck = ['jobDescriptionText', 'salaryInfoAndJobType', 'qualificationsSection']
+    const hasAtLeastOneProp = (obj) => fieldsToCheck.some(prop => obj.hasOwnProperty(prop))
+  
+    let description = await axios
+      .get(`http://localhost:5000/record/${id}/linkdata`)
+      .then((response) => {
+        return response.data
+      })
+      .catch((error) => sendMessage(ws, error))
+  
+    let promptData = { id, role }
+  
+    fieldsToCheck.forEach((field) => {
+      if (description[field]) {
+        promptData[field] = description[field]
+      }
+    })
+    if (hasAtLeastOneProp) {
+      await generateSummary(ws, promptData)
+    }
+  } else{
+    skipRecord = sendMessage(ws, {
+      message: 'Not implemented yet',
+      data: skipRecord
+    })
+  }
+}

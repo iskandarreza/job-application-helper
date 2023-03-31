@@ -5,6 +5,7 @@ import Box from '@mui/material/Box'
 import RoleDescriptionContainer from './RoleDescriptionContainer'
 import RoleSummaryContainer from './RoleSummaryContainer'
 import { useSelector } from 'react-redux'
+import RoleExtraDataContainer from './RoleExtraDataContainer'
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -43,7 +44,8 @@ const RoleDetailsTabs = () => {
   }
 
   React.useEffect(() => {
-    setTabStartIndex(summary ? 1 : 0)
+    let index = summary ? 1 : 0
+    setTabStartIndex(index)
   }, [summary])
 
   return (
@@ -65,7 +67,9 @@ const RoleDetailsTabs = () => {
           <RoleDescriptionContainer />
         </TabPanel>
         <TabPanel value={value} index={tabStartIndex + 1}>
-          Coming soon...
+          { summary ? 
+            <RoleExtraDataContainer /> : ''
+          }
         </TabPanel>
       </Box>
     </Box>

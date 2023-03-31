@@ -23,26 +23,34 @@ const outpuFormat = `{
 JSON: Can you please provide me with the JSON object only, and exclude any other information. Output only
 `
 
-module.exports = generateChatPrompt = async(dialogData) => {
+module.exports = generateChatPrompt = async(input) => {
 
-  console.log(dialogData)
+  const fieldsToCheck = ['jobDescriptionText', 'salaryInfoAndJobType', 'qualificationsSection']
 
-  delete dialogData.rowData
-  delete dialogData.crawlDate
-  delete dialogData._id
-  delete dialogData.redirected
-  delete dialogData.status
-  delete dialogData.dateModified
-  delete dialogData.externalSource
+  const makeObj = (sourceObj) => {
+    return Object.keys(sourceObj)
+    .filter(key => fieldsToCheck.includes(key))
+    .reduce((obj, key) => {
+      obj[key] = sourceObj[key]
+      return obj;
+    }, {})
+  }
+
+  const dialogData = makeObj(input)
+
+  const markdown = Object.keys(dialogData)
+  .filter(key => fieldsToCheck.includes(key))
+  .map(key => dialogData[key])
+  .join('')
 
   return {
       prompt: [
-          {"role": "system", "content": "You are a contextual data analysis engine, ready to receive a JSON input and extract relevant data and produce a JSON output."},
-          {"role": "user", "content": "Consider the following 'inputData' JSON object and all it's properties:"},
-          {"role": "user", "content": `const inputData = ${JSON.stringify(dialogData)}`},
+          {"role": "system", "content": "You are a contextual data analysis engine, ready to receive a markdown input and extract relevant data and produce a JSON output."},
+          {"role": "user", "content": "Consider the following markdown:"},
+          {"role": "user", "content": `${markdown}`},
           {"role": "user", "content": 'Now extract the relevant information and fill in the data into the JSON object below, with the comments next to the object properties defining the limitations:'},
           {"role": "user", "content": `${outpuFormat}`}
       ],
-      title: `Convert input JSON to output JSON`,
+      title: `Convert input markdown to output JSON`,
   }
 }

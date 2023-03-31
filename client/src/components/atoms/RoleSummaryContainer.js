@@ -14,6 +14,7 @@ const useStyles = makeStyles((theme) => ({
 const RoleSummaryContainer = () => {
   const data = useSelector((state) => state.uiStates.jobSummaryDialogContent) || ''
   const [value, setValue] = useState(JSON.parse(data?.response?.result))
+  const { _id } = data
 
   useEffect(() => {
     const {
@@ -41,7 +42,7 @@ const RoleSummaryContainer = () => {
 
   return (
     <div className={classes.roleSummary}>
-      {value ?
+      {value && value.summary !== '' ?
         <>
           <p>{value.summary}</p>
           <br />
@@ -49,31 +50,27 @@ const RoleSummaryContainer = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
 
             <div>
-              <p>
-                <strong>Skills</strong>
-                <ul>
-                  <em><small>Minimum</small></em>
-                  {value.skills.minimum.map(({ keyword, type }) => <li>{keyword}</li>)}
-                </ul>
-                <ul>
-                  <em><small>Extras</small></em>
-                  {value.skills.extras.map((item) => <li>{item}</li>)}
-                </ul>
-              </p>
+              <strong>Skills</strong>
+              <ul>
+                <em><small>Minimum</small></em>
+                {value.skills.minimum.map(({ keyword, type }, i) => <li key={`sm-${_id}-${i}`}>{keyword}</li>)}
+              </ul>
+              <ul>
+                <em><small>Extras</small></em>
+                {value.skills.extras.map((item, i) => <li key={`sx-${_id}-${i}`}>{item}</li>)}
+              </ul>
             </div>
 
             <div>
-              <p>
-                <strong>Responsibilities</strong>
-                <ul>
-                  {value.responsibilities.map((item) => <li>{item}</li>)}
-                </ul>
-              </p>
+              <strong>Responsibilities</strong>
+              <ul>
+                {value.responsibilities.map((item, i) => <li key={`r-${_id}-${i}`}>{item}</li>)}
+              </ul>
             </div>
 
           </Box>
         </>
-        : ''}
+        : `Failed to generate summary, prompt token cost exceeded limit: ${data.response?.prompt_tokens} tokens`}
     </div>
   )
 }

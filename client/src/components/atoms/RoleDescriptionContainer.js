@@ -1,14 +1,27 @@
 import { Box, Container } from '@mui/system'
 import Parser from 'html-react-parser'
+import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 
 const RoleDescriptionContainer = () => {
+  const [mainText, setMaintext] = useState('')
   const {
     crawlDate, 
     jobDescriptionText, 
     salaryInfoAndJobType, 
     qualificationsSection 
   } = useSelector((state) => state.uiStates.jobDescriptionDialogContent)
+
+  useEffect(() => {
+    if (jobDescriptionText) {
+      let node = document.createElement('div')
+      node.insertAdjacentHTML('afterbegin', jobDescriptionText)
+      node.querySelectorAll('icon').forEach((element) => {element.remove()})
+      node.querySelectorAll('button').forEach((element) => {element.remove()})
+
+      setMaintext(node.innerHTML)
+    }
+  }, [jobDescriptionText])
 
   return (
     <Container>
@@ -31,7 +44,7 @@ const RoleDescriptionContainer = () => {
         {qualificationsSection ? Parser(qualificationsSection) : ''}
       </Box>
       <Box sx={{ marginTop: '15px' }}>
-        {jobDescriptionText ? Parser(jobDescriptionText) : ''}
+        {jobDescriptionText ? Parser(mainText) : ''}
       </Box>
 
     </Container>
