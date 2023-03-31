@@ -16,6 +16,7 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
   * present that data using MUI X DataGrid 
   * filter/edit that data, then save it to the connected database in the server backend
   * manually trigger Puppeteer on the Express server to check the open/expired/closed status of the job and update the database
+  * send an API call to OpenAI to use the gpt-3.5-turbo model to generate a summary and produce the output in JSON format for consumption by the frontend 
   
 ### Still in development:
 * Host it somewhere where it can run on schedule? Or leave it local and on-demand? 
@@ -39,3 +40,4 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
 * React frontend serving data using Material UI X DataGrid
 * Express server backend serving data from MongoDB Atlas Cloud and Google Apps Script API
 * Puppeteer script to collect publicly viewable data from Indeed and/or LinkedIn completed
+* ChatGPT for summarizing and formatting the data completed

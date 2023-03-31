@@ -2,10 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
 import { Box, Tooltip } from '@mui/material'
 
-import { JobLinkButtonRenderer } from './atoms/JobLinkButtonRenderer'
-import { RenderSelectMenu } from './atoms/RenderSelectMenu'
-import { CustomToolbar } from './atoms/JobLinksToolBar'
-import { AddRowForm } from './atoms/JobRecordInsert'
+import RenderSelectMenu from './atoms/RenderSelectMenu'
+import RenderLastModifiedText from './atoms/RenderLastModifiedText'
+import RenderRoleCell from './atoms/RenderRoleCell'
+import JobLinkButtonRenderer from './atoms/JobLinkButtonRenderer'
+
+import CustomToolbar from './atoms/JobLinksToolBar'
+import AddRowForm from './atoms/JobRecordInsert'
+import JobDescriptionDialog from './JobDescriptionDialog'
 
 import '../index.scss'
 
@@ -14,9 +18,6 @@ import {
   fetchJobs,
   updateRecord,
 } from '../redux/actions/jobActions'
-import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
-import { RenderRoleCell } from './atoms/RenderRoleCell'
-import { JobDescriptionDialog } from './atoms/JobDescriptionDialog'
 
 import { toast } from 'react-toastify'
 import { useTheme } from '@emotion/react'

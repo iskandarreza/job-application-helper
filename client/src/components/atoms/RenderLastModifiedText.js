@@ -1,5 +1,5 @@
 
-export const RenderLastModifiedText = (params) => {
+const RenderLastModifiedText = (params) => {
   const timeDifferenceFromNow = (dateString) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -28,3 +28,5 @@ export const RenderLastModifiedText = (params) => {
     
   )
 }
+
+export default RenderLastModifiedText

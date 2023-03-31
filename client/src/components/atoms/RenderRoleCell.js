@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux'
 import { fetchJobDescription, fetchJobSummary, openJobDescriptionDialog } from '../../redux/actions/uiActions'
 import { useTheme } from '@emotion/react'
 
-export const RenderRoleCell = (params) => {
+const RenderRoleCell = (params) => {
   const { row } = params
   const { role, crawlDate } = row || { role: '', crawlDate: '' }
 
@@ -13,11 +13,8 @@ export const RenderRoleCell = (params) => {
 
 
   const handleClick = () => {
-    const { crawlDate } = row
-    const rowData = { ...row }
-
-    dispatch(fetchJobDescription(rowData, crawlDate))
-    dispatch(fetchJobSummary(rowData.id))
+    dispatch(fetchJobDescription(row))
+    dispatch(fetchJobSummary(row.id))
     dispatch(openJobDescriptionDialog())
   }
 
@@ -47,5 +44,6 @@ export const RenderRoleCell = (params) => {
         </Tooltip>}
     </>
   )
-
 }
+
+export default RenderRoleCell

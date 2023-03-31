@@ -15,7 +15,7 @@ const useStyles = makeStyles(() => ({
   }
 }))
 
-export const RenderSelectMenu = ({ params, menuOptions }) => {
+const RenderSelectMenu = ({ params, menuOptions }) => {
   const dispatch = useDispatch()
   const [value, setValue] = useState(params.value ?? '')
 
@@ -59,3 +59,5 @@ export const RenderSelectMenu = ({ params, menuOptions }) => {
     </Select>
   )
 }
+
+export default RenderSelectMenu

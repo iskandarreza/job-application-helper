@@ -33,7 +33,7 @@ export const closeSnackbarMessage = createAction(CLOSE_SNACKBAR)
 export const fetchJobDescription = (rowData, crawlDate) => async (dispatch) => {
   const { id } = rowData
   const data = await getLinkData(id)
-  dispatch(fetchJobDescriptionDialogContent({ rowData,  crawlDate, ...data }))
+  dispatch(fetchJobDescriptionDialogContent({ rowData, data: { crawlDate, ...data } }))
 }
 
 export const fetchJobSummary = (id) => async (dispatch) => {

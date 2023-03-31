@@ -12,7 +12,7 @@ const checkForNewRecords = async (ws) => {
     let newData = []
     
     const hasNewRecords = await axios
-      .post('http://localhost:5000/records/email-link-data/?new')
+      .post('http://localhost:5000/records/email-link-data/?new=true')
       .then(({ data }) => {
         newData = [...meta(data)]
         return data.length > 0
@@ -22,7 +22,10 @@ const checkForNewRecords = async (ws) => {
       let recordNoun = newData.length > 1 ? 'records' :
         newData.length === 0 ? recordNoun = 'no' : 'record'
       const message1 = `${newData.length} new ${recordNoun} queued`
-      const message2 = {action: 'FETCH_NEW_RECORDS_BEGIN', data: 'Content will be fetched in the background'}
+      const message2 = {action: 'FETCH_NEW_RECORDS_BEGIN', data: {
+        message: 'Content will be fetched in the background',
+        data: newData
+      }}
       const fetchPagesData = require("./fetchPagesData")
 
       sendMessage(ws, message1)

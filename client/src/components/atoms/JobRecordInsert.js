@@ -3,7 +3,7 @@ import { Box, TextField, Button } from '@mui/material'
 import { Add } from '@mui/icons-material'
 import { highlightJob, insertRecord } from '../../redux/actions/jobActions'
 import { useDispatch, useSelector } from 'react-redux'
-import CustomSelect from './CustomSelect'
+import RenderCustomSelect from './CustomSelect'
 
 const defaultValidationMessage = 'Please fill out all fields.'
 const status1ValidationMessage = 'Please select a valid status.'
@@ -20,7 +20,7 @@ const rowModel = {
   status1: '',
 }
 
-export const AddRowForm = () => {
+const AddRowForm = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const dispatch = useDispatch()
   const [row, setRow] = useState(rowModel)
@@ -180,7 +180,7 @@ export const AddRowForm = () => {
                 }
               />
             ) : (
-              <CustomSelect
+              <RenderCustomSelect
                 id={key}
                 name={key}
                 value={row[key]}
@@ -211,3 +211,5 @@ export const AddRowForm = () => {
     </Box>
   )
 }
+
+export default AddRowForm

@@ -19,8 +19,8 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
   const { body, query } = req
   const field = query.field || 'dateModified'
   const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : 1
-  const idOnly = query.id_only == '' ? true : false
-  const newRecords = query.new === '' ? true : false
+  const idOnly = query.id_only == 'true' ? true : false
+  const newRecords = query.new === 'true' ? true : false
   const queryObj = body
 
   const queryOpts = idOnly ? {
@@ -33,7 +33,6 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
       status2: 0,
       status3: 0,
       notes: 0,
-      extraData: 0,
       dateAdded: 0,
       dateModified: 0,
       crawlDate: 0,
@@ -43,7 +42,7 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
 
   if (newRecords) {
     
-    const recordIds = await axios.post('http://localhost:5000/records/email-link-data?id_only')
+    const recordIds = await axios.post('http://localhost:5000/records/email-link-data?id_only=true')
       .then((response) => { return response.data })
     
     const newData = await axios.get('http://localhost:5000/data')
@@ -362,7 +361,6 @@ recordRoutes.route('/record').get(async function (req, res) {
         status2: 0,
         status3: 0,
         notes: 0,
-        extraData: 0,
         dateAdded: 0,
         dateModified: 0,
         crawlDate: 0,

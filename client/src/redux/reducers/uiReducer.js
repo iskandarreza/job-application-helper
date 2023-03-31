@@ -9,7 +9,20 @@ const {
 
 const initialState = {
   jobDescriptionDialogOpen: false,
-  jobDescriptionDialogContent: null,
+  activeRow: {
+    _id: '',
+    id: '',
+    org: '',
+    role: '',
+    location: '',
+    url: '',
+  },
+  jobDescriptionDialogContent: {
+    jobDescriptionText: '',
+    salaryInfoAndJobType: '',
+    qualificationsSection: '',
+    crawlDate: 'N/A'
+  },
   jobSummaryDialogContent: null,
   snackbar: {
     isOpen: false,
@@ -28,14 +41,18 @@ const jobDescriptionDialogClose = (state) => {
   return {
     ...state,
     jobDescriptionDialogOpen: false,
-    jobDescriptionDialogContent: null
+    jobDescriptionDialogContent: initialState.jobDescriptionDialogContent
   }
 }
 
 const jobDescriptionDialogContent = (state, payload) => {
   return {
     ...state,
-    jobDescriptionDialogContent: payload
+    activeRow: payload.rowData,
+    jobDescriptionDialogContent: { 
+      ...payload.data, 
+      crawlDate:  payload.rowData.crawlDate 
+    }
   }
 }
 

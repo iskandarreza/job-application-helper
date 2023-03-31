@@ -1,6 +1,6 @@
 const outpuFormat = `{
   summary: '', // summary of job description (summarize to under 200 characters)
-  responsibiities: [], // array of tasks/responsibiities, summarized to up to 6 items , not more than 12 words each
+  responsibilities: [], // array of tasks/responsibilities, summarized to up to 6 items , not more than 12 words each
   skills: { // 
     minimum: [{
     keyword: '',
@@ -13,9 +13,9 @@ const outpuFormat = `{
     extras: [], // nice to haves but not mandatory, list as short phrases up to 5 words
   },
   salary: {
-  hourly: '0', // if "inputData.salaryInfoAndJobType" has the information, convert to hourly, set 0 if data unavailable in "inputData.salaryInfoAndJobType" or "inputData.jobDescriptionText", number as string
-  estimate: '0' // if using an estimate because no data is available in "inputData.salaryInfoAndJobType" or "inputData.jobDescriptionText", fill this
-  
+    hourly: '0', // if "inputData.salaryInfoAndJobType" has the information, convert to hourly, set 0 if data unavailable in "inputData.salaryInfoAndJobType" or "inputData.jobDescriptionText", number as string
+    estimate: '0' // if using an estimate because no data is available in "inputData.salaryInfoAndJobType" or "inputData.jobDescriptionText", fill this
+  },
   workType: '', // labels are strictly 'remote', 'hybrid', or 'on-site'
   note: '', // additional note or context
 }

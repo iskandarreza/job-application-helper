@@ -31,13 +31,14 @@ const crawlJobPage = async (jobId, hostdomain) => {
   data.redirected = 'false'
   data.externalSource = 'false'
   data.status = 'open'
-  page.on('request', (request) => {
+  page.on('request', async (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
       console.log(chalk.bgYellow(`Redirected to ${request.redirectChain()[0].url()}`))
       redirected = true
-      console.log('Redirected')
+      console.log(chalk.magentaBright('Redirected'))
       data.redirected = 'true'
-      data.status = 'closed'
+      await page.screenshot({ path: `redirected-${hostdomain}-${jobId}.png` })
+
     }
   })
 
@@ -68,9 +69,10 @@ const crawlJobPage = async (jobId, hostdomain) => {
           }
             
         } catch (error) {
-
-          data.status = 'closed'
+          console.log(chalk.red('Could not determine position status'))
+          await page.screenshot({ path: `positionStatus-indeed-${jobId}.png` })
           data.crawlStatus = JSON.stringify(error)
+
         }
 
         if (data.status === 'open') {
@@ -192,14 +194,20 @@ const crawlJobPage = async (jobId, hostdomain) => {
   
           } catch (error) {
             console.log(chalk.red('Job description info unavailable'))
+            await page.screenshot({ path: `jobDescription-indeed-${jobId}.png` })
+            data.crawlStatus = JSON.stringify(error)
+
           }
   
         }
         
       } else {
-        status = 'closed'
-        data.status = 'closed'
+        data.redirected = 'true'
       }
+
+      // update status after crawl
+      data.status = status
+
       if (status === 'open') {
         console.log(chalk.bgGreenBright(`job ID ${jobId} at indeed ${status}`))
       } else {
@@ -208,6 +216,9 @@ const crawlJobPage = async (jobId, hostdomain) => {
       return {
         success: data
       }
+
+
+
     } else if (hostdomain === `linkedin`) {
       console.log(`Navigating to https://www.linkedin.com/jobs/view/${jobId}/`)
       await page.goto(`https://www.linkedin.com/jobs/view/${jobId}/`)
@@ -227,9 +238,10 @@ const crawlJobPage = async (jobId, hostdomain) => {
             }
 
         } catch (error) {
-
-          data.status = 'open'
+          console.log(chalk.red('Could not determine position status'))
+          await page.screenshot({ path: `positionStatus-linkedin-${jobId}.png` })
           data.crawlStatus = JSON.stringify(error)
+
         }
 
         if (data.status === 'open') {
@@ -264,7 +276,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
             }
   
           } catch (error) {
-            await page.screenshot({ path: `screenshot-linkedin-${jobId}.png` })
+            await page.screenshot({ path: `jobsDescription-linkedin-${jobId}.png` })
             data.crawlStatus = JSON.stringify(error)
             console.log(chalk.red('Job description info unavailable'))
           }
@@ -272,9 +284,11 @@ const crawlJobPage = async (jobId, hostdomain) => {
         
         
       } else {
-        status = 'closed'
-        data.status = 'closed'
+        data.redirected = 'true'
       }
+
+      data.status = status
+
       if (status === 'open') {
         console.log(chalk.bgGreenBright(`job ID ${jobId} at linkedin ${status}`))
       } else {

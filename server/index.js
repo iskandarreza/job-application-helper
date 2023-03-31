@@ -25,24 +25,26 @@ const generateSummary = require("./tasks/generateSummary")
 
 wss.on('connection', async (ws) => {
   let lastFetch
-  let lastCheck
+
   ws.on('message', async (data) => {
     const { message } = JSON.parse(data)
-    const startupCheck = false
+    const startupCheck = true
+    const checkNew = true
+    const checkApplied = true
+    const checkOld = true
 
     if (startupCheck) {
 
-      if (message === 'Check for new records') {
+      if (message === 'Check for new records' && checkNew) {
         await checkForNewRecords(ws)
         lastFetch = new Date().toISOString()
       }
 
-      if (message === 'Check applied postings status') {
-        await checkAppiedStatus(ws, lastCheck)
-        lastCheck = new Date().toISOString()
+      if (message === 'Check applied postings status' && checkApplied) {
+        await checkAppiedStatus(ws)
       }
 
-      if (message === 'Check oldest 24 open records') {
+      if (message === 'Check oldest 24 open records' && checkOld) {
         const { default: axios } = require("axios")
         const query = {
           positionStatus: 'open'

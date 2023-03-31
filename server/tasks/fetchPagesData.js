@@ -1,5 +1,6 @@
 const { default: axios } = require('axios')
 const chalk = require('chalk')
+const sendMessage = require('../websocket/sendMessage')
 
 /**
  * It takes an array of objects, chunks them into arrays of 3, and then makes an axios request for each
@@ -26,7 +27,7 @@ const checkJobStatuses = async (jobs) => {
       try {
         return axios.get(
           `http://localhost:5000/job-status/${hostname}/${id}`
-        ).then(({ data }) => ({ _id, id, status: data.status, extraData: data }))
+        ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
           
       } catch (error) {
         console.log(error)        
@@ -90,20 +91,21 @@ const fetchPagesData = async (data, ws) => {
     for (const result of results) {
       const record = filtered.find(({id}) => id === result.id)
       const isNew = !record._id
-      const { id, status, org, role, location, extraData, redirected } = result
-      const crawlData = { ...extraData, id, redirected: redirected === true ? true : false, crawlDate: new Date().toISOString() }
+      const { id, status, org, role, location, puppeteerData, redirected } = result
+      const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
 
       await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
 
       const url = isNew ? 'http://localhost:5000/record/new' : `http://localhost:5000/record/${result._id}`
       const method = isNew ? 'post' : 'put'
       const body = {
+        ...record,
+        org: crawlData.org ? crawlData.org : org ? org : record.org,
+        role: crawlData.role ? crawlData.role : role ? role : record.role,
+        location: crawlData.location ? crawlData.location : location ? location : record.location,
         crawlDate: crawlData.crawlDate,
         externalSource: crawlData.externalSource,
-        ...record,
-        org: org || crawlData.org,
-        role: role || crawlData.role,
-        location: location || crawlData.location
+        redirected: redirected ? redirected.toString() : 'false'
       }
 
       delete body.status1

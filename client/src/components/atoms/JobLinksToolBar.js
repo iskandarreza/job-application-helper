@@ -176,7 +176,7 @@ const useStyles = makeStyles(() => ({
 
 }))
 
-export const CustomToolbar = () => {
+const CustomToolbar = () => {
   const dispatch = useDispatch()
   const [query, setQuery] = useState(initialQuery)
   const [previewValue, setPreviewValue] = useState('')
@@ -284,3 +284,5 @@ export const CustomToolbar = () => {
     </GridToolbarContainer>
   )
 }
+
+export default CustomToolbar
