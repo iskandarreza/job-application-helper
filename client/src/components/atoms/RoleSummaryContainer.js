@@ -13,7 +13,7 @@ const useStyles = makeStyles((theme) => ({
 
 const RoleSummaryContainer = () => {
   const data = useSelector((state) => state.uiStates.jobSummaryDialogContent) || ''
-  const [value, setValue] = useState(JSON.parse(data?.response?.result))
+  const [value, setValue] = useState(data?.response?.result)
   const { _id } = data
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const RoleSummaryContainer = () => {
       salary,
       workType,
       note,
-    } = JSON.parse(data?.response?.result)
+    } = data?.response?.result
 
     setValue({
       summary,
