@@ -1,15 +1,16 @@
 import React from 'react'
 import { IconButton } from '@mui/material'
-import { Link } from '@material-ui/icons'
+import { Link } from '@mui/icons-material'
 
-export const JobLinkButtonRenderer = (params) => {
-  const isIndeed = params.row.url?.includes('indeed.com')
+const JobLinkButtonRenderer = (params) => {
+  const { id, url, externalSource } = params.row
+  const isIndeed = url?.includes('indeed.com')
   const handleClickLink = () => {
-    window.open(params.row.url, '_blank')
+    window.open(url, '_blank')
   }
   const handleClickSource = () => {
     window.open(
-      `${'https://www.indeed.com/rc/clk/dl?jk=' + params.row.id}`,
+      `${'https://www.indeed.com/rc/clk/dl?jk=' + id}`,
       '_blank'
     )
   }
@@ -23,21 +24,32 @@ export const JobLinkButtonRenderer = (params) => {
       }}
     >
       <div>
-        <IconButton onClick={handleClickLink} size="small" color="primary">
-          <Link />
-        </IconButton>
+
         {isIndeed ? (
-          <IconButton
-            onClick={handleClickSource}
-            size="small"
-            color="secondary"
-          >
-            <Link>Source</Link>
-          </IconButton>
+          <>
+            <IconButton onClick={handleClickLink} size="small" color="primary">
+              <Link />
+            </IconButton>
+            <IconButton
+              onClick={handleClickSource}
+              size="small"
+              color={externalSource === 'true' ? 'warning' : 'secondary'}
+            >
+              <Link>Source</Link>
+            </IconButton>
+          </>
         ) : (
-          ''
+          <IconButton
+            onClick={handleClickLink}
+            size="small"
+            color={externalSource === 'true' ? 'warning' : 'primary'}
+          >
+            <Link />
+          </IconButton>
         )}
       </div>
     </div>
   )
 }
+
+export default JobLinkButtonRenderer

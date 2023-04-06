@@ -2,30 +2,39 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
 import { Box, Tooltip } from '@mui/material'
 
-import { JobLinkButtonRenderer } from './atoms/JobLinkButtonRenderer'
-import { RenderSelectMenu } from './atoms/RenderSelectMenu'
-import { CustomToolbar } from './atoms/JobLinksToolBar'
-import { AddRowForm } from './atoms/JobRecordInsert'
+import RenderDateCell from './atoms/RenderDateCell'
+import RenderSelectMenu from './atoms/RenderSelectMenu'
+import RenderRoleCell from './atoms/RenderRoleCell'
+import JobLinkButtonRenderer from './atoms/JobLinkButtonRenderer'
+
+import CustomToolbar from './atoms/JobLinksToolBar'
+import AddRowForm from './atoms/JobRecordInsert'
+import JobDescriptionDialog from './JobDescriptionDialog'
 
 import '../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchJobs,
-  fetchNewJobs,
   updateRecord,
 } from '../redux/actions/jobActions'
-import { RenderLastModifiedText } from './atoms/RenderLastModifiedText'
-import { RenderRoleCell } from './atoms/RenderRoleCell'
-import { JobDescriptionDialog } from './atoms/JobDescriptionDialog'
+
+import { toast } from 'react-toastify'
+import { useTheme } from '@emotion/react'
+import { postStatusOpts, status1Opts, status2Opts } from './fieldOpts'
 
 const columns = [
   { field: '_id', flex: 1 },
   { field: 'id', flex: 1 },
+  { 
+    field: 'dateAdded', 
+    flex: 1,
+    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
+  },
   {
     field: 'dateModified',
     flex: 1,
-    renderCell: RenderLastModifiedText,
+    renderCell: (params) => RenderDateCell(params.row?.dateModified),
   },
   {
     field: 'org',
@@ -71,10 +80,7 @@ const columns = [
     renderCell: (params) => (
       <RenderSelectMenu
         params={params}
-        menuOptions={[
-          'open',
-          'closed',
-        ]}
+        menuOptions={postStatusOpts}
       />
     ),
     editable: true,
@@ -87,12 +93,7 @@ const columns = [
     renderCell: (params) => (
       <RenderSelectMenu
         params={params}
-        menuOptions={[
-          'pending',
-          'applied',
-          'uncertain',
-          'declined',
-        ]}
+        menuOptions={status1Opts}
       />
     ),
     editable: true,
@@ -105,12 +106,7 @@ const columns = [
     renderCell: (params) => (
       <RenderSelectMenu
         params={params}
-        menuOptions={[
-          'app viewed',
-          'test requested',
-          'test taken',
-          'rejected',
-        ]}
+        menuOptions={status2Opts}
       />
     ),
     editable: true,
@@ -134,57 +130,10 @@ const JobsDataGrid = () => {
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
   const dispatch = useDispatch()
 
-  const openJobsFilterModel = {
-    items: [{ id: 1, field: 'positionStatus', operator: 'isAnyOf', value: ['open'] }],
-  }
-  const [filterModel, setFilterModel] = useState(openJobsFilterModel)
-  const [isFiltering, setIsFiltering] = useState(true)
-  const [filterAction, setFilterAction] = useState('open')
-
   const [paginationModel, setPaginationModel] = useState({
     pageSize: 25,
     page: 0,
   })
-
-  const resetFilters = () => {
-    setFilterModel({ items: [] })
-    setIsFiltering(false)
-  }
-
-  const handleShowAppliedJobsClick = () => {
-    const model = {
-      items: [
-        { id: 1, field: 'status1', operator: 'isAnyOf', value: ['applied', 'uncertain'] },
-      ],
-    }
-
-    if (!isFiltering) {
-      setFilterModel(model)
-      setIsFiltering(true)
-    } else {
-      if (filterAction === 'open') {
-        setFilterModel(model)
-        setFilterAction('applied')
-      } else {
-        resetFilters()
-      }
-    }
-  }
-
-  const handleShowOpenJobsClick = () => {
-    if (!isFiltering) {
-      setFilterModel(openJobsFilterModel)
-      setIsFiltering(true)
-    } else {
-      if (filterAction === 'applied') {
-        setFilterModel(openJobsFilterModel)
-        setFilterAction('open')
-        console.log(filterModel.items)
-      } else {
-        resetFilters()
-      }
-    }
-  }
 
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
@@ -192,11 +141,30 @@ const JobsDataGrid = () => {
     }
   }, [jobsLoading, dispatch])
 
-  const fetchNewJobsFromAPI = useCallback(async () => {
-    if (!jobsLoading) {
-      dispatch(fetchNewJobs())
+  const theme = useTheme()
+  const style = theme.palette.success.main
+  
+  useEffect(() => {
+    if (jobs?.length > 0) {
+      const appliedJobs = [...jobs].filter((job) => job.status1 === 'applied' || job.status1 === 'uncertain')
+      const stillOpen = [...appliedJobs].filter((job) => job.positionStatus === 'open')
+      const open = [...jobs].filter((job) => job.positionStatus === 'open')
+      toast(() => {
+        return (
+          <div>
+            <p>
+              <span style={{ color: style }}>{stillOpen.length}</span>
+              <strong>/{appliedJobs.length}</strong> jobs applied still open
+            </p>
+            <p>
+              <span style={{color: style}}>{open.length}</span>
+              <strong>/{jobs.length}</strong> jobs in record still open
+            </p>
+          </div>
+        )
+      }, {position: toast.POSITION.BOTTOM_RIGHT})
     }
-  }, [jobsLoading, dispatch])
+  }, [jobs, style])
 
   useEffect(() => {
     fetchData()
@@ -209,20 +177,13 @@ const JobsDataGrid = () => {
   return (
     <DataGrid
       getRowId={(row) => row._id}
-      filterModel={filterModel}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
       rows={jobs}
       columns={columns}
       components={{
         Toolbar: () => (
-          <CustomToolbar
-            isFiltering={isFiltering}
-            filterAction={filterAction}
-            handleShowOpenJobsClick={handleShowOpenJobsClick}
-            handleShowAppliedJobsClick={handleShowAppliedJobsClick}
-            fetchNewJobs={fetchNewJobsFromAPI}
-          />
+          <CustomToolbar />
         ),
       }}
       initialState={{
@@ -242,18 +203,6 @@ const JobsDataGrid = () => {
         const newValue = { [field]: value }
 
         dispatch(updateRecord(row, newValue))
-      }}
-      onFilterModelChange={(model) => {
-        if (model.quickFilterValues) {
-          setFilterModel({
-            items: [],
-            quickFilterValues: model.quickFilterValues
-          })
-        } else {
-          setFilterModel({
-            items: model.items
-          })
-        }
       }}
     />
   )

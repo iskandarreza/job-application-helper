@@ -1,7 +1,7 @@
 
-export const RenderLastModifiedText = (params) => {
-  const timeDifferenceFromNow = (dateString) => {
-    const date = new Date(dateString)
+const RenderDateCell = (dateString) => {
+  const timeDifferenceFromNow = (_dateString) => {
+    const date = new Date(_dateString)
     const now = new Date()
     const diff = now.getTime() - date.getTime()
     const diffInMinutes = Math.round(diff / (1000 * 60))
@@ -22,9 +22,11 @@ export const RenderLastModifiedText = (params) => {
 
   return (
     <>
-      <span style={{ width: '1px', opacity: '0%' }}>{params.row?.dateModified}</span>
-      <span>{`${timeDifferenceFromNow(params.row?.dateModified)} ago`}</span>
+      <span style={{ width: '1px', opacity: '0%' }}>{dateString}</span>
+      <span>{`${timeDifferenceFromNow(dateString)} ago`}</span>
     </>
     
   )
 }
+
+export default RenderDateCell

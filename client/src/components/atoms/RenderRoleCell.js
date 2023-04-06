@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { fetchJobDescription, openJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { fetchJobDescription, fetchJobSummary, openJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { useTheme } from '@emotion/react'
 
-export const RenderRoleCell = (params) => {
+const RenderRoleCell = (params) => {
   const { row } = params
   const { role, crawlDate } = row || { role: '', crawlDate: '' }
 
@@ -12,12 +13,12 @@ export const RenderRoleCell = (params) => {
 
 
   const handleClick = () => {
-    const { crawlDate } = row
-    const rowData = { ...row }
-
-    dispatch(fetchJobDescription(rowData, crawlDate))
+    dispatch(fetchJobDescription(row))
+    dispatch(fetchJobSummary(row.id))
     dispatch(openJobDescriptionDialog())
   }
+
+  const theme = useTheme()
 
   return (
     <>
@@ -27,7 +28,7 @@ export const RenderRoleCell = (params) => {
           onClick={handleClick}
         >
           <span style={{
-            color: 'darkblue',
+            color: theme.palette.primary.main,
             cursor: 'pointer'
           }}
           >
@@ -43,5 +44,6 @@ export const RenderRoleCell = (params) => {
         </Tooltip>}
     </>
   )
-
 }
+
+export default RenderRoleCell

@@ -29,20 +29,29 @@ const serviceWorkerMiddleware = (store) => {
       store.dispatch({ type: 'RECEIVE_FROM_SERVICE_WORKER', payload: { data } });
     });
 
-    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
-      serviceWorker = registration.active;
-      store.dispatch({ type: 'SERVICE_WORKER_REGISTERED', payload: { registration } });
+    navigator.serviceWorker.register('/script/service-worker.js').then((registration) => {
+      setTimeout(() => {
+        serviceWorker = registration.active
+        try {
+          const registered = { type: 'SERVICE_WORKER_REGISTERED', payload: { registration } }
+          serviceWorker.postMessage({action: registered.type})
+          store.dispatch(registered);
+        } catch (error) {
+          console.log(error)
+        }
+
+      }, 1000)
     });
   }
 
   return (next) => (action) => {
     if (action.type === SEND_TO_SERVICE_WORKER && serviceWorker) {
-      serviceWorker.postMessage(action.payload);
+      serviceWorker.postMessage(action.payload)
     }
 
-    return next(action);
-  };
-};
+    return next(action)
+  }
+}
 
 const store = createStore(rootReducer, applyMiddleware(thunk, serviceWorkerMiddleware))
 

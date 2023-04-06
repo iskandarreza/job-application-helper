@@ -1,7 +1,10 @@
+import { refreshRecord } from "../actions/jobActions"
+import { showSnackbar } from "../actions/uiActions"
 import { 
   RECEIVE_FROM_SERVICE_WORKER, 
   SEND_TO_SERVICE_WORKER 
 } from "../actions/serviceWorkerActions"
+import store from "../store"
 
 const initialServiceWorkerState = {
   loading: false,
@@ -9,21 +12,21 @@ const initialServiceWorkerState = {
 }
 
 const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload) => {
-  const { action } = payload
+  const { action, payload: data } = payload
+  // console.log({action})
 
   switch (action) {
     case 'UPDATE_LINK_DATA_BEGIN':
-      console.log('service worker is beginning an update', {state, ...payload})
-
-      return { ... state, loading: true }, payload
+      store.dispatch(showSnackbar('Service worker is beginning a record update', null, true))
+      break
     case 'UPDATE_LINK_DATA_SUCCESS':
-      console.log('service worker successfully completed an update', {state, ...payload})
-      return state, payload
+      break
+    case 'RECORD_REFRESH_SUCCESS':
+      // console.log({data})
 
-    case 'UPDATE_LINK_DATA_WIND_DOWN':
-      console.log('service worker is tying up loose ends', {state, ...payload})
-      return state, payload
-
+      store.dispatch(refreshRecord(data.record._id))
+      store.dispatch(showSnackbar('Background record update task completed', 'success', false))
+      break
     default:
       return state
   }
@@ -32,9 +35,17 @@ const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload)
 const dataFromServiceWorkerReducer = (state = initialServiceWorkerState, action) => {  
   switch (action.type) {
     case SEND_TO_SERVICE_WORKER:
-      return state, action.payload.data
+      return {
+        state, 
+        payload: action.payload.data
+      }
+
     case RECEIVE_FROM_SERVICE_WORKER:
+      console.log('RECEIVE_FROM_SERVICE_WORKER', {...action.payload})
+
       serviceWorkerActionsReducer(state, action.payload.data)
+      return state
+
     default:
       return state
   }

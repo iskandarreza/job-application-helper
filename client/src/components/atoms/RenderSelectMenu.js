@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { makeStyles } from '@material-ui/core/styles'
+import makeStyles from '@mui/styles/makeStyles';
 import { MenuItem, Select } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { updateRecord } from '../../redux/actions/jobActions'
@@ -15,7 +15,7 @@ const useStyles = makeStyles(() => ({
   }
 }))
 
-export const RenderSelectMenu = ({ params, menuOptions }) => {
+const RenderSelectMenu = ({ params, menuOptions }) => {
   const dispatch = useDispatch()
   const [value, setValue] = useState(params.value ?? '')
 
@@ -59,3 +59,5 @@ export const RenderSelectMenu = ({ params, menuOptions }) => {
     </Select>
   )
 }
+
+export default RenderSelectMenu
