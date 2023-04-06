@@ -1,3 +1,4 @@
+const websocketURI = 'ws://job-application-helper.onrender.com:5001'
 const self = this
 let wSocket
 let messageClient
@@ -69,7 +70,7 @@ const checkForNewRecords = JSON.stringify({ message: 'Check for new records' })
 const messageListener = (event) => {
 
   return (() => {
-    if (event.origin === 'ws://localhost:5001') {
+    if (event.origin === websocketURI) {
       const { receiver, message } = JSON.parse(event.data)
       const { action, data } = message
 
@@ -136,7 +137,7 @@ const messageListener = (event) => {
 
 // WebSocket init
 const initWebSocket = () => {
-  const socket = new WebSocket(`${process.env.REACT_APP_WEBSOCKET_URI}`)
+  const socket = new WebSocket(websocketURI)
 
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!')
