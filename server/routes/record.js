@@ -4,7 +4,6 @@ const recordRoutes = express.Router()
 const dbo = require('../db/conn')
 const fetchPagesData = require('../tasks/fetchPagesData')
 const meta = require('../meta')
-const { json } = require('express')
 const ObjectId = require('mongodb').ObjectId
 
 const collection = 'email-link-data'
@@ -18,7 +17,7 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
   const dbCollection = req.params.collection
   const { body, query } = req
   const field = query.field || 'dateModified'
-  const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : 1
+  const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : -1
   const idOnly = query.id_only == 'true' ? true : false
   const newRecords = query.new === 'true' ? true : false
   const queryObj = body
@@ -205,46 +204,24 @@ recordRoutes.get('/maintenance/get-duplicates/:collection/:deleteRecords', async
 })
 
 recordRoutes.get('/maintenance/fix-records', async (req, res) => {
-  const workingCollection = linkContentData
 
-  let query = { id: { $type: ["double", "int", "long", "decimal"] , $ne: null } }
-  let db_connect = dbo.getDb()
+  const records = await axios
+    .post(`http://localhost:5000/records/chatgpt-summary-responses/`, {})
+    .then(({ data }) => data)
 
-  let results = []
+  let arrayToSend = []
 
-  await db_connect
-    .collection(workingCollection)
-    .find(query)
-    .toArray()
-    .then((data) => {
-      console.log(`${data.length} records matching query: ${JSON.stringify(query)}`)
-      results.push(...data)
+  for (const record of records) {
+    const { id, response } = record
+    const { result } = response
+    const { skills } = result
+    
+    arrayToSend.push({ id, skills })
+  }
 
-    })
-    .catch((e) => console.log(e))
+  console.log(arrayToSend.length)
 
-  res.json(meta(results))
-
-  results.forEach(async (doc) => {
-    let myquery = { _id: new ObjectId(doc._id) }
-    let newvalues = {}
-
-    newvalues.$set = { id: doc.id.toString() }
-
-    try {
-      db_connect
-        .collection(workingCollection)
-        .updateOne(myquery, newvalues)
-        .then((data) => {
-          console.log({ ...data, newvalues })
-        })
-        .catch((e) => console.log(e))
-    } catch (error) {
-      console.log('error @/record/:id PUT:', { error, body: req.body })
-    }
-
-  })
-
+  res.send(arrayToSend)
 
 })
 

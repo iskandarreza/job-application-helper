@@ -44,6 +44,16 @@ const failureAction = (state, payload) => ({
   jobs: [],
 })
 
+const replaceRecordInArray = (state, action) => {
+  const { payload } = action
+  const { _id } = payload
+  const index = state.jobs.findIndex((job) => job._id === _id)
+  const newArray = [...state.jobs]
+  newArray.splice(index, 1, payload)
+
+  return newArray
+}
+
 const jobsReducer = (state = initialState, action) => {
   switch (action.type) {
     case FETCH_JOBS_BEGIN:
@@ -54,15 +64,10 @@ const jobsReducer = (state = initialState, action) => {
       return failureAction(state, action.payload)
 
     case REFRESH_SINGLE_RECORD:
-      const { payload } = action
-      const { _id } = payload
-      const index = state.jobs.findIndex((job) => job._id === _id)
-      const newArray = [...state.jobs]
-      newArray.splice(index, 1, payload)
-
       return {
         ...state,
-        jobs: [...newArray]        
+        loading: false,
+        jobs: [...replaceRecordInArray(state, action)]
       }
 
     case INSERT_RECORD_BEGIN:

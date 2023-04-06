@@ -280,6 +280,22 @@ const crawlJobPage = async (jobId, hostdomain) => {
             data.crawlStatus = JSON.stringify(error)
             console.log(chalk.red('Job description info unavailable'))
           }
+
+          console.log('Getting the work location...')
+          try {
+            const selector = '.top-card-layout__entity-info-container > .top-card-layout__entity-info > .top-card-layout__second-subline > .topcard__flavor-row > .topcard__flavor:nth-child(2)'
+            const element = await page.waitForSelector(selector, { timeout: 10000 })
+            
+            if (element) {
+              const text = await page.$eval(selector, (element) => element.innerText)
+              data.location = text.trim()
+            }
+  
+          } catch (error) {
+            await page.screenshot({ path: `workLocation-linkedin-${jobId}.png` })
+            data.crawlStatus = JSON.stringify(error)
+            console.log(chalk.red('Work location info unavailable'))
+          }
         }
         
         

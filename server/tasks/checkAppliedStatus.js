@@ -29,7 +29,7 @@ const checkAppiedStatus = async (ws) => {
     })
     .catch((error) => console.error(error))
 
-  let result = await fetchPagesData(meta(records), ws)
+  let result = await fetchPagesData(meta(records), ws, true)
 
   sendMessage(ws, { action: 'CHECK_APPLIED_COMPLETE', data: result })
 

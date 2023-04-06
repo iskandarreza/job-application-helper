@@ -12,7 +12,8 @@ const initialServiceWorkerState = {
 }
 
 const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload) => {
-  const { action } = payload
+  const { action, payload: data } = payload
+  // console.log({action})
 
   switch (action) {
     case 'UPDATE_LINK_DATA_BEGIN':
@@ -20,11 +21,12 @@ const serviceWorkerActionsReducer = (state = initialServiceWorkerState, payload)
       break
     case 'UPDATE_LINK_DATA_SUCCESS':
       break
-    case 'UPDATE_LINK_DATA_WIND_DOWN':
-      store.dispatch(refreshRecord(state.payload._id))
+    case 'RECORD_REFRESH_SUCCESS':
+      // console.log({data})
+
+      store.dispatch(refreshRecord(data.record._id))
       store.dispatch(showSnackbar('Background record update task completed', 'success', false))
       break
-
     default:
       return state
   }
@@ -39,7 +41,7 @@ const dataFromServiceWorkerReducer = (state = initialServiceWorkerState, action)
       }
 
     case RECEIVE_FROM_SERVICE_WORKER:
-      console.log('RECEIVE_FROM_SERVICE_WORKER',{dataFromServiceWorkerReducer: action})
+      console.log('RECEIVE_FROM_SERVICE_WORKER', {...action.payload})
 
       serviceWorkerActionsReducer(state, action.payload.data)
       return state
