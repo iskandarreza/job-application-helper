@@ -64,22 +64,10 @@ const jobsReducer = (state = initialState, action) => {
       return failureAction(state, action.payload)
 
     case REFRESH_SINGLE_RECORD:
-      // const { payload } = action
-      // const { _id } = payload
-      // const index = state.jobs.findIndex((job) => job._id === _id)
-      // const newArray = [...state.jobs]
-      // newArray.splice(index, 1, payload)
-
-      // return {
-      //   ...state,
-      //   jobs: [...newArray]        
-      // }
       return {
         ...state,
         loading: false,
-        jobs: state.jobs.map((job) =>
-          job.id === action.payload.id ? action.payload : job
-        ),
+        jobs: [...replaceRecordInArray(state, action)]
       }
 
     case INSERT_RECORD_BEGIN:
