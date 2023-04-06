@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "./config.env" })
 const { default: axios } = require("axios")
 const generateSummary = require("../tasks/generateSummary")
 const sendMessage = require("../websocket/sendMessage")
@@ -9,7 +10,7 @@ const initPromptSetup = async (record, ws, skipRecord) => {
     const hasAtLeastOneProp = (obj) => fieldsToCheck.some(prop => obj.hasOwnProperty(prop))
   
     let description = await axios
-      .get(`http://localhost:5000/record/${id}/linkdata`)
+      .get(`${process.env.SERVER_URI}/record/${id}/linkdata`)
       .then((response) => {
         return response.data
       })

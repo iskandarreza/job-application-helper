@@ -21,12 +21,12 @@
     "react-dom": "^18.2.0",
     "react-querybuilder": "^6.1.4",
     "react-redux": "^8.0.5",
-    "react-router-dom": "^6.8.0",
+    "react-router-dom": "^6.10.0",
     "react-scripts": "5.0.1",
     "react-toastify": "^9.1.1",
     "redux": "^4.2.1",
     "redux-thunk": "^2.4.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^3.3.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-0",
-    "@babel/plugin-syntax-flow": "^7.14.5",
+    "@babel/plugin-syntax-flow": "^7.21.4",
     "@babel/plugin-transform-react-jsx": "^7.14.9",
     "eslint": "^8.0.0",
     "sass": "^1.60.0",

@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "./config.env" })
 const express = require('express')
 const axios = require("axios")
 const recordRoutes = express.Router()
@@ -41,10 +42,10 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
 
   if (newRecords) {
     
-    const recordIds = await axios.post('http://localhost:5000/records/email-link-data?id_only=true')
+    const recordIds = await axios.post(`${process.env.SERVER_URI}/records/email-link-data?id_only=true`)
       .then((response) => { return response.data })
     
-    const newData = await axios.get('http://localhost:5000/data')
+    const newData = await axios.get(`${process.env.SERVER_URI}/data`)
       .then((response) => { return response.data })
 
     const filteredObjects = await newData.filter((newRecord) => {
@@ -206,7 +207,7 @@ recordRoutes.get('/maintenance/get-duplicates/:collection/:deleteRecords', async
 recordRoutes.get('/maintenance/fix-records', async (req, res) => {
 
   const records = await axios
-    .post(`http://localhost:5000/records/chatgpt-summary-responses/`, {})
+    .post(`${process.env.SERVER_URI}/records/chatgpt-summary-responses/`, {})
     .then(({ data }) => data)
 
   let arrayToSend = []

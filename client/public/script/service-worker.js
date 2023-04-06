@@ -136,7 +136,7 @@ const messageListener = (event) => {
 
 // WebSocket init
 const initWebSocket = () => {
-  const socket = new WebSocket('ws://localhost:5001')
+  const socket = new WebSocket(`${process.env.REACT_APP_WEBSOCKET_URI}`)
 
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!')

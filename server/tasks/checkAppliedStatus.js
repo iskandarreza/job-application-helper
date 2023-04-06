@@ -22,7 +22,7 @@ const checkAppiedStatus = async (ws) => {
       ]
     }
 
-    const records = await axios.post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
+    const records = await axios.post(`${process.env.SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec`, query)
 
     .then((response) => {
       return response.data

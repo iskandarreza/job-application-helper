@@ -49,7 +49,7 @@ wss.on('connection', async (ws) => {
           positionStatus: 'open'
         }
 
-        const records = await axios.post('http://localhost:5000/records/email-link-data/', query)
+        const records = await axios.post(`${process.env.SERVER_URI}/records/email-link-data/`, query)
           .then((response) => {
             console.log(`${response.data.length} open records in total`)
             return response.data
@@ -82,7 +82,7 @@ wss.on('connection', async (ws) => {
         action: 'RECORD_REFRESH_SUCCESS',
         data: {
           record: await axios
-            .get(`http://localhost:5000/record/${record._id}`)
+            .get(`${process.env.SERVER_URI}/record/${record._id}`)
             .then((response) => response.data)
         }
       }
@@ -123,7 +123,7 @@ app.use(cors())
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CLIENT_URI,
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

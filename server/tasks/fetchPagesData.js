@@ -1,6 +1,6 @@
+require("dotenv").config({ path: "./config.env" })
 const { default: axios } = require('axios')
 const chalk = require('chalk')
-const sendMessage = require('../websocket/sendMessage')
 
 /**
  * It takes an array of objects, chunks them into arrays of 3, and then makes an axios request for each
@@ -27,11 +27,11 @@ const checkJobStatuses = async (jobs, statusOnly) => {
       try {
         if (!statusOnly) {
           return axios.get(
-            `http://localhost:5000/job-data/${hostname}/${id}`
+            `${process.env.SERVER_URI}/job-data/${hostname}/${id}`
           ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
         } else {
           return axios.get(
-            `http://localhost:5000/job-status/${hostname}/${id}`
+            `${process.env.SERVER_URI}/job-status/${hostname}/${id}`
           ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
         }
           
@@ -102,9 +102,9 @@ const fetchPagesData = async (data, ws, statusOnly) => {
       const { id, status, org, role, location, puppeteerData, redirected } = result
       const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
 
-      await axios.post(`http://localhost:5000/record/${id}/linkdata`, crawlData)
+      await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
 
-      const url = isNew ? 'http://localhost:5000/record/new' : `http://localhost:5000/record/${result._id}`
+      const url = isNew ? `${process.env.SERVER_URI}/record/new` : `${process.env.SERVER_URI}/record/${result._id}`
       const method = isNew ? 'post' : 'put'
       const body = {
         ...record,

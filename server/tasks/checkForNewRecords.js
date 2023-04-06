@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "./config.env" })
 const axios = require("axios")
 const meta = require("../meta")
 const sendMessage = require("../websocket/sendMessage")
@@ -12,7 +13,7 @@ const checkForNewRecords = async (ws) => {
     let newData = []
     
     const hasNewRecords = await axios
-      .post('http://localhost:5000/records/email-link-data/?new=true')
+      .post(`${process.env.SERVER_URI}/records/email-link-data/?new=true`)
       .then(({ data }) => {
         newData = [...meta(data)]
         return data.length > 0

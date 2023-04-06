@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const runQuery = async (query) => {
   return axios
-    .post('http://localhost:5000/records/email-link-data/', query)
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/`, query)
     .then((response) => {
       return response.data
     })
@@ -14,7 +14,7 @@ export const runQuery = async (query) => {
 export const getRecords = async () => {
   const query = {}
   return axios
-    .post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec`, query)
     .then((response) => {
       return response.data
     })
@@ -23,7 +23,7 @@ export const getRecords = async () => {
 
 export const addRecord = async (row) => {
   return axios
-    .post('http://localhost:5000/record/new', row)
+    .post(`${process.env.REACT_APP_SERVER_URI}/record/new`, row)
     .then((response) => {
       return response.data
     })
@@ -34,7 +34,7 @@ export const addRecord = async (row) => {
 
 export const getRecordById = async (id) => {
   return axios
-    .get('http://localhost:5000/record/' + id)
+    .get(`${process.env.REACT_APP_SERVER_URI}/record/${id}`)
     .then((response) => {
       return response.data
     })
@@ -44,7 +44,7 @@ export const getRecordById = async (id) => {
 export const updateRecordByID = async (row, newValue) => {
   const { _id } = row
   return axios
-    .put('http://localhost:5000/record/' + _id, newValue)
+    .put(`${process.env.REACT_APP_SERVER_URI}/record/${_id}`, newValue)
     .then((response) => {
       return response.data
     })
@@ -55,7 +55,7 @@ export const updateRecordByID = async (row, newValue) => {
 
 export const deleteRecordByID = async (rowID) => {
   return axios
-    .delete('http://localhost:5000/record/' + rowID)
+    .delete(`${process.env.REACT_APP_SERVER_URI}/record/${rowID}`)
     .then((response) => {
       return response.data
     })
@@ -66,7 +66,7 @@ export const deleteRecordByID = async (rowID) => {
 
 export const getLinkData = async (id) => {
   return axios
-    .get(`http://localhost:5000/record/${id}/linkdata`)
+    .get(`${process.env.REACT_APP_SERVER_URI}/record/${id}/linkdata`)
     .then((response) => {
       return response.data
     })
@@ -75,7 +75,7 @@ export const getLinkData = async (id) => {
 
 export const getSummaryData = async (id) => {
   return await axios
-    .post('http://localhost:5000/records/chatgpt-summary-responses/', { id })
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/chatgpt-summary-responses/`, { id })
     .then((response) => {
       return response.data
     })

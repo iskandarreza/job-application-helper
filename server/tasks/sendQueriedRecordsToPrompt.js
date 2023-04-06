@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "../config.env" })
 const { default: axios } = require("axios")
 const meta = require("../meta")
 const sendMessage = require("../websocket/sendMessage")
@@ -7,7 +8,7 @@ const sendQueriedRecordsToPrompt = async(ws, query) => {
 
   let records = []
   await axios
-    .post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
+    .post(`${process.env.SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec`, query)
     .then(({ data }) => {
       records = [...meta(data)]
       return data
@@ -21,7 +22,7 @@ const sendQueriedRecordsToPrompt = async(ws, query) => {
   for (const record of records) {
     const { id } = record
     let result
-    await axios.post('http://localhost:5000/records/chatgpt-summary-responses/', { id })
+    await axios.post(`${process.env.SERVER_URI}/records/chatgpt-summary-responses/`, { id })
       .then(async ({ data }) => {
         // check if record already exist, replace only if summary is malformed
         if (data.length >= 1) {
@@ -38,7 +39,7 @@ const sendQueriedRecordsToPrompt = async(ws, query) => {
             } catch (error) {
 
               await axios
-                .post('http://localhost:5000/logging/chatgpt-error-log', {
+                .post(`${process.env.SERVER_URI}/logging/chatgpt-error-log`, {
                   type: 'SUMMARY_PARSE_ERROR',
                   data: data,
                   parsed: result
