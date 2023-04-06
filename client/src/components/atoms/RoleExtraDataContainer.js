@@ -8,7 +8,7 @@ const RoleExtraDataContainer = () => {
   return (
     <>
       {
-        response ?
+        completion_tokens && prompt_tokens && total_tokens ?
           <div>
             <strong>ChatGPT token costs</strong>
             <ul>

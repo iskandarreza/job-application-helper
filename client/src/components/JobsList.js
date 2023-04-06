@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
 import { Box, Tooltip } from '@mui/material'
 
+import RenderDateCell from './atoms/RenderDateCell'
 import RenderSelectMenu from './atoms/RenderSelectMenu'
-import RenderLastModifiedText from './atoms/RenderLastModifiedText'
 import RenderRoleCell from './atoms/RenderRoleCell'
 import JobLinkButtonRenderer from './atoms/JobLinkButtonRenderer'
 
@@ -26,10 +26,15 @@ import { postStatusOpts, status1Opts, status2Opts } from './fieldOpts'
 const columns = [
   { field: '_id', flex: 1 },
   { field: 'id', flex: 1 },
+  { 
+    field: 'dateAdded', 
+    flex: 1,
+    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
+  },
   {
     field: 'dateModified',
     flex: 1,
-    renderCell: RenderLastModifiedText,
+    renderCell: (params) => RenderDateCell(params.row?.dateModified),
   },
   {
     field: 'org',
