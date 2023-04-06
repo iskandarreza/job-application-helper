@@ -24,6 +24,10 @@ module.exports = {
   },
  
   getDb: function () {
-    return _db
+    if (_db) {
+      return _db
+    } else {
+      return this.connectToServer()
+    }
   },
 }

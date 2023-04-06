@@ -59,7 +59,7 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
     res.json(filteredResults)
 
   } else {
-    let db_connect = dbo.getDb()
+    let db_connect = await dbo.getDb()
     let response
     let docs = db_connect
       .collection(dbCollection)
@@ -83,7 +83,7 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
 })
 
 recordRoutes.get('/maintenance/populate-collection', async (req, res) => {
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   try {
     const result = await db_connect.collection(collection).aggregate([
       {
@@ -117,7 +117,7 @@ recordRoutes.get('/maintenance/get-duplicates/:collection/:deleteRecords', async
 
   const deleteRecords = req.params.deleteRecords ? true : false
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let results = []
 
   let aggregateQuery =
@@ -229,7 +229,7 @@ recordRoutes.get('/maintenance/fix-records', async (req, res) => {
 recordRoutes.route('/maintenance/find-missing').get(async (req, res) => {
   const linkData = linkContentData
   const metaData = collection
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
 
   let results = []
 
@@ -266,21 +266,21 @@ recordRoutes.route('/maintenance/find-missing').get(async (req, res) => {
 })
 
 recordRoutes.route('/maintenance/clone/:source/:target').get(async function (req, res) {
-  const db = dbo.getDb()
+  let db_connect = await dbo.getDb()
   console.log({...req.params})
   const { source, target } = req.params
   const report = []
 
   try {
     // Delete all documents in the target collection
-    const deleteResult = await db.collection(target).deleteMany({})
+    const deleteResult = await db_connect.collection(target).deleteMany({})
     report.push(`Deleted ${deleteResult.deletedCount} documents from ${target}`)
 
     // Find all documents in the source collection
-    const docs = await db.collection(source).find().toArray()
+    const docs = await db_connect.collection(source).find().toArray()
 
     // Insert all documents into the target collection
-    const result = await db.collection(target).insertMany(docs)
+    const result = await db_connect.collection(target).insertMany(docs)
 
     report.push(`Inserted ${result.insertedCount} documents into ${target}`)
 
@@ -300,7 +300,7 @@ recordRoutes.route('/record').get(async function (req, res) {
     req.query
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
 
   let query = {}
   let options = {}
@@ -357,14 +357,14 @@ recordRoutes.route('/record').get(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-recordRoutes.route('/record/new').post(function (req, res) {
+recordRoutes.route('/record/new').post(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
     req.body
   )
 
   const now = new Date()
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let record = req.body
 
   record.dateAdded = now
@@ -383,13 +383,13 @@ recordRoutes.route('/record/new').post(function (req, res) {
   }
 })
 
-recordRoutes.route('/record/:id').get(async function (req, res) {
+recordRoutes.route('/record/:id').get(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.query: `,
     req.query
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
   db_connect
@@ -401,13 +401,13 @@ recordRoutes.route('/record/:id').get(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-recordRoutes.route('/record/:id').put(function (req, res) {
+recordRoutes.route('/record/:id').put(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
     req.body
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
 
   let updateFields = {}
@@ -457,13 +457,13 @@ recordRoutes.route('/record/:id').put(function (req, res) {
   }
 })
 
-recordRoutes.route('/record/:id').delete((req, res) => {
+recordRoutes.route('/record/:id').delete(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
     req.body
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { _id: new ObjectId(req.params.id) }
   db_connect
     .collection(collection)
@@ -480,7 +480,7 @@ recordRoutes.route('/record/:id/linkdata').get(async function (req, res) {
     req.body
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { id: { $eq: req.params.id } }
 
   db_connect
@@ -498,7 +498,7 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
     req.body
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { id: { $eq: req.params.id } }
   let id = req.params.id
   if (isNaN(id)) {
@@ -550,13 +550,13 @@ recordRoutes.route('/record/:id/linkdata').post(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-recordRoutes.route('/record/:id/summary').post(async function (req, res) {
+recordRoutes.route('/record/:id/summary').post(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
     req.body
   )
 
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let myquery = { id: { $eq: req.params.id } }
 
   let record = req.body
@@ -603,14 +603,14 @@ recordRoutes.route('/record/:id/summary').post(async function (req, res) {
     .catch((e) => console.log(e))
 })
 
-recordRoutes.route('/logging/chatgpt-error-log').post(function (req, res) {
+recordRoutes.route('/logging/chatgpt-error-log').post(async (req, res) => {
   console.log(
     `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
     req.body
   )
 
   const now = new Date()
-  let db_connect = dbo.getDb()
+  let db_connect = await dbo.getDb()
   let record = req.body
 
   record.dateAdded = now
