@@ -122,31 +122,14 @@ export const insertRecord = (row) => async (dispatch) => {
   }
 }
 
-// unused
-export const filterOpenJobs = () => async (dispatch, getState) => {
-  const { jobs: rows } = getState().jobRecords
-
+export const updateListWithQueryResults = (results) => async (dispatch, getState) => {
   try {
-    const filteredRows = rows.filter(
-      (row) => !['closed', 'removed', 'declined'].includes(row.status1)
-    )
-    const filterResults = filteredRows.filter(
-      (row) => !['closed', 'rejected'].includes(row.status2)
-    ) 
-    // const filteredOutRows = rows.length - filterResults.length
-    
-    // toast.info(
-    //   `${filteredOutRows} rows filtered out, ${filterResults.length} rows remaining`
-    // )
-
-   dispatch(filterJobsSuccess(filterResults))
-   return filterResults
-
+   dispatch(filterJobsSuccess(results))
+   return results
   } catch (error) {
     console.error(error)
     dispatch(filterJobFailure(error.message))
   }
-
 }
 
 // unused

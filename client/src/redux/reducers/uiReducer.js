@@ -3,12 +3,27 @@ const {
   JOB_DESCRIPTION_DIALOG_CLOSE, 
   JOB_DESCRIPTION_DIALOG_CONTENT, 
   SHOW_SNACKBAR,
-  CLOSE_SNACKBAR
+  CLOSE_SNACKBAR,
+  JOB_SUMMARY_DIALOG_CONTENT
 } = require("../actions/uiActions")
 
 const initialState = {
   jobDescriptionDialogOpen: false,
-  jobDescriptionDialogContent: null,
+  activeRow: {
+    _id: '',
+    id: '',
+    org: '',
+    role: '',
+    location: '',
+    url: '',
+  },
+  jobDescriptionDialogContent: {
+    jobDescriptionText: '',
+    salaryInfoAndJobType: '',
+    qualificationsSection: '',
+    crawlDate: 'N/A'
+  },
+  jobSummaryDialogContent: null,
   snackbar: {
     isOpen: false,
     message: '',
@@ -26,14 +41,25 @@ const jobDescriptionDialogClose = (state) => {
   return {
     ...state,
     jobDescriptionDialogOpen: false,
-    jobDescriptionDialogContent: null
+    jobDescriptionDialogContent: initialState.jobDescriptionDialogContent
   }
 }
 
 const jobDescriptionDialogContent = (state, payload) => {
   return {
     ...state,
-    jobDescriptionDialogContent: payload
+    activeRow: payload.rowData,
+    jobDescriptionDialogContent: { 
+      ...payload.data, 
+      crawlDate:  payload.rowData.crawlDate 
+    }
+  }
+}
+
+const jobSummaryDialogContent = (state, payload) => {
+  return {
+    ...state,
+    jobSummaryDialogContent: payload
   }
 }
 
@@ -71,6 +97,8 @@ const uiReducer = (state = initialState, action) => {
       return jobDescriptionDialogClose(state)
     case JOB_DESCRIPTION_DIALOG_CONTENT:
       return jobDescriptionDialogContent(state, action.payload)
+    case JOB_SUMMARY_DIALOG_CONTENT:
+      return jobSummaryDialogContent(state, action.payload)
     case SHOW_SNACKBAR:
       return showSnackbar(state, action.payload)
     case CLOSE_SNACKBAR:

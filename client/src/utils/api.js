@@ -1,8 +1,20 @@
 import axios from 'axios'
 
-export const getRecords = async () => {
+export const runQuery = async (query) => {
   return axios
-    .get('http://localhost:5000/record')
+    .post('http://localhost:5000/records/email-link-data/', query)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+}
+
+export const getRecords = async () => {
+  const query = {}
+  return axios
+    .post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
     .then((response) => {
       return response.data
     })
@@ -45,7 +57,6 @@ export const deleteRecordByID = async (rowID) => {
   return axios
     .delete('http://localhost:5000/record/' + rowID)
     .then((response) => {
-      // toast.success(`Record ID:${rowID} deleted`)
       return response.data
     })
     .catch((error) => {
@@ -54,10 +65,17 @@ export const deleteRecordByID = async (rowID) => {
 }
 
 export const getLinkData = async (id) => {
-  // toast.info('Getting data from db...')
-
   return axios
     .get(`http://localhost:5000/record/${id}/linkdata`)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => console.error(error))
+}
+
+export const getSummaryData = async (id) => {
+  return await axios
+    .post('http://localhost:5000/records/chatgpt-summary-responses/', { id })
     .then((response) => {
       return response.data
     })

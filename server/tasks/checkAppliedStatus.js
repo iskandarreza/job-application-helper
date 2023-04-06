@@ -1,24 +1,38 @@
 const { default: axios } = require("axios")
+const sendMessage = require("../websocket/sendMessage")
 const fetchPagesData = require("./fetchPagesData")
+const meta = require("../meta")
 
-const checkAppiedStatus = async (ws, lastCheck) => {
-  const checked = !isNaN(lastCheck)
-  const now = new Date()
-  const lastCheckDate = !checked ? now : new Date(lastCheck)
-  const numOfHoursAgo = Math.abs(now - lastCheckDate) / 36e5
+const checkAppiedStatus = async (ws) => {
+    const query = {
+      "$and": [
+        {
+          "positionStatus": "open"
+        },
+        {
+          "$or": [
+            {
+              "status1": "uncertain"
+            },
+            {
+              "status1": "applied"
+            }
+          ]
+        }
+      ]
+    }
 
-  console.log({ numOfHoursAgo: numOfHoursAgo.toString(), lastCheck })
+    const records = await axios.post('http://localhost:5000/records/email-link-data/?field=dateModified&sort_order=dec', query)
 
-  if (numOfHoursAgo > 24) {
-    const records = await axios.get('http://localhost:5000/record?filter=applied')
-      .then((response) => {
-        return response.data
-      })
-      .catch((error) => console.error(error))
-    const result = await fetchPagesData(ws, records)
+    .then((response) => {
+      return response.data
+    })
+    .catch((error) => console.error(error))
 
-    console.log(`${result} records updated`)
-  }
+  let result = await fetchPagesData(meta(records), ws)
+
+  sendMessage(ws, { action: 'CHECK_APPLIED_COMPLETE', data: result })
+
 }
 
 module.exports = checkAppiedStatus

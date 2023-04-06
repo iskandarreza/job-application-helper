@@ -2,7 +2,7 @@ import React from 'react'
 import { IconButton } from '@mui/material'
 import { Link } from '@mui/icons-material'
 
-export const JobLinkButtonRenderer = (params) => {
+const JobLinkButtonRenderer = (params) => {
   const { id, url, externalSource } = params.row
   const isIndeed = url?.includes('indeed.com')
   const handleClickLink = () => {
@@ -33,7 +33,7 @@ export const JobLinkButtonRenderer = (params) => {
             <IconButton
               onClick={handleClickSource}
               size="small"
-              color={externalSource ? 'warning' : 'secondary'}
+              color={externalSource === 'true' ? 'warning' : 'secondary'}
             >
               <Link>Source</Link>
             </IconButton>
@@ -42,7 +42,7 @@ export const JobLinkButtonRenderer = (params) => {
           <IconButton
             onClick={handleClickLink}
             size="small"
-            color={externalSource ? 'warning' : 'primary'}
+            color={externalSource === 'true' ? 'warning' : 'primary'}
           >
             <Link />
           </IconButton>
@@ -51,3 +51,5 @@ export const JobLinkButtonRenderer = (params) => {
     </div>
   )
 }
+
+export default JobLinkButtonRenderer
