@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const runQuery = async (query) => {
   return axios
-    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/`, query)
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?keywords=true`, query)
     .then((response) => {
       return response.data
     })
@@ -14,7 +14,7 @@ export const runQuery = async (query) => {
 export const getRecords = async () => {
   const query = {}
   return axios
-    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec`, query)
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec&keywords=true`, query)
     .then((response) => {
       return response.data
     })
