@@ -5,7 +5,7 @@ import { Box, Tooltip } from '@mui/material'
 import RenderDateCell from './atoms/RenderDateCell'
 import RenderSelectMenu from './atoms/RenderSelectMenu'
 import RenderRoleCell from './atoms/RenderRoleCell'
-import JobLinkButtonRenderer from './atoms/JobLinkButtonRenderer'
+import RenderURLButtons from './atoms/RenderURLButtons'
 
 import CustomToolbar from './atoms/JobLinksToolBar'
 import AddRowForm from './atoms/JobRecordInsert'
@@ -70,7 +70,7 @@ const columns = [
   },
   {
     field: 'link',
-    renderCell: JobLinkButtonRenderer,
+    renderCell: RenderURLButtons,
   },
   {
     field: 'positionStatus',
