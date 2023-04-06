@@ -307,7 +307,8 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
 
       results = await response.map((result) => {
         const keywordData = result.keywordData[0]?.response?.result?.skills || false
-        return { ...result, keywordData }
+        const flattenedKeywords = keywordData ? [...keywordData.minimum.flatMap(obj => obj.keyword), ...keywordData.extras] : false
+        return { ...result, keywordData: flattenedKeywords }
       })
 
 
