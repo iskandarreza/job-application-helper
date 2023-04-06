@@ -16,7 +16,7 @@ module.exports = {
     }
 
     
-    _db = client.db("job-helper")
+    _db = client.db(process.env.DB_NAME)
     console.log("Successfully connected to MongoDB.")
 
     return (_db === undefined ? false : true);
