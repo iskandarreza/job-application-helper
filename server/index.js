@@ -27,7 +27,7 @@ wss.on('connection', async (ws) => {
 
   ws.on('message', async (data) => {
     const { message } = JSON.parse(data)
-    const startupCheck = false
+    const startupCheck = true
     const checkNew = true
     const checkApplied = true
     const checkOld = true
@@ -56,7 +56,7 @@ wss.on('connection', async (ws) => {
           })
           .catch((error) => console.error(error))
 
-        let result = await fetchPagesData(meta(records.slice(0, 24)), ws)
+        let result = await fetchPagesData(meta(records.slice(0, 24)), ws, true)
         let payload = {
           action: 'UPDATE_24_OLDEST_SUCCESS',
           data: {
@@ -76,7 +76,7 @@ wss.on('connection', async (ws) => {
 
     if (message === 'Refresh single record') {
       let { data: record } = JSON.parse(data)
-      await fetchPagesData(meta([record]), ws)
+      await fetchPagesData(meta([record]), ws, false)
 
       let payload = {
         action: 'RECORD_REFRESH_SUCCESS',

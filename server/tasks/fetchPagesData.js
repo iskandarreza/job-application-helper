@@ -8,7 +8,7 @@ const sendMessage = require('../websocket/sendMessage')
  * @param jobs - an array of objects that look like this:
  * @returns An array of objects.
  */
-const checkJobStatuses = async (jobs) => {
+const checkJobStatuses = async (jobs, statusOnly) => {
   const results = []
 
   const chunks = chunkObjects(jobs, 3)
@@ -25,9 +25,15 @@ const checkJobStatuses = async (jobs) => {
       }
 
       try {
-        return axios.get(
-          `http://localhost:5000/job-status/${hostname}/${id}`
-        ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
+        if (!statusOnly) {
+          return axios.get(
+            `http://localhost:5000/job-data/${hostname}/${id}`
+          ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
+        } else {
+          return axios.get(
+            `http://localhost:5000/job-status/${hostname}/${id}`
+          ).then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
+        }
           
       } catch (error) {
         console.log(error)        
@@ -65,14 +71,16 @@ const chunkObjects = (data, size) => {
  * @param data - an array of objects, each object has an id property
  * @returns The return value is the number of records that were updated.
  */
-const fetchPagesData = async (data, ws) => {
+const fetchPagesData = async (data, ws, statusOnly) => {
   const filtered = data.filter((datum) => {
     if (!datum.crawlDate) {
       return datum
     } else {
       const diff = Math.abs(new Date() - new Date(datum.crawlDate)) / 36e5
       console.log(chalk.yellow(`Record last crawled ${diff} hours ago`))
-      return diff >= 36 && datum.positionStatus === 'open' ? datum : false
+      return diff >= 2 && datum.positionStatus === 'open' ? datum : false
+      // return datum.positionStatus === 'open' ? datum : false
+
     }
   })
 
@@ -85,7 +93,7 @@ const fetchPagesData = async (data, ws) => {
   const totalJobs = filtered.length
 
   for (const [index, jobChunk] of jobChunks.entries()) {
-    const results = await checkJobStatuses(jobChunk)
+    const results = await checkJobStatuses(jobChunk, statusOnly)
     let jobsProcessed = 0
 
     for (const result of results) {

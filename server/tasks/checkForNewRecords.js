@@ -31,7 +31,7 @@ const checkForNewRecords = async (ws) => {
       sendMessage(ws, message1)
       sendMessage(ws, message2)
 
-      let result = await fetchPagesData(newData, ws)
+      let result = await fetchPagesData(newData, ws, false)
       const message3 = {action: 'FETCH_NEW_RECORDS_SUCCESS', data: `${result} new records fetched`}
       sendMessage(ws, message3)
     } else {
