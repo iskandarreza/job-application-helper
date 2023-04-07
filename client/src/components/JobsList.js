@@ -10,6 +10,7 @@ import RenderURLButtons from './atoms/RenderURLButtons'
 import CustomToolbar from './atoms/JobLinksToolBar'
 import AddRowForm from './atoms/JobRecordInsert'
 import JobDescriptionDialog from './JobDescriptionDialog'
+import AdvancedQueryDrawer from './AdvancedQueryDrawer'
 
 import '../index.scss'
 
@@ -222,6 +223,7 @@ export const JobsList = () => {
         <AddRowForm />
       </Box>
       <JobDescriptionDialog />
+      <AdvancedQueryDrawer />
     </div>
   )
 }
