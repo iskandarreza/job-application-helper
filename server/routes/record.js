@@ -281,35 +281,94 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
     let db_connect = await dbo.getDb()
     let response
     let results
+    console.log(queryObj)
 
     if (keywords) {
 
-      let aggregateQuery = [
-        { $match: queryObj },
+      let aggregateQuery =         [
         {
           $lookup: {
             from: chatgptSummary,
             localField: "id",
             foreignField: "id",
-            as: "keywordData"
+            pipeline: [
+              {
+                $project: {
+                  id: "$id",
+                  skills: {
+                    $filter: {
+                      input: "$response.result.skills.minimum",
+                      as: "skill",
+                      cond: {
+                        $and: [
+                          { $ne: ["$$skill.keyword", ""] },
+                          { $ne: ["$$skill.keyword", null] }
+                        ]
+                      }
+                    }
+                  },
+                  extras: {
+                    $filter: {
+                      input: "$response.result.skills.extras",
+                      as: "extras",
+                      cond: {
+                        $and: [
+                          { $ne: ["$$extras", ""] },
+                          { $ne: ["$$extras", null] }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                $project: {
+                  keywords: {
+                    $reduce: {
+                      input: { $setUnion: ["$skills.keyword", "$extras"] },
+                      initialValue: "",
+                      in: { $concat: [ "$$value", ",", "$$this" ] }
+                    }
+                  }
+                }
+              },
+
+            ],
+            as: "lookupResults"
           }
-        }
-      ]
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: ["$$ROOT", {
+                keywords: {
+                  $cond: {
+                    if: { $gt: [{ $size: "$lookupResults.keywords" }, 0] },
+                    then: { $arrayElemAt: ["$lookupResults.keywords", 0] },
+                    else: "$$REMOVE"
+                  }
+                }
+              }]
+            }
+          }
+        },
+        {
+          $project: {
+            lookupResults: 0
+          }
+        },
+        { $match: queryObj },
+
+      ]  
 
       if (field && sort) {
         aggregateQuery.unshift({ $sort: { [field]: sort } })
       }
 
-      response = await db_connect.collection(dbCollection)
+      results = await db_connect.collection(dbCollection)
       .aggregate(aggregateQuery)
       .toArray()
       .catch((e) => res.status(500).send(e))
-
-      results = await response.map((result) => {
-        const keywordData = result.keywordData[0]?.response?.result?.skills || false
-        const flattenedKeywords = keywordData ? [...keywordData.minimum.flatMap(obj => obj.keyword), ...keywordData.extras] : false
-        return { ...result, keywordData: flattenedKeywords }
-      })
 
 
     } else {

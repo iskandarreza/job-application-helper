@@ -51,6 +51,7 @@ const fields = [
       ...postStatusOpts.map((v) => Object.create({ name: v, label: v }))
     ]
   },
+  { name: 'keywords', label: 'Keywords' },
   {
     name: 'status1',
     label: 'Status 1',
