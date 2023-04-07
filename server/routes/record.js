@@ -9,79 +9,10 @@ const ObjectId = require('mongodb').ObjectId
 
 const collection = 'email-link-data'
 const linkContentData = 'link-content-data'
+const chatgptSummary = 'chatgpt-summary-responses'
+const chatgptErrorLog = 'chatgpt-error-log'
 
-recordRoutes.post('/records/:collection/', async (req, res) => {
-  console.log(
-    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, : ` ,
-    {body: req.body, query: req.query}
-  )
-  const dbCollection = req.params.collection
-  const { body, query } = req
-  const field = query.field || 'dateModified'
-  const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : -1
-  const idOnly = query.id_only == 'true' ? true : false
-  const newRecords = query.new === 'true' ? true : false
-  const queryObj = body
-
-  const queryOpts = idOnly ? {
-    projection: {
-      org: 0,
-      role: 0,
-      location: 0,
-      positionStatus: 0,
-      status1: 0,
-      status2: 0,
-      status3: 0,
-      notes: 0,
-      dateAdded: 0,
-      dateModified: 0,
-      crawlDate: 0,
-      fieldsModified: 0
-    }
-  } : {}
-
-  if (newRecords) {
-    
-    const recordIds = await axios.post(`${process.env.SERVER_URI}/records/email-link-data?id_only=true`)
-      .then((response) => { return response.data })
-    
-    const newData = await axios.get(`${process.env.SERVER_URI}/data`)
-      .then((response) => { return response.data })
-
-    const filteredObjects = await newData.filter((newRecord) => {
-      return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
-    })
-
-    const filteredResults = await filteredObjects.filter((obj) => {
-      return !recordIds.some((record) => { record.url === obj.url })
-    })
-
-    res.json(filteredResults)
-
-  } else {
-    let db_connect = await dbo.getDb()
-    let response
-    let docs = db_connect
-      .collection(dbCollection)
-      .find(queryObj, queryOpts)
-  
-    if (field && sort) {
-      console.log({field, sort})
-      response = docs.sort({ [field]: sort })
-    }
-  
-    response
-      .toArray()
-      .then((data) => {
-        res.json(data)
-      })
-      .catch((e) => console.log(e))
-  
-  }
-
-  
-})
-
+// Maintenance routes
 recordRoutes.get('/maintenance/populate-collection', async (req, res) => {
   let db_connect = await dbo.getDb()
   try {
@@ -294,67 +225,175 @@ recordRoutes.route('/maintenance/clone/:source/:target').get(async function (req
   }
 })
 
-recordRoutes.route('/record').get(async function (req, res) {
+
+
+// App routes
+recordRoutes.post('/records/:collection/', async (req, res) => {
   console.log(
-    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.query: `,
-    req.query
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, : ` ,
+    {body: req.body, query: req.query}
   )
+  const dbCollection = req.params.collection
+  const { body, query } = req
+  const field = query.field || 'dateModified'
+  const sort =  query.sort_order === 'asc' ? 1 : query.sort_order === 'dec' ? -1 : -1
+  const idOnly = query.id_only === 'true' ? true : false
+  const newRecords = query.new === 'true' ? true : false
+  const keywords = query.keywords === 'true' ? true : false
+  const queryObj = body
 
-  let db_connect = await dbo.getDb()
-
-  let query = {}
-  let options = {}
-
-  if (req.query.filter === 'none') {
-    // no filtering needed
-    query = {}
-
-  } else if (req.query.filter === 'applied') {
-    query = {
-      positionStatus: 'open',
-      $or: [
-        { status1: 'applied' },
-        { status1: 'uncertain' }
-      ],
+  const queryOpts = idOnly ? {
+    projection: {
+      org: 0,
+      role: 0,
+      location: 0,
+      positionStatus: 0,
+      status1: 0,
+      status2: 0,
+      status3: 0,
+      notes: 0,
+      dateAdded: 0,
+      dateModified: 0,
+      crawlDate: 0,
+      fieldsModified: 0
     }
+  } : {}
 
-  } else if (req.query.filter === 'unapplied') {
-    query = {
-      positionStatus: 'open',
-      $and: [
-        { status1: { $ne: 'applied' } },
-        { status1: { $ne: 'uncertain' } }
-      ],
-    }
-  }
+  if (newRecords) {
+    
+    const recordIds = await axios.post(`${process.env.SERVER_URI}/records/email-link-data?id_only=true`)
+      .then((response) => { return response.data })
+    
+    const newData = await axios.get(`${process.env.SERVER_URI}/data`)
+      .then((response) => { return response.data })
 
-  if (req.query.id_only === 'true') {
-    options = {
-      projection: {
-        org: 0,
-        role: 0,
-        location: 0,
-        positionStatus: 0,
-        status1: 0,
-        status2: 0,
-        status3: 0,
-        notes: 0,
-        dateAdded: 0,
-        dateModified: 0,
-        crawlDate: 0,
-        fieldsModified: 0
-      }
-    }
-  }
-
-  db_connect
-    .collection(collection)
-    .find(query, options)
-    .toArray()
-    .then((data) => {
-      res.json(data)
+    const filteredObjects = await newData.filter((newRecord) => {
+      return !recordIds.some((record) => record.id.toString() === newRecord.id.toString())
     })
-    .catch((e) => console.log(e))
+
+    const filteredResults = await filteredObjects.filter((obj) => {
+      return !recordIds.some((record) => { record.url === obj.url })
+    })
+
+    res.json(filteredResults)
+
+  } else {
+    let db_connect = await dbo.getDb()
+    let response
+    let results
+    console.log(queryObj)
+
+    if (keywords) {
+
+      let aggregateQuery =         [
+        {
+          $lookup: {
+            from: chatgptSummary,
+            localField: "id",
+            foreignField: "id",
+            pipeline: [
+              {
+                $project: {
+                  id: "$id",
+                  skills: {
+                    $filter: {
+                      input: "$response.result.skills.minimum",
+                      as: "skill",
+                      cond: {
+                        $and: [
+                          { $ne: ["$$skill.keyword", ""] },
+                          { $ne: ["$$skill.keyword", null] }
+                        ]
+                      }
+                    }
+                  },
+                  extras: {
+                    $filter: {
+                      input: "$response.result.skills.extras",
+                      as: "extras",
+                      cond: {
+                        $and: [
+                          { $ne: ["$$extras", ""] },
+                          { $ne: ["$$extras", null] }
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                $project: {
+                  keywords: {
+                    $reduce: {
+                      input: { $setUnion: ["$skills.keyword", "$extras"] },
+                      initialValue: "",
+                      in: { $concat: [ "$$value", ",", "$$this" ] }
+                    }
+                  }
+                }
+              },
+
+            ],
+            as: "lookupResults"
+          }
+        },
+        {
+          $replaceRoot: {
+            newRoot: {
+              $mergeObjects: ["$$ROOT", {
+                keywords: {
+                  $cond: {
+                    if: { $gt: [{ $size: "$lookupResults.keywords" }, 0] },
+                    then: { $arrayElemAt: ["$lookupResults.keywords", 0] },
+                    else: "$$REMOVE"
+                  }
+                }
+              }]
+            }
+          }
+        },
+        {
+          $project: {
+            lookupResults: 0
+          }
+        },
+        { $match: queryObj },
+
+      ]  
+
+      if (field && sort) {
+        aggregateQuery.unshift({ $sort: { [field]: sort } })
+      }
+
+      results = await db_connect.collection(dbCollection)
+      .aggregate(aggregateQuery)
+      .toArray()
+      .catch((e) => res.status(500).send(e))
+
+
+    } else {
+      
+      let docs = await db_connect
+        .collection(dbCollection)
+        .find(queryObj, queryOpts)
+    
+      if (field && sort) {
+        console.log({field, sort})
+        response = docs.sort({ [field]: sort })
+      }
+    
+      results = await response
+        .toArray()
+        .then((data) => data)
+        .catch((e) => res.status(500).send(e))
+
+    }
+
+    res.json(results)
+  
+  }
+
+  
 })
 
 recordRoutes.route('/record/new').post(async (req, res) => {
@@ -575,7 +614,6 @@ recordRoutes.route('/record/:id/summary').post(async (req, res) => {
     newvalues.$set.dateModified = new Date().toISOString()
   }
 
-  const chatgptSummary = 'chatgpt-summary-responses'
   db_connect
     .collection(chatgptSummary)
     .findOne(myquery)
@@ -617,7 +655,7 @@ recordRoutes.route('/logging/chatgpt-error-log').post(async (req, res) => {
 
   try {
     db_connect
-      .collection('chatgpt-error-log')
+      .collection(chatgptErrorLog)
       .insertOne(record)
       .then((data) => {
         res.json(data)

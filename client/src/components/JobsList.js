@@ -85,6 +85,7 @@ const columns = [
     ),
     editable: true,
   },
+  { field: 'keywords', flex: 1 },
   {
     field: 'status1',
     headerAlign: 'center',
@@ -191,6 +192,7 @@ const JobsDataGrid = () => {
           columnVisibilityModel: {
             _id: false,
             id: false,
+            keywords: false
           },
         },
         sorting: {
