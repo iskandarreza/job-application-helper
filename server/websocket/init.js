@@ -1,11 +1,6 @@
-const express = require('express')
-const http = require('http')
 const WebSocket = require('ws')
 
-const app = express()
-const server = http.createServer(app)
-
-const setupWebSocketServer = () => {
+const setupWebSocketServer = (server) => {
   const wss = new WebSocket.Server({ server })
 
   wss.on('connection', function connection(ws) {
@@ -20,11 +15,6 @@ const setupWebSocketServer = () => {
     ws.on('close', function close() {
       console.log('WebSocket disconnected')
     })
-  })
-
-  // Start the server
-  server.listen(5001, function listening() {
-    console.log('WebSocket server listening on port', server.address().port)
   })
 
   return wss
