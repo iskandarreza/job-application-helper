@@ -1,24 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
-import { Box, Tooltip } from '@mui/material'
+import { Tooltip } from '@mui/material'
 
-import RenderDateCell from './atoms/RenderDateCell'
-import RenderSelectMenu from './atoms/RenderSelectMenu'
-import RenderRoleCell from './atoms/RenderRoleCell'
-import RenderURLButtons from './atoms/RenderURLButtons'
+import RenderDateCell from './RenderDateCell'
+import RenderSelectMenu from './RenderSelectMenu'
+import RenderRoleCell from './RenderRoleCell'
+import RenderURLButtons from './RenderURLButtons'
+import CustomToolbar from './CustomToolBar'
 
-import CustomToolbar from './atoms/JobLinksToolBar'
-import AddRowForm from './atoms/JobRecordInsert'
-import JobDescriptionDialog from './JobDescriptionDialog'
-import AdvancedQueryDrawer from './AdvancedQueryDrawer'
-
-import '../index.scss'
+import '../../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchJobs,
   updateRecord,
-} from '../redux/actions/jobActions'
+} from '../../redux/actions/jobActions'
 
 import { toast } from 'react-toastify'
 import { useTheme } from '@emotion/react'
@@ -211,19 +207,4 @@ const JobsDataGrid = () => {
   )
 }
 
-export const JobsList = () => {
-
-  return (
-    <div style={{ padding: '5px 20px' }}>
-      <h1>Job Postings</h1>
-      <Box sx={{ height: '75vh', width: 'auto' }}>
-        <JobsDataGrid />
-      </Box>
-      <Box>
-        <AddRowForm />
-      </Box>
-      <JobDescriptionDialog />
-      <AdvancedQueryDrawer />
-    </div>
-  )
-}
+export default JobsDataGrid

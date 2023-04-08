@@ -11,9 +11,11 @@ import {
 import makeStyles from '@mui/styles/makeStyles'
 import { Container } from '@mui/system'
 import { useDispatch, useSelector } from 'react-redux'
-import { updateListWithQueryResults } from './../redux/actions/jobActions'
-import { hideQueryDrawer } from '../redux/actions/uiActions'
-import QueryBuilderComponent from './atoms/QueryBuilderComponent'
+import { updateListWithQueryResults } from '../../redux/actions/jobActions'
+import { hideQueryDrawer } from '../../redux/actions/uiActions'
+import QueryBuilderComponent from './QueryBuilderComponent'
+import QueryPresetsComponent from './QueryPresetsComponent'
+import { hideQueryResultsDialog } from '../../redux/actions/queryActions'
 
 const useStyles = makeStyles(() => ({
   queryBuilderContainer: {
@@ -27,17 +29,14 @@ const useStyles = makeStyles(() => ({
 
 const AdvancedQueryDrawer = () => {
   const drawerState = useSelector((state) => state.uiStates.queryDrawer.isOpen)
+  const queryResults = useSelector((state) => state.queryStates.results)
+  const dialogState = useSelector((state) => state.queryStates.dialogOpen)
+
   const dispatch = useDispatch()
-  const [results, setResults] = useState([])
-  const [dialogState, setDialogState] = useState(false)
   const [isPreset, setIsPreset] = useState(false)
 
   const handlePresetLinkClick = () => {
     setIsPreset(true)
-  }
-
-  const handleCustomQueryClick = () => {
-    setIsPreset(false)
   }
 
   const handleDrawerClose = () => {
@@ -45,12 +44,12 @@ const AdvancedQueryDrawer = () => {
   }
 
   const handleDialogClose = () => {
-    setDialogState(false)
+    dispatch(hideQueryResultsDialog())
   }
 
   const handleListUpdate = () => {
-    setDialogState(false)
-    dispatch(updateListWithQueryResults(results))
+    dispatch(hideQueryResultsDialog())
+    dispatch(updateListWithQueryResults(queryResults))
     dispatch(hideQueryDrawer())
   }
 
@@ -65,7 +64,7 @@ const AdvancedQueryDrawer = () => {
       >
         <Container className={classes.queryBuilderContainer} sx={{ margin: '30px auto', width: 'auto' }}>
           <Box marginBottom={'10px'}>
-            { !isPreset ?
+            {!isPreset ?
               <>
                 <h2>Create an advanced query</h2>
                 <h4>...or choose a <span onClick={handlePresetLinkClick}>preset</span></h4>
@@ -76,32 +75,32 @@ const AdvancedQueryDrawer = () => {
             }
           </Box>
           <Box>
-          { !isPreset ?
+            {!isPreset ?
               <>
-                <QueryBuilderComponent {...{ setResults, setDialogState }} />
+                <QueryBuilderComponent />
               </>
-            : <>
-            <Button color='secondary' variant='contained' onClick={handleCustomQueryClick}>Create custom query</Button>
-            </>
-          }
+              : <>
+                <QueryPresetsComponent  {...{ setIsPreset }} />
+              </>
+            }
 
           </Box>
         </Container>
       </Drawer>
       <Dialog open={dialogState}>
-        <DialogTitle>{results.length > 0 ? 'Update List?' : 'Attention'}</DialogTitle>
+        <DialogTitle>{queryResults.length > 0 ? 'Update List?' : 'Attention'}</DialogTitle>
         <DialogContent>
           <Container>
-            {results.length > 0 ?
+            {queryResults.length > 0 ?
               <>
-                <p>Query returned {results.length} rows.</p>
+                <p>Query returned {queryResults.length} rows.</p>
                 <p>Update the list with data from the query?</p>
               </> : <p>Query did not return any results</p>
             }
           </Container>
         </DialogContent>
         <DialogActions>
-          {results.length > 0 ?
+          {queryResults.length > 0 ?
             <Button variant='outlined' onClick={handleListUpdate}>Yes</Button> : ''
           }
           <Button variant='outlined' onClick={handleDialogClose}>Dismiss</Button>

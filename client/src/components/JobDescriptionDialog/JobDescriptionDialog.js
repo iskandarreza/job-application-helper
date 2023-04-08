@@ -6,10 +6,10 @@ import {
 } from '@mui/material'
 
 import { useDispatch, useSelector } from 'react-redux'
-import { closeJobDescriptionDialog } from '../redux/actions/uiActions'
-import { sendToServiceWorker } from '../redux/actions/serviceWorkerActions'
+import { closeJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
-import RoleDetailsTabs from './atoms/RoleDetailsTab'
+import RoleDetailsTabs from './RoleDetailsTab'
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;

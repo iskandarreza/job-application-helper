@@ -4,6 +4,7 @@ import { SEND_TO_SERVICE_WORKER } from './actions/serviceWorkerActions'
 import jobsReducer from './reducers/jobsReducer'
 import dataFromServiceWorkerReducer from './reducers/serviceWorkerReducer'
 import uiReducer from './reducers/uiReducer'
+import queryReducer from './reducers/queryReducer'
 
 const initialState = {}
 const defaultReducer = (state = initialState, action) => {
@@ -17,7 +18,8 @@ const rootReducer = combineReducers({
   defaultState: defaultReducer,
   serviceWorkerState: dataFromServiceWorkerReducer,
   jobRecords: jobsReducer,
-  uiStates: uiReducer
+  uiStates: uiReducer,
+  queryStates: queryReducer
 })
 
 const serviceWorkerMiddleware = (store) => {

@@ -1,9 +1,14 @@
 import { Button, FormControlLabel, IconButton, Paper, Slide, Switch, Tooltip } from '@mui/material'
 import ContentPasteIcon from '@mui/icons-material/ContentPaste'
 import makeStyles from '@mui/styles/makeStyles'
-import { useState } from 'react'
-import { runQuery } from '../../utils/api'
-import { formatQuery } from 'react-querybuilder'
+import { useDispatch, useSelector } from 'react-redux'
+
+import { 
+  showQueryResultsDialog, 
+  updateCopyToClipboardToolTip, 
+  updateJobsGridWithQueryResults, 
+  toggleQueryStringSwitch
+} from '../../redux/actions/queryActions'
 
 const useStyles = makeStyles((theme) => ({
   queryStringBox: {
@@ -11,6 +16,7 @@ const useStyles = makeStyles((theme) => ({
     margin: '20px auto',
     padding: '15px',
     position: 'relative',
+    width: '100%',
 
     '& button': {
       position: 'absolute',
@@ -21,19 +27,26 @@ const useStyles = makeStyles((theme) => ({
 
 }))
 
-const SubmitQueryComponent = ({query, queryString, tooltipTitle, setTooltipTitle, setResults, setDialogState}) => {
-  const [checked, setChecked] = useState(false)
+const SubmitQueryComponent = () => {
+  const query = useSelector((state) => state.queryStates.query)
+  const queryString = useSelector((state) => state.queryStates.queryString)
+  const showPreview = useSelector((state) => state.queryStates.showQueryString)
+  const tooltipTitle = useSelector((state) => state.queryStates.tooltipTitle)
 
-  // const clipBoardCopyTooltipTitle = 'Click to copy to clipboard'
-  // const [tooltipTitle, setTooltipTitle] = useState(clipBoardCopyTooltipTitle)
+  const dispatch = useDispatch()
 
   const handlePreviewSwitch = () => {
-    setChecked((prev) => !prev);
+    dispatch(toggleQueryStringSwitch())
   }
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(queryString)
-    setTooltipTitle('Copied to clipboard!')
+    dispatch(updateCopyToClipboardToolTip())
+  }
+
+  const handleSubmitQuery = async () => {
+    dispatch(updateJobsGridWithQueryResults(query))
+    dispatch(showQueryResultsDialog())
   }
 
   const classes = useStyles()
@@ -41,7 +54,7 @@ const SubmitQueryComponent = ({query, queryString, tooltipTitle, setTooltipTitle
   return (
     <>
       <FormControlLabel
-        control={<Switch checked={checked} onChange={handlePreviewSwitch} />}
+        control={<Switch checked={showPreview} onChange={handlePreviewSwitch} />}
         label="Show query string"
       />
 
@@ -49,19 +62,14 @@ const SubmitQueryComponent = ({query, queryString, tooltipTitle, setTooltipTitle
         <Button
           variant="contained"
           color="warning"
-          onClick={async () => {
-            let results = await runQuery(JSON.parse(formatQuery(query, 'mongodb')))
-
-            setResults(results)
-            setDialogState(true)
-          }}
+          onClick={handleSubmitQuery}
           style={{ marginLeft: 'auto' }}
         >
           Send Query
         </Button>
       </div>
 
-      <Slide direction="up" in={checked} mountOnEnter unmountOnExit>
+      <Slide direction="up" in={showPreview} mountOnEnter unmountOnExit>
         <Paper className={classes.queryStringBox} elevation={4} >
           <Tooltip title={tooltipTitle} >
             <IconButton onClick={handleCopyToClipboard}>

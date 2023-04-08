@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import DragIndicator from '@mui/icons-material/DragIndicator'
 import {
   Button,
@@ -16,10 +16,14 @@ import {
 } from '@mui/material'
 import makeStyles from '@mui/styles/makeStyles'
 import { QueryBuilderMaterial } from '@react-querybuilder/material'
-import { formatQuery, QueryBuilder } from 'react-querybuilder'
+import { QueryBuilder } from 'react-querybuilder'
 import { QueryBuilderDnD } from '@react-querybuilder/dnd'
-import { postStatusOpts, status1Opts, status2Opts } from '../fieldOpts'
+import { postStatusOpts, status1Opts, status2Opts } from '../Grid/fieldOpts'
+import { useDispatch, useSelector } from 'react-redux'
+import { resetCopyToClipboardToolTip, setRecordQuery } from '../../redux/actions/queryActions'
+
 import SubmitQueryComponent from './SubmitQueryComponent'
+
 
 const fields = [
   { name: 'id', label: 'Job ID' },
@@ -83,42 +87,6 @@ const fields = [
   },
 ]
 
-const initialQuery = {
-  "combinator": "and",
-  "rules": [
-    {
-      "field": "positionStatus",
-      "operator": "=",
-      "valueSource": "value",
-      "value": "open",
-    },
-    {
-      "field": "externalSource",
-      "operator": "=",
-      "valueSource": "value",
-      "value": "false",
-    },
-    {
-      "field": "status1",
-      "operator": "!=",
-      "valueSource": "value",
-      "value": "applied"
-    },
-    {
-      "field": "status1",
-      "operator": "!=",
-      "valueSource": "value",
-      "value": "uncertain"
-    },
-    {
-      "field": "status1",
-      "operator": "!=",
-      "valueSource": "value",
-      "value": "declined"
-    }
-  ],
-}
-
 const muiComponents = {
   Button,
   Checkbox,
@@ -160,28 +128,12 @@ const useStyles = makeStyles((theme) => ({
       marginLeft: '10px',
     },
   },
-  queryStringBox: {
-    display: 'flex',
-    margin: '20px auto',
-    padding: '15px',
-    position: 'relative',
-
-    '& button': {
-      position: 'absolute',
-      top: theme.spacing(2),
-      right: theme.spacing(2)
-    }
-  }
 
 }))
 
-const QueryBuilderComponent = ({ setResults, setDialogState }) => {
-  const [query, setQuery] = useState(initialQuery)
-
-  const [queryString, setQueryString] = useState('')
-
-  const clipBoardCopyTooltipTitle = 'Click to copy to clipboard'
-  const [tooltipTitle, setTooltipTitle] = useState(clipBoardCopyTooltipTitle)
+const QueryBuilderComponent = () => {
+  const query = useSelector((state) => state.queryStates.query)
+  const dispatch = useDispatch()
 
   const classes = useStyles()
 
@@ -190,17 +142,15 @@ const QueryBuilderComponent = ({ setResults, setDialogState }) => {
       <QueryBuilderDnD>
         <QueryBuilderMaterial muiComponents={muiComponents}>
           <QueryBuilder fields={fields} query={query} onQueryChange={q => {
-            setQuery(q)
-            setQueryString(JSON.stringify(JSON.parse(formatQuery(q, 'mongodb')), null, 2))
-            setTooltipTitle(clipBoardCopyTooltipTitle)
+            dispatch(setRecordQuery(q))
+            dispatch(resetCopyToClipboardToolTip())
+
+            console.log(q)
           }}
           />
         </QueryBuilderMaterial>
       </QueryBuilderDnD>
-      { queryString ?
-          <SubmitQueryComponent {...{query, queryString, tooltipTitle, setTooltipTitle, setResults, setDialogState}} />
-          : ''
-      }
+      <SubmitQueryComponent />
     </div>
   )
 
