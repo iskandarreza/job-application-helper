@@ -15,7 +15,7 @@ import { updateListWithQueryResults } from '../../redux/actions/jobActions'
 import { hideQueryDrawer } from '../../redux/actions/uiActions'
 import QueryBuilderComponent from './QueryBuilderComponent'
 import QueryPresetsComponent from './QueryPresetsComponent'
-import { hideQueryResultsDialog } from '../../redux/actions/queryActions'
+import { hideQueryResultsDialog, toggleQueryStringSwitch } from '../../redux/actions/queryActions'
 
 const useStyles = makeStyles(() => ({
   queryBuilderContainer: {
@@ -29,6 +29,7 @@ const useStyles = makeStyles(() => ({
 
 const AdvancedQueryDrawer = () => {
   const drawerState = useSelector((state) => state.uiStates.queryDrawer.isOpen)
+  const showPreview = useSelector((state) => state.queryStates.showQueryString)
   const queryResults = useSelector((state) => state.queryStates.results)
   const dialogState = useSelector((state) => state.queryStates.dialogOpen)
 
@@ -36,6 +37,10 @@ const AdvancedQueryDrawer = () => {
   const [isPreset, setIsPreset] = useState(false)
 
   const handlePresetLinkClick = () => {
+    if (!showPreview) {
+      dispatch(toggleQueryStringSwitch())
+    }
+    
     setIsPreset(true)
   }
 

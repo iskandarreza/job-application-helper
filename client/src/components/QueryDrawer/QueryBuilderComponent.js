@@ -144,8 +144,6 @@ const QueryBuilderComponent = () => {
           <QueryBuilder fields={fields} query={query} onQueryChange={q => {
             dispatch(setRecordQuery(q))
             dispatch(resetCopyToClipboardToolTip())
-
-            console.log(q)
           }}
           />
         </QueryBuilderMaterial>
