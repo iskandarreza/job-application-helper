@@ -3,7 +3,7 @@ import { Box, TextField, Button } from '@mui/material'
 import { Add } from '@mui/icons-material'
 import { highlightJob, insertRecord } from '../../redux/actions/jobActions'
 import { useDispatch, useSelector } from 'react-redux'
-import RenderCustomSelect from './CustomSelect'
+import RenderCustomSelect from '../Grid/CustomSelect'
 
 const defaultValidationMessage = 'Please fill out all fields.'
 const status1ValidationMessage = 'Please select a valid status.'

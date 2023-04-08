@@ -4,7 +4,9 @@ const {
   JOB_DESCRIPTION_DIALOG_CONTENT, 
   SHOW_SNACKBAR,
   CLOSE_SNACKBAR,
-  JOB_SUMMARY_DIALOG_CONTENT
+  JOB_SUMMARY_DIALOG_CONTENT,
+  SHOW_QUERY_DRAWER,
+  HIDE_QUERY_DRAWER
 } = require("../actions/uiActions")
 
 const initialState = {
@@ -27,6 +29,9 @@ const initialState = {
   snackbar: {
     isOpen: false,
     message: '',
+  },
+  queryDrawer: {
+    isOpen: false
   }
 }
 
@@ -88,6 +93,24 @@ const closeSnackbar = (state) => {
   }
 }
 
+const showQueryDrawer = (state) => {
+  return {
+    ...state,
+    queryDrawer: {
+      isOpen: true,
+    }
+  }
+}
+
+const hideQueryDrawer = (state) => {
+  return {
+    ...state,
+    queryDrawer: {
+      isOpen: false,
+    }
+  }
+}
+
 const uiReducer = (state = initialState, action) => {
 
   switch (action.type) {
@@ -103,6 +126,10 @@ const uiReducer = (state = initialState, action) => {
       return showSnackbar(state, action.payload)
     case CLOSE_SNACKBAR:
       return closeSnackbar(state)
+    case SHOW_QUERY_DRAWER:
+      return showQueryDrawer(state, action.payload)
+    case HIDE_QUERY_DRAWER:
+      return hideQueryDrawer(state)
     default:
       return state
   }  
