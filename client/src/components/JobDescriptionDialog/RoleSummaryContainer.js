@@ -5,9 +5,10 @@ import { useSelector } from "react-redux"
 
 const useStyles = makeStyles((theme) => ({
   roleSummary: {
-    '& ul em small': {
-      marginLeft: theme.spacing(-2),
+    '& ul, ol':  {
+      marginLeft: theme.spacing(2),
     },
+
     '& .data-box:not(:nth-child(1))': {
       marginTop: theme.spacing(2),
     },

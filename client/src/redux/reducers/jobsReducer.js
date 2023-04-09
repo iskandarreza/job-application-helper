@@ -87,9 +87,10 @@ const jobsReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        jobs: state.jobs.map((job) =>
-          job.id === action.payload.id ? action.payload : job
-        ),
+        // jobs: state.jobs.map((job) =>
+        //   job.id === action.payload.id ? action.payload : job
+        // ),
+        jobs: [...replaceRecordInArray(state, action)]
       }
     case UPDATE_RECORD_FAILURE:
       return failureAction(state, action.payload)
