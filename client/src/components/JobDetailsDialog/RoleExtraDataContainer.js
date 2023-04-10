@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux"
 
 const RoleExtraDataContainer = () => {
-  const data = useSelector((state) => state.uiStates.jobSummaryDialogContent) || ''
+  const data = useSelector((state) => state.uiStates.jobSummaryDialog.content) || ''
   const { response, _id } = data
   const { completion_tokens, prompt_tokens, total_tokens } = response
 

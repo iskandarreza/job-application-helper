@@ -1,4 +1,4 @@
-const websocketURI = 'ws://localhost:5001'
+const websocketURI = 'ws://localhost:5000'
 const self = this
 let wSocket
 let messageClient
@@ -24,7 +24,7 @@ const taskReducer = async (task) => {
       break
     case 'GENERATE_SUMMARY_FROM_QUERY':
       sendWS(JSON.stringify({
-        message: 'Generate summarySend queried records to chatgpt prompt',
+        message: 'Send queried records to chatgpt prompt',
         data: payload
       }))
       break

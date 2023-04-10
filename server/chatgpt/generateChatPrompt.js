@@ -44,13 +44,23 @@ module.exports = generateChatPrompt = async(input) => {
   .join('')
 
   return {
+      // prompt: [
+      //     {"role": "system", "content": "You are a contextual data analysis engine, ready to receive a markdown input and extract relevant data and produce a JSON output."},
+      //     {"role": "user", "content": "Consider the following markdown:"},
+      //     {"role": "user", "content": `${markdown}`},
+      //     {"role": "user", "content": 'Now extract the relevant information and fill in the data into the JSON object below, with the comments next to the object properties defining the limitations:'},
+      //     {"role": "user", "content": `${outpuFormat}`}
+      // ],
+      // title: `Convert input markdown to output JSON`,
+      
+      // Testing this optimized prompt that ChatGPT provided 
       prompt: [
-          {"role": "system", "content": "You are a contextual data analysis engine, ready to receive a markdown input and extract relevant data and produce a JSON output."},
-          {"role": "user", "content": "Consider the following markdown:"},
-          {"role": "user", "content": `${markdown}`},
-          {"role": "user", "content": 'Now extract the relevant information and fill in the data into the JSON object below, with the comments next to the object properties defining the limitations:'},
-          {"role": "user", "content": `${outpuFormat}`}
+        {"role": "system", "content": "Convert markdown input to JSON output for a contextual data analysis engine."},
+        {"role": "system", "content": `See code for format: ${outpuFormat}`},
+        {"role": "user", "content": `Input markdown: ${markdown} \n Extract data and fill JSON object as defined in code.`},
+        {"role": "user", "content": "Prompt format: {summary:'', responsibilities:[], skills:{minimum:[{keyword:'',type:''}],extras:[]}, qualifications:{minimum:[],extras:[]}, salary:{hourly:'0',estimate:'0'}, workType:'', note:''}"},
       ],
-      title: `Convert input markdown to output JSON`,
+      title: "Convert input markdown to output JSON"
+      
   }
 }

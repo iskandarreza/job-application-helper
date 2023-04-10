@@ -16,31 +16,34 @@ const useStyles = makeStyles((theme) => ({
 }))
 
 const RoleSummaryContainer = () => {
-  const data = useSelector((state) => state.uiStates.jobSummaryDialogContent) || ''
+  const isLoading = useSelector((state) => state.uiStates.jobSummaryDialog.isLoading) || true
+  const data = useSelector((state) => state.uiStates.jobSummaryDialog.content) || ''
   const [value, setValue] = useState(data?.response?.result)
   const { _id } = data
 
   useEffect(() => {
-    const {
-      summary,
-      responsibilities,
-      skills,
-      qualifications,
-      salary,
-      workType,
-      note,
-    } = data?.response?.result
-
-    setValue({
-      summary,
-      responsibilities,
-      skills,
-      qualifications,
-      salary,
-      workType,
-      note,
-    })
-  }, [data])
+    if(!isLoading) {
+      const {
+        summary,
+        responsibilities,
+        skills,
+        qualifications,
+        salary,
+        workType,
+        note,
+      } = data?.response?.result
+  
+      setValue({
+        summary,
+        responsibilities,
+        skills,
+        qualifications,
+        salary,
+        workType,
+        note,
+      })  
+    }
+  }, [isLoading, data])
 
   const classes = useStyles()
 

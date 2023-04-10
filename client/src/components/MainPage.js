@@ -2,7 +2,7 @@ import React from 'react'
 import { Box } from '@mui/material'
 
 import AddRowForm from './atoms/JobRecordInsert'
-import JobDescriptionDialog from './JobDescriptionDialog/JobDescriptionDialog'
+import JobDetailsDialog from './JobDetailsDialog/JobDetailsDialog'
 import AdvancedQueryDrawer from './QueryDrawer/AdvancedQueryDrawer'
 import JobsDataGrid from './Grid/JobListGrid'
 
@@ -19,7 +19,7 @@ export const JobsList = () => {
       <Box>
         <AddRowForm />
       </Box>
-      <JobDescriptionDialog />
+      <JobDetailsDialog />
       <AdvancedQueryDrawer />
     </div>
   )

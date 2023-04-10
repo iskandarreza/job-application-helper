@@ -11,7 +11,7 @@ import {
 import makeStyles from '@mui/styles/makeStyles'
 
 import { useDispatch, useSelector } from 'react-redux'
-import { closeJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { closeJobDetailsDialog } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
 import RoleDetailsTabs from './RoleDetailsTab'
@@ -42,11 +42,11 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 })
 
-const JobDescriptionDialog = () => {
-  const open = useSelector((state) => state.uiStates.jobDescriptionDialogOpen)
+const JobDetailsDialog = () => {
+  const open = useSelector((state) => state.uiStates.jobDetailsDialog.isOpen) 
   const activeRow = useSelector((state) => state.uiStates.activeRow)
-  const description = useSelector((state) => state.uiStates.jobDescriptionDialogContent)
-  const summary = useSelector((state) => state.uiStates.jobSummaryDialogContent) || null
+  const description = useSelector((state) => state.uiStates.jobDescriptionDialog.content)
+  const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content) || null
   const { _id, id, org, role, location, url, status1 } = activeRow
   const [status, setStatus] = useState(!status1 ? 'Set Status' : status1)
 
@@ -54,7 +54,7 @@ const JobDescriptionDialog = () => {
   const dispatch = useDispatch()
 
   const handleClose = () => {
-    dispatch(closeJobDescriptionDialog())
+    dispatch(closeJobDetailsDialog())
   }
 
   const handleUpdateData = () => {
@@ -74,7 +74,7 @@ const JobDescriptionDialog = () => {
     })
 
     dispatch(sendToServiceWorker({ data: { ...promptData }, action: 'GENERATE_SUMMARY' }))
-    handleClose()
+    // handleClose()
   }
 
   const handleOpenPage = () => {
@@ -85,7 +85,12 @@ const JobDescriptionDialog = () => {
     const value = event.target.value
     if (value && value !== 'Set Status') {
       setStatus(value)
-      dispatch(updateRecord(activeRow, { status1: value }))
+
+      if (value !== 'closed') {
+        dispatch(updateRecord(activeRow, { status1: value }))  
+      } else {
+        dispatch(updateRecord(activeRow, { positionStatus: value }))  
+      }
     }
   }
 
@@ -139,6 +144,9 @@ const JobDescriptionDialog = () => {
                     {option}
                   </MenuItem>
                 ))}
+                <MenuItem value="closed">
+                  closed
+                </MenuItem>
               </Select>
 
             </FormControl>
@@ -154,4 +162,4 @@ const JobDescriptionDialog = () => {
   )
 }
 
-export default JobDescriptionDialog
+export default JobDetailsDialog
