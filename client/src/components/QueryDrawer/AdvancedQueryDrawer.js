@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -32,6 +33,7 @@ const AdvancedQueryDrawer = () => {
   const showPreview = useSelector((state) => state.queryStates.showQueryString)
   const queryResults = useSelector((state) => state.queryStates.results)
   const dialogState = useSelector((state) => state.queryStates.dialogOpen)
+  const isLoading = useSelector((state) => state.queryStates.isLoading)
 
   const dispatch = useDispatch()
   const [isPreset, setIsPreset] = useState(false)
@@ -40,7 +42,7 @@ const AdvancedQueryDrawer = () => {
     if (!showPreview) {
       dispatch(toggleQueryStringSwitch())
     }
-    
+
     setIsPreset(true)
   }
 
@@ -93,23 +95,36 @@ const AdvancedQueryDrawer = () => {
         </Container>
       </Drawer>
       <Dialog open={dialogState}>
-        <DialogTitle>{queryResults.length > 0 ? 'Update List?' : 'Attention'}</DialogTitle>
-        <DialogContent>
-          <Container>
-            {queryResults.length > 0 ?
-              <>
-                <p>Query returned {queryResults.length} rows.</p>
-                <p>Update the list with data from the query?</p>
-              </> : <p>Query did not return any results</p>
-            }
-          </Container>
-        </DialogContent>
-        <DialogActions>
-          {queryResults.length > 0 ?
-            <Button variant='outlined' onClick={handleListUpdate}>Yes</Button> : ''
-          }
-          <Button variant='outlined' onClick={handleDialogClose}>Dismiss</Button>
-        </DialogActions>
+        {!isLoading ?
+          <>
+            <DialogTitle>{queryResults.length > 0 ? 'Update List?' : 'Attention'}</DialogTitle>
+            <DialogContent>
+              <Container>
+                {queryResults.length > 0 ?
+                  <>
+                    <p>Query returned {queryResults.length} rows.</p>
+                    <p>Update the list with data from the query?</p>
+                  </> : <p>Query did not return any results</p>
+                }
+              </Container>
+            </DialogContent>
+            <DialogActions>
+              {queryResults.length > 0 ?
+                <Button variant='outlined' onClick={handleListUpdate}>Yes</Button> : ''
+              }
+              <Button variant='outlined' onClick={handleDialogClose}>Dismiss</Button>
+            </DialogActions>
+          </> : <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignContent: 'center',
+            padding: '30px'
+          }}>
+            <CircularProgress />
+          </Box>
+        }
+
       </Dialog>
     </>
   )

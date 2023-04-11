@@ -12,6 +12,7 @@ import '../../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
+  checkNewRecords,
   fetchJobs,
   updateRecord,
 } from '../../redux/actions/jobActions'
@@ -136,6 +137,7 @@ const JobsDataGrid = () => {
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
       dispatch(fetchJobs())
+      dispatch(checkNewRecords())
     }
   }, [jobsLoading, dispatch])
 

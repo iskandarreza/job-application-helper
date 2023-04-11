@@ -29,6 +29,11 @@ export const receivedFromServiceWorker = (payload) => (dispatch) => {
       dispatch(showSnackbar('Summary generated successfully', 'success', false))
       break
 
+    case 'NO_NEW_RECORDS':
+      dispatch(showSnackbar(data, 'info', false))
+      break
+
+
     default:
       return
   }

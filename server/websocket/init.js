@@ -1,4 +1,5 @@
 const WebSocket = require('ws')
+const setupTasks = require('./tasker')
 
 const setupWebSocketServer = (server) => {
   const wss = new WebSocket.Server({ server })
@@ -7,9 +8,7 @@ const setupWebSocketServer = (server) => {
     console.log('WebSocket connected')
 
     // Listen for messages from the client
-    ws.on('message', function incoming(message) {
-      console.log('WebSocket server received message:',JSON.parse(message.toString()))
-    })
+    setupTasks(ws)
 
     // Listen for the WebSocket connection to close
     ws.on('close', function close() {

@@ -9,7 +9,6 @@ const app = express()
 
 // get MongoDB driver connection
 const dbo = require("./db/conn")
-const setupTasks = require("./websocket/tasker")
 
 const PORT = process.env.PORT || 5000
 
@@ -59,7 +58,6 @@ server.listen(PORT, async () => {
 
   })
 
-  wss.on('connection', (ws) => setupTasks(ws))
   console.log(`Server listening on ${PORT}`)
   serverReady = true
 })

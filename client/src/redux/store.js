@@ -1,9 +1,12 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux'
+import { persistStore, persistReducer } from 'redux-persist'
+import storage from 'redux-persist/lib/storage'
 import thunk from 'redux-thunk'
-import { SEND_TO_SERVICE_WORKER, receivedFromServiceWorker } from './actions/serviceWorkerActions'
 import jobsReducer from './reducers/jobsReducer'
 import uiReducer from './reducers/uiReducer'
 import queryReducer from './reducers/queryReducer'
+import { serviceWorkerMiddleware } from './middleware/serviceWorker'
+import { localStorageMiddleware } from './middleware/localStorage'
 
 const initialState = {}
 const defaultReducer = (state = initialState, action) => {
@@ -20,39 +23,18 @@ const rootReducer = combineReducers({
   queryStates: queryReducer
 })
 
-const serviceWorkerMiddleware = (store) => {
-  let serviceWorker;
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('message', (event) => {
-      const { data } = event;
-      store.dispatch(receivedFromServiceWorker(data))
-    })
-
-    navigator.serviceWorker.register('/script/service-worker.js').then((registration) => {
-      setTimeout(() => {
-        serviceWorker = registration.active
-        try {
-          const registered = { type: 'SERVICE_WORKER_REGISTERED', payload: { registration } }
-          serviceWorker.postMessage({action: registered.type})
-          store.dispatch(registered)
-        } catch (error) {
-          console.log(error)
-        }
-
-      }, 1000)
-    })
-  }
-
-  return (next) => (action) => {
-    if (action.type === SEND_TO_SERVICE_WORKER && serviceWorker) {
-      serviceWorker.postMessage(action.payload)
-    }
-
-    return next(action)
-  }
+const persistConfig = {
+  key: 'root',
+  storage,
 }
 
-const store = createStore(rootReducer, applyMiddleware(thunk, serviceWorkerMiddleware))
+const persistedReducer = persistReducer(persistConfig, rootReducer)
 
-export default store
+export const configureStore = () => {
+  const store = createStore(
+    persistedReducer, 
+    applyMiddleware(thunk, serviceWorkerMiddleware, localStorageMiddleware)
+  )
+  const persistor = persistStore(store)
+  return { store, persistor }
+}

@@ -43,6 +43,7 @@ recordRoutes.get('/maintenance/populate-collection', async (req, res) => {
   }
 })
 
+// http://localhost:5000/maintenance/get-duplicates/email-link-data/true
 recordRoutes.get('/maintenance/get-duplicates/:collection/:deleteRecords', async (req, res) => {
   const workingCollection = req.params.collection
 

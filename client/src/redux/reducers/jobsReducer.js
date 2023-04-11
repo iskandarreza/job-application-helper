@@ -11,7 +11,8 @@ import {
   UPDATE_RECORD_FAILURE,
   FILTER_RECORDS_SUCCESS,
   FILTER_RECORDS_FAILURE,
-  HIGHLIGHT_RECORD_SUCCESS
+  HIGHLIGHT_RECORD_SUCCESS,
+  CHECK_FOR_NEW_RECORDS
 } from '../actions/jobActions'
 
 const initialState = {
@@ -19,6 +20,9 @@ const initialState = {
   loading: false,
   error: null,
   lastFetch: null,
+  lastNewRecordsCheck: null,
+  lastAppliedRecordsCheck: null,
+  lastOldRecordsCheck: null
 }
 
 const beginAction = (state) => ({
@@ -87,9 +91,6 @@ const jobsReducer = (state = initialState, action) => {
       return {
         ...state,
         loading: false,
-        // jobs: state.jobs.map((job) =>
-        //   job.id === action.payload.id ? action.payload : job
-        // ),
         jobs: [...replaceRecordInArray(state, action)]
       }
     case UPDATE_RECORD_FAILURE:
@@ -103,6 +104,12 @@ const jobsReducer = (state = initialState, action) => {
     case HIGHLIGHT_RECORD_SUCCESS:
       return successAction(state, action.payload, true)
     
+    case CHECK_FOR_NEW_RECORDS:
+      return {
+        ...state,
+        lastNewRecordsCheck: Date.now()
+      }
+
     default:
       return state
   }
