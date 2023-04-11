@@ -91,7 +91,6 @@ const jobDescriptionDialogContent = (state, payload) => {
 }
 
 const jobSummaryDialogContent = (state, payload) => {
-  console.log(payload)
   return {
     ...state,
     jobSummaryDialog: {

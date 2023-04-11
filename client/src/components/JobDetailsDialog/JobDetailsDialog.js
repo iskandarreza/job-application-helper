@@ -6,12 +6,13 @@ import {
   Box,
   Paper,
   MenuItem,
-  FormControl
+  FormControl, 
+  LinearProgress
 } from '@mui/material'
 import makeStyles from '@mui/styles/makeStyles'
 
 import { useDispatch, useSelector } from 'react-redux'
-import { closeJobDetailsDialog, showSnackbar } from '../../redux/actions/uiActions'
+import { closeJobDetailsDialog, fetchJobSummaryBegin, showSnackbar } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
 import RoleDetailsTabs from './RoleDetailsTab'
@@ -47,6 +48,7 @@ const JobDetailsDialog = () => {
   const activeRow = useSelector((state) => state.uiStates.activeRow)
   const description = useSelector((state) => state.uiStates.jobDescriptionDialog.content)
   const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content)
+  const summaryLoading = useSelector((state) => state.uiStates.jobSummaryDialog.isLoading)
   const { _id, id, org, role, location, url, status1 } = activeRow
   const [status, setStatus] = useState(!status1 ? 'Set Status' : status1)
 
@@ -77,6 +79,7 @@ const JobDetailsDialog = () => {
 
     dispatch(sendToServiceWorker({ data: { ...promptData }, action: 'GENERATE_SUMMARY' }))
     dispatch(showSnackbar('Service worker is requesting a summary from ChatGPT API', 'info', true))
+    dispatch(fetchJobSummaryBegin())
   }
 
   const handleOpenPage = () => {
@@ -126,6 +129,7 @@ const JobDetailsDialog = () => {
         <DialogContent>
           <Paper elevation={4}>
             <RoleDetailsTabs />
+            {summaryLoading ? <LinearProgress /> : ''}
           </Paper>
         </DialogContent>
 
