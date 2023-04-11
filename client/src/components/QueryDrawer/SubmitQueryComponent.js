@@ -33,6 +33,7 @@ const SubmitQueryComponent = () => {
   const showPreview = useSelector((state) => state.queryStates.showQueryString)
   const tooltipTitle = useSelector((state) => state.queryStates.tooltipTitle)
 
+
   const dispatch = useDispatch()
 
   const handlePreviewSwitch = () => {

@@ -26,6 +26,7 @@ export const serviceWorkerMiddleware = (store) => {
 
   return (next) => (action) => {
     if (action.type === SEND_TO_SERVICE_WORKER && serviceWorker) {
+      console.log({action})
       serviceWorker.postMessage(action.payload)
     }
 
