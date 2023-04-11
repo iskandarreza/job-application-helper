@@ -75,29 +75,46 @@ const messageListener = (event) => {
       const { action, data } = message
 
       if (receiver === 'webworker') {
-        console.log('WebSocket WebWorker received message:', message)
+        console.log('Service worker received websocket message: ', {message})
+
       }
 
-      if (action === 'LAST_FETCH_FALSE') {
-        sendWS(checkForNewRecords)
-      }
+      // if (action === 'LAST_FETCH_FALSE') {
+      //   sendWS(checkForNewRecords)
+      // }
 
-      const newRecordsChecked = [
-        'NO_NEW_RECORDS',
-        'FETCH_NEW_RECORDS_SUCCESS'
-      ]
-      if (newRecordsChecked.includes(action)) {
-        const checkApplied = JSON.stringify({ message: 'Check applied postings status' })
-        sendWS(checkApplied)
-      }
+      // const newRecordsChecked = [
+      //   'NO_NEW_RECORDS',
+      //   'FETCH_NEW_RECORDS_SUCCESS'
+      // ]
+      // if (newRecordsChecked.includes(action)) {
+      //   const checkApplied = JSON.stringify({ message: 'Check applied postings status' })
+      //   sendWS(checkApplied)
+      // }
 
-      const applicationsChecked = [
-        'CHECK_APPLIED_COMPLETE',
-        'CHECK_APPLIED_INCOMPLETE',
-      ]
+      // const applicationsChecked = [
+      //   'CHECK_APPLIED_COMPLETE',
+      //   'CHECK_APPLIED_INCOMPLETE',
+      // ]
 
-      if (applicationsChecked.includes(action)) {
-        sendWS(JSON.stringify({ message: 'Check oldest 24 open records' }))
+      // if (applicationsChecked.includes(action)) {
+      //   sendWS(JSON.stringify({ message: 'Check oldest 24 open records' }))
+      // }
+      if (message.message === 'SUMMARY_RECORD_INSERTED') {
+        let payload = { action: 'SUMMARY_RECORD_INSERTED', payload: message.data }
+        console.log({payload})
+        try {
+          messageClient.postMessage(payload)
+        } catch (error) {
+          console.error({ error, payload })
+          if (messageClient) {
+            console.debug({ messageClient, payload })
+            setTimeout(() => {
+              messageClient.postMessage(payload)
+            }, 5000)
+          }
+        }
+
       }
 
       if (action === 'RECORD_REFRESH_SUCCESS') {
@@ -114,6 +131,7 @@ const messageListener = (event) => {
           }
         }
       }
+      
     } else {
       const { data, source: client } = event
       console.log('Service worker received postMessage: ', { data, client })

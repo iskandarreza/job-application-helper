@@ -1,8 +1,7 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux'
 import thunk from 'redux-thunk'
-import { SEND_TO_SERVICE_WORKER } from './actions/serviceWorkerActions'
+import { SEND_TO_SERVICE_WORKER, receivedFromServiceWorker } from './actions/serviceWorkerActions'
 import jobsReducer from './reducers/jobsReducer'
-import dataFromServiceWorkerReducer from './reducers/serviceWorkerReducer'
 import uiReducer from './reducers/uiReducer'
 import queryReducer from './reducers/queryReducer'
 
@@ -16,7 +15,6 @@ const defaultReducer = (state = initialState, action) => {
 
 const rootReducer = combineReducers({
   defaultState: defaultReducer,
-  serviceWorkerState: dataFromServiceWorkerReducer,
   jobRecords: jobsReducer,
   uiStates: uiReducer,
   queryStates: queryReducer
@@ -28,8 +26,8 @@ const serviceWorkerMiddleware = (store) => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       const { data } = event;
-      store.dispatch({ type: 'RECEIVE_FROM_SERVICE_WORKER', payload: { data } });
-    });
+      store.dispatch(receivedFromServiceWorker(data))
+    })
 
     navigator.serviceWorker.register('/script/service-worker.js').then((registration) => {
       setTimeout(() => {
@@ -37,13 +35,13 @@ const serviceWorkerMiddleware = (store) => {
         try {
           const registered = { type: 'SERVICE_WORKER_REGISTERED', payload: { registration } }
           serviceWorker.postMessage({action: registered.type})
-          store.dispatch(registered);
+          store.dispatch(registered)
         } catch (error) {
           console.log(error)
         }
 
       }, 1000)
-    });
+    })
   }
 
   return (next) => (action) => {

@@ -11,7 +11,7 @@ import {
 import makeStyles from '@mui/styles/makeStyles'
 
 import { useDispatch, useSelector } from 'react-redux'
-import { closeJobDetailsDialog } from '../../redux/actions/uiActions'
+import { closeJobDetailsDialog, showSnackbar } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
 import RoleDetailsTabs from './RoleDetailsTab'
@@ -46,7 +46,7 @@ const JobDetailsDialog = () => {
   const open = useSelector((state) => state.uiStates.jobDetailsDialog.isOpen) 
   const activeRow = useSelector((state) => state.uiStates.activeRow)
   const description = useSelector((state) => state.uiStates.jobDescriptionDialog.content)
-  const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content) || null
+  const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content)
   const { _id, id, org, role, location, url, status1 } = activeRow
   const [status, setStatus] = useState(!status1 ? 'Set Status' : status1)
 
@@ -59,6 +59,8 @@ const JobDetailsDialog = () => {
 
   const handleUpdateData = () => {
     dispatch(sendToServiceWorker({ data: { _id, id, org, role, location, url }, action: 'UPDATE_LINK_DATA' }))
+    dispatch(showSnackbar('Service worker is beginning a record update', 'info', true))
+
     handleClose()
   }
 
@@ -74,7 +76,7 @@ const JobDetailsDialog = () => {
     })
 
     dispatch(sendToServiceWorker({ data: { ...promptData }, action: 'GENERATE_SUMMARY' }))
-    // handleClose()
+    dispatch(showSnackbar('Service worker is requesting a summary from ChatGPT API', 'info', true))
   }
 
   const handleOpenPage = () => {
@@ -91,6 +93,8 @@ const JobDetailsDialog = () => {
       } else {
         dispatch(updateRecord(activeRow, { positionStatus: value }))  
       }
+      
+      handleClose()
     }
   }
 
@@ -103,6 +107,10 @@ const JobDetailsDialog = () => {
     }
 
   }, [activeRow, setStatus])
+
+  useEffect(() => {
+    
+  }, [summary])
 
   return (
     <Dialog

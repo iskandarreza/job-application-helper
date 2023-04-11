@@ -2,13 +2,14 @@ const {
   JOB_DESCRIPTION_DIALOG_CONTENT, 
   SHOW_SNACKBAR,
   CLOSE_SNACKBAR,
-  JOB_SUMMARY_DIALOG_CONTENT,
   SHOW_QUERY_DRAWER,
   HIDE_QUERY_DRAWER,
   JOB_SUMMARY_BEGIN,
   JOB_DETAILS_DIALOG_OPEN,
   JOB_DETAILS_DIALOG_CLOSE,
-  SET_ROLE_DETAILS_TABS_STATE
+  SET_ROLE_DETAILS_TABS_STATE,
+  JOB_SUMMARY_SUCCESS,
+  JOB_SUMMARY_FAILURE
 } = require("../actions/uiActions")
 
 const initialState = {
@@ -90,6 +91,7 @@ const jobDescriptionDialogContent = (state, payload) => {
 }
 
 const jobSummaryDialogContent = (state, payload) => {
+  console.log(payload)
   return {
     ...state,
     jobSummaryDialog: {
@@ -162,8 +164,17 @@ const uiReducer = (state = initialState, action) => {
           isLoading: true,
         }
       }
-    case JOB_SUMMARY_DIALOG_CONTENT:
+    case JOB_SUMMARY_SUCCESS:
       return jobSummaryDialogContent(state, action.payload)
+    case JOB_SUMMARY_FAILURE:
+      return {
+        ...state,
+        jobSummaryDialog: {
+          content: '',
+          isLoading: false,
+        }
+      }
+
     case SHOW_SNACKBAR:
       return showSnackbar(state, action.payload)
     case CLOSE_SNACKBAR:

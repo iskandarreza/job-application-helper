@@ -48,7 +48,7 @@ const RoleDetailsTabs = () => {
   React.useEffect(() => {
     let index = summary ? 1 : 0
     dispatch(setNewTabState({tabStartIndex: index, tabValue}))
-  }, [summary])
+  }, [summary, dispatch, tabValue])
 
   return (
     <Box sx={{ width: '100%', height: '60vh' }}>
