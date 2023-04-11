@@ -4,6 +4,7 @@ import {
   addRecord,
   getRecordById,
 } from '../../utils/api'
+import { sendToServiceWorker } from './serviceWorkerActions'
 import { showSnackbar } from './uiActions'
 
 // Define action types
@@ -26,6 +27,7 @@ export const FILTER_RECORDS_FAILURE = 'FILTER_RECORD_FAILURE'
 
 export const HIGHLIGHT_RECORD_SUCCESS = 'HIGHLIGHT_RECORD_SUCCESS'
 
+export const CHECK_FOR_NEW_RECORDS = 'CHECK_FOR_NEW_RECORDS'
 
 
 // Define action creators
@@ -57,13 +59,15 @@ export const filterJobFailure = createPayloadAction(FILTER_RECORDS_FAILURE)
 
 export const highlightJobSuccess = createPayloadAction(HIGHLIGHT_RECORD_SUCCESS)
 
+export const checkForNewRecords = createAction(CHECK_FOR_NEW_RECORDS)
+
 // Define async action creators
 export const fetchJobs = () => {
   return async (dispatch, getState) => {
     const { lastFetch, jobs } = getState().jobRecords
     // Check if data is cached
     if (lastFetch && Date.now() - lastFetch < 1000 * 15 * 1) {
-      // 1 minute
+      // 15 minute
       dispatch(fetchJobsSuccess(jobs))
     } else {
       dispatch(fetchJobsBegin())
@@ -132,7 +136,6 @@ export const updateListWithQueryResults = (results) => async (dispatch, getState
   }
 }
 
-// unused
 export const highlightJob = (id) => async (dispatch, getState) => {
   const { jobs: rows } = getState().jobRecords
   const index = rows?.findIndex((existingRow) => existingRow.id === id)
@@ -145,4 +148,14 @@ export const highlightJob = (id) => async (dispatch, getState) => {
     dispatch(highlightJobSuccess(updatedRows))
   }
 
+}
+
+export const checkNewRecords = () => (dispatch, getState) => {
+  const { lastNewRecordsCheck } = getState().jobRecords
+
+  if (lastNewRecordsCheck && Date.now() - lastNewRecordsCheck < 1000 * 1 * 1) {
+    //  1 hour
+    dispatch(checkForNewRecords())
+    dispatch(sendToServiceWorker({action: CHECK_FOR_NEW_RECORDS}))  
+  }
 }

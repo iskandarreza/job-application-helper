@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import makeStyles from '@mui/styles/makeStyles';
+import React, { useEffect, useState } from 'react'
+import makeStyles from '@mui/styles/makeStyles'
 import { MenuItem, Select } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { updateRecord } from '../../redux/actions/jobActions'
@@ -44,6 +44,12 @@ const RenderSelectMenu = ({ params, menuOptions }) => {
   })
 
   const cellClassName = selectMenuClassNames[value] || ''
+
+  useEffect(() => {
+    if (params.value) {
+      setValue(params.value)
+    }
+  }, [params, setValue])
 
   return (
     <Select

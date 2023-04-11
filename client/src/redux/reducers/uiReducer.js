@@ -1,16 +1,18 @@
 const { 
-  JOB_DESCRIPTION_DIALOG_OPEN, 
-  JOB_DESCRIPTION_DIALOG_CLOSE, 
   JOB_DESCRIPTION_DIALOG_CONTENT, 
   SHOW_SNACKBAR,
   CLOSE_SNACKBAR,
-  JOB_SUMMARY_DIALOG_CONTENT,
   SHOW_QUERY_DRAWER,
-  HIDE_QUERY_DRAWER
+  HIDE_QUERY_DRAWER,
+  JOB_SUMMARY_BEGIN,
+  JOB_DETAILS_DIALOG_OPEN,
+  JOB_DETAILS_DIALOG_CLOSE,
+  SET_ROLE_DETAILS_TABS_STATE,
+  JOB_SUMMARY_SUCCESS,
+  JOB_SUMMARY_FAILURE
 } = require("../actions/uiActions")
 
 const initialState = {
-  jobDescriptionDialogOpen: false,
   activeRow: {
     _id: '',
     id: '',
@@ -19,13 +21,26 @@ const initialState = {
     location: '',
     url: '',
   },
-  jobDescriptionDialogContent: {
-    jobDescriptionText: '',
-    salaryInfoAndJobType: '',
-    qualificationsSection: '',
-    crawlDate: 'N/A'
+  jobDetailsDialog: {
+    isOpen: false,
   },
-  jobSummaryDialogContent: null,
+  roleDetailsTab: {
+    tabStartIndex: 1,
+    tabValue: 0
+  },
+  jobDescriptionDialog: {
+    content: {
+      jobDescriptionText: '',
+      salaryInfoAndJobType: '',
+      qualificationsSection: '',
+      crawlDate: 'N/A'
+    },
+    isLoading: true
+  },
+  jobSummaryDialog: {
+    content: '',
+    isLoading: false,
+  },
   snackbar: {
     isOpen: false,
     message: '',
@@ -35,18 +50,29 @@ const initialState = {
   }
 }
 
-const jobDescriptionDialogOpen = (state) => {
+const jobDetailsDialogOpen = (state) => {
   return {
     ...state,
-    jobDescriptionDialogOpen: true
+    jobDetailsDialog: {
+      isOpen: true
+    }
   }
 }
 
-const jobDescriptionDialogClose = (state) => {
+const jobDetailsDialogClose = (state) => {
   return {
     ...state,
-    jobDescriptionDialogOpen: false,
-    jobDescriptionDialogContent: initialState.jobDescriptionDialogContent
+    jobDetailsDialog: {
+      isOpen: false
+    },
+    jobDescriptionDialog: initialState.jobDescriptionDialog,
+  }
+}
+
+const setRoleDetailsTabState = (state, payload) => {
+  return {
+    ...state,
+    roleDetailsTab: payload
   }
 }
 
@@ -54,9 +80,12 @@ const jobDescriptionDialogContent = (state, payload) => {
   return {
     ...state,
     activeRow: payload.rowData,
-    jobDescriptionDialogContent: { 
-      ...payload.data, 
-      crawlDate:  payload.rowData.crawlDate 
+    jobDescriptionDialog: {
+      content: { 
+        ...payload.data, 
+        crawlDate:  payload.rowData.crawlDate 
+      },
+      isLoading: false
     }
   }
 }
@@ -64,7 +93,10 @@ const jobDescriptionDialogContent = (state, payload) => {
 const jobSummaryDialogContent = (state, payload) => {
   return {
     ...state,
-    jobSummaryDialogContent: payload
+    jobSummaryDialog: {
+      content: payload,
+      isLoading: false, 
+    }
   }
 }
 
@@ -114,14 +146,34 @@ const hideQueryDrawer = (state) => {
 const uiReducer = (state = initialState, action) => {
 
   switch (action.type) {
-    case JOB_DESCRIPTION_DIALOG_OPEN:
-      return jobDescriptionDialogOpen(state)
-    case JOB_DESCRIPTION_DIALOG_CLOSE:
-      return jobDescriptionDialogClose(state)
+    case JOB_DETAILS_DIALOG_OPEN:
+      return jobDetailsDialogOpen(state)
+    case JOB_DETAILS_DIALOG_CLOSE:
+      return jobDetailsDialogClose(state)
+    case SET_ROLE_DETAILS_TABS_STATE:
+      return setRoleDetailsTabState(state, action.payload)
+  
     case JOB_DESCRIPTION_DIALOG_CONTENT:
       return jobDescriptionDialogContent(state, action.payload)
-    case JOB_SUMMARY_DIALOG_CONTENT:
+    case JOB_SUMMARY_BEGIN:
+      return {
+        ...state,
+        jobSummaryDialog: {
+          content: '',
+          isLoading: true,
+        }
+      }
+    case JOB_SUMMARY_SUCCESS:
       return jobSummaryDialogContent(state, action.payload)
+    case JOB_SUMMARY_FAILURE:
+      return {
+        ...state,
+        jobSummaryDialog: {
+          content: '',
+          isLoading: false,
+        }
+      }
+
     case SHOW_SNACKBAR:
       return showSnackbar(state, action.payload)
     case CLOSE_SNACKBAR:

@@ -5,8 +5,9 @@ import {
   SET_QUERY, 
   SHOW_QUERY_RESULTS_DIALOG, 
   HIDE_QUERY_RESULTS_DIALOG, 
-  UPDATE_QUERY_RESULTS,
+  UPDATE_QUERY_RESULTS_SUCCESS,
   TOGGLE_QUERY_STRING_PREVIEW,
+  UPDATE_QUERY_RESULTS_BEGIN,
 } from "../actions/queryActions"
 
 const clipBoardCopyTooltipTitle = 'Click to copy to clipboard'
@@ -32,6 +33,7 @@ const initialState = {
   tooltipTitle: clipBoardCopyTooltipTitle,
   results: [],
   dialogOpen: false,
+  isLoading: false
 }
 
 const queryReducer = (state = initialState, action) => {
@@ -57,10 +59,17 @@ const queryReducer = (state = initialState, action) => {
         tooltipTitle: 'Query string copied to clipboard!'
       }
 
-    case UPDATE_QUERY_RESULTS:
+    case UPDATE_QUERY_RESULTS_BEGIN:
       return {
         ...state,
-        results: [...action.payload]
+        isLoading: true
+      }
+      
+    case UPDATE_QUERY_RESULTS_SUCCESS:
+      return {
+        ...state,
+        results: [...action.payload],
+        isLoading: false
       }
 
     case SHOW_QUERY_RESULTS_DIALOG:
