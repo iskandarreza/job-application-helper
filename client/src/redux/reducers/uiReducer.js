@@ -101,18 +101,19 @@ const jobSummaryDialogContent = (state, payload) => {
 }
 
 const showSnackbar = (state, payload) => {
-  return { 
+  const newState = { 
     ...state,
     snackbar: { 
       ...state.snackbar,
       isOpen: true,
       message: payload.message,
-      ...(payload.type && {type: payload.type}),
-      ...(payload.stayOpen && {stayOpen: payload.stayOpen}),
-
+      type: !payload.type ? 'info' : payload.type,
+      stayOpen: !payload.stayOpen ? false : payload.stayOpen  
      },
      
   }
+
+  return newState
 }
 
 const closeSnackbar = (state) => {

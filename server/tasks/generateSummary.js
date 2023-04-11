@@ -82,8 +82,8 @@ const generateSummary = async (ws, record) => {
         }
 
         sendMessage(ws, {
-          message: 'PROMPT_COMPLETION',
-            data: { id: record.id, cost, parsedResponse }
+          action: 'PROMPT_COMPLETION',
+          data: { id: record.id, cost, parsedResponse }
         })
         console.log('----------PROMPT_COMPLETION----------')
 
@@ -94,7 +94,7 @@ const generateSummary = async (ws, record) => {
           .post(`${process.env.SERVER_URI}/record/${record.id}/summary`, payload)
           
           sendMessage(ws, {
-            message: 'SUMMARY_RECORD_INSERTED',
+            action: 'SUMMARY_RECORD_INSERTED',
             data: { id: record.id, cost, payload }
           })
           console.log('----------SUMMARY_RECORD_INSERTED----------')
@@ -109,7 +109,7 @@ const generateSummary = async (ws, record) => {
             })
 
           sendMessage(ws, {
-            message: 'SUMMARY_RECORD_INCOMPLETE',
+            action: 'SUMMARY_RECORD_INCOMPLETE',
             data: { id: record.id, cost, prompt, result: completion.data }
           })
           console.log('----------SUMMARY_RECORD_INCOMPLETE----------')

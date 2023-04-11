@@ -29,7 +29,7 @@ const taskReducer = async (task) => {
       }))
       break
 
-    case 'CHECK_FOR_NEW_RECORDS':
+    case 'CHECK_FOR_NEW_RECORDS_BEGIN':
       sendWS(JSON.stringify({
         message: 'Check for new records'
       }))
@@ -66,9 +66,6 @@ const initWebWorker = async () => {
 
   ws.onopen = function (event) {
     console.log('WebSocket connection established')
-
-    // sendWS(checkForNewRecords)
-
   }
 
   self.addEventListener('message', messageListener)
@@ -85,16 +82,12 @@ const messageListener = (event) => {
       if (receiver === 'webworker') {
         console.log('Service worker received websocket message: ', {message})
 
-        if (message.message === 'SUMMARY_RECORD_INSERTED') {
-          let payload = { action: 'SUMMARY_RECORD_INSERTED', payload: message.data }
-          sendPostMessage(payload)
-  
+        if (action === 'SUMMARY_RECORD_INSERTED') {
+          sendPostMessage({ action, payload: data }, messageClient)
         }
 
-
         if (action === 'RECORD_REFRESH_SUCCESS') {
-          let payload = { action: 'RECORD_REFRESH_SUCCESS', payload: data }
-          sendPostMessage(payload)
+          sendPostMessage({ action, payload: data }, messageClient)
         }
 
         const newRecordsChecked = [
@@ -103,37 +96,27 @@ const messageListener = (event) => {
         ]
 
         if (newRecordsChecked.includes(action)) {
-          let payload = { action, payload: data }
-          sendPostMessage(payload)
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        const applicationsChecked = [
+          'CHECK_APPLIED_COMPLETE',
+          'CHECK_APPLIED_INCOMPLETE',
+        ]
+
+        if (applicationsChecked.includes(action)) {
+          sendPostMessage({ action, payload: data }, messageClient)
         }
   
-      }
+      }      
 
-      // if (action === 'LAST_FETCH_FALSE') {
-      //   sendWS(checkForNewRecords)
-      // }
+    } else {
+      const { source: client, data } = event 
+      messageClient = client
 
-      // const newRecordsChecked = [
-      //   'NO_NEW_RECORDS',
-      //   'FETCH_NEW_RECORDS_SUCCESS'
-      // ]
-      // if (newRecordsChecked.includes(action)) {
-      //   const checkApplied = JSON.stringify({ message: 'Check applied postings status' })
-      //   sendWS(checkApplied)
-      // }
-
-      // const applicationsChecked = [
-      //   'CHECK_APPLIED_COMPLETE',
-      //   'CHECK_APPLIED_INCOMPLETE',
-      // ]
-
-      // if (applicationsChecked.includes(action)) {
-      //   sendWS(JSON.stringify({ message: 'Check oldest 24 open records' }))
-      // }
       console.log('Service worker received postMessage: ', { data, client })
 
       if (data.action === 'SERVICE_WORKER_REGISTERED') {
-        messageClient = client
         sendWS(JSON.stringify({ message: 'Service worker registered' }))
       } else {
         try {
@@ -143,7 +126,6 @@ const messageListener = (event) => {
           console.log(error)
         }
       }
-
     }
 
   })()
@@ -204,7 +186,6 @@ const sendWS = async (data) => {
   }
 }
 
-
 const sendPostMessage = (payload) => {
   try {
     messageClient.postMessage(payload)
@@ -218,7 +199,5 @@ const sendPostMessage = (payload) => {
     }
   }
 }
-
-
 
 initWebWorker()

@@ -117,7 +117,7 @@ const JobDetailsDialog = () => {
 
   return (
     <Dialog
-      maxWidth={'xl'}
+      maxWidth={'xxl'}
       open={open}
       TransitionComponent={Transition}
       keepMounted
@@ -133,7 +133,7 @@ const JobDetailsDialog = () => {
           </Paper>
         </DialogContent>
 
-        <Container sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Container maxWidth={'xxl'} sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{display: 'flex', gap: 2}}> 
             <Button color='secondary' variant='outlined' onClick={handleUpdateData}>Fetch Page Data</Button>
             {!summary ?

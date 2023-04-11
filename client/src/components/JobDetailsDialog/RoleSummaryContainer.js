@@ -56,7 +56,7 @@ const RoleSummaryContainer = () => {
             <p>{value.summary}</p>
             <br />
   
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: '24px' }}>
   
               <div className={'data-box'}>
                 {value.skills ?

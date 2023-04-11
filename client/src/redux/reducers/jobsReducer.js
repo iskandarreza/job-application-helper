@@ -12,7 +12,8 @@ import {
   FILTER_RECORDS_SUCCESS,
   FILTER_RECORDS_FAILURE,
   HIGHLIGHT_RECORD_SUCCESS,
-  CHECK_FOR_NEW_RECORDS
+  CHECK_FOR_NEW_RECORDS_BEGIN,
+  CHECK_FOR_NEW_RECORDS_COMPLETE
 } from '../actions/jobActions'
 
 const initialState = {
@@ -20,7 +21,10 @@ const initialState = {
   loading: false,
   error: null,
   lastFetch: null,
-  lastNewRecordsCheck: null,
+  newRecordsCheck: {
+    lastFetch: null,
+    isLoading: false
+  },
   lastAppliedRecordsCheck: null,
   lastOldRecordsCheck: null
 }
@@ -104,10 +108,22 @@ const jobsReducer = (state = initialState, action) => {
     case HIGHLIGHT_RECORD_SUCCESS:
       return successAction(state, action.payload, true)
     
-    case CHECK_FOR_NEW_RECORDS:
+    case CHECK_FOR_NEW_RECORDS_BEGIN:
       return {
         ...state,
-        lastNewRecordsCheck: Date.now()
+        newRecordsCheck: {
+          ...state.newRecordsCheck,
+          isLoading: true
+        }
+      }
+      
+    case CHECK_FOR_NEW_RECORDS_COMPLETE:
+      return {
+        ...state,
+        newRecordsCheck: {
+          lastFetch: Date.now(),
+          isLoading: false
+        }
       }
 
     default:

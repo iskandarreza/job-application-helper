@@ -27,10 +27,18 @@ const columns = [
   { 
     field: 'dateAdded', 
     flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
   },
   {
     field: 'dateModified',
+    flex: 1,
+  },
+  { 
+    field: 'received', 
+    flex: 1,
+    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
+  },
+  {
+    field: 'modified',
     flex: 1,
     renderCell: (params) => RenderDateCell(params.row?.dateModified),
   },
@@ -110,18 +118,27 @@ const columns = [
     ),
     editable: true,
   },
+  { field: 'status3', flex: 1 },
+  { field: 'notes', flex: 1 },
   {
-    field: 'status3',
-    headerAlign: 'center',
+    field: 'last update',
     flex: 1,
-    editable: true,
-  },
-  {
-    field: 'notes',
-    headerAlign: 'center',
-    flex: 1,
-    editable: true,
-  },
+    renderCell: (params) => {
+      if (params?.row?.fieldsModified) {
+        const lastUpdatedField = params.row.fieldsModified.slice(-1)[0]
+
+        if (lastUpdatedField.value === 'open') {
+          return ''
+        }
+
+        if (lastUpdatedField.value !== '') {
+          return <span>{lastUpdatedField?.value}</span>            
+        } 
+      } 
+
+      return ''
+    }
+  }
 ]
 
 const JobsDataGrid = () => {
@@ -191,11 +208,15 @@ const JobsDataGrid = () => {
           columnVisibilityModel: {
             _id: false,
             id: false,
-            keywords: false
+            dateAdded: false,
+            dateModified: false,
+            status3: false,
+            notes: false,
+            keywords: false,
           },
         },
         sorting: {
-          sortModel: [{ field: 'dateModified', sort: 'asc' }],
+          sortModel: [{ field: 'received', sort: 'desc' }],
         },
       }}
       onCellEditStop={(params, event) => {

@@ -14,7 +14,7 @@ export const runQuery = async (query) => {
 export const getRecords = async () => {
   const query = {}
   return axios
-    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?field=dateModified&sort_order=dec&keywords=true`, query)
+    .post(`${process.env.REACT_APP_SERVER_URI}/records/email-link-data/?field=dateAdded&sort_order=dec&keywords=true`, query)
     .then((response) => {
       return response.data
     })
