@@ -28,9 +28,10 @@ app.use("/uploads", express.static("uploads"))
 app.use(express.json())
 app.use(cors())
 
+
 app.use(
   cors({
-    origin: process.env.CLIENT_URI,
+    origin: [process.env.CLIENT_URI, process.env.SERVER_URI],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
