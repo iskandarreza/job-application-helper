@@ -4,10 +4,15 @@ const chalk = require('chalk')
 const chunkObjects = require("./chunkObjects")
 
 /**
- * It takes an array of objects, chunks them into arrays of 1, and then makes an axios request for each
- * object in the chunk.
- * @param jobs - an array of objects that look like this:
- * @returns An array of objects.
+ * The function `checkJobStatuses` retrieves job data or status from a server endpoint for an array of
+ * job objects, and returns an object containing the job ID, status, and any retrieved data or errors.
+ * @param jobs - An array of job objects.
+ * @param statusOnly - A boolean value that determines whether the function should retrieve only the
+ * job status or the full job data. If `statusOnly` is true, the function retrieves only the job
+ * status. If `statusOnly` is false, the function retrieves the full job data.
+ * @returns The function `checkJobStatuses` returns an array of objects containing the job ID, status,
+ * and any retrieved data or errors. If an error occurs during the HTTP request, the function logs the
+ * error and returns nothing.
  */
 const checkJobStatuses = async (jobs, statusOnly) => {
   const results = []
@@ -31,8 +36,8 @@ const checkJobStatuses = async (jobs, statusOnly) => {
             .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
             .catch((e) => {
               return {
-                puppeteerData,             
-                error: e,
+                data: job,             
+                error: e.response.data,
               }
             })
         } else {
@@ -40,17 +45,15 @@ const checkJobStatuses = async (jobs, statusOnly) => {
           .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
           .catch((e) => {
             return {
-              puppeteerData,             
-              error: e,
+              job,             
+              error: e.response.data,
             }   
           })
         }
           
       } catch (e) {
-        return {
-          puppeteerData,             
-          error: e,
-        }
+        console.error('checkJobStatuses error: ', e)
+        return 
       }
 
     })
@@ -64,11 +67,19 @@ const checkJobStatuses = async (jobs, statusOnly) => {
 }
 
 /**
- * It takes a list of job records, checks the status of each job, and updates the database with the new
- * status
- * @param ws - websocket connection
- * @param data - an array of objects, each object has an id property
- * @returns The return value is the number of records that were updated.
+ * The function fetches data, filters it based on certain criteria, checks the status of job positions,
+ * updates the records, and sends messages through a WebSocket.
+ * @param data - An array of job data objects to be filtered and checked for updates.
+ * @param ws - The "ws" parameter is likely a WebSocket object used for sending messages to a client in
+ * real-time.
+ * @param statusOnly - The `statusOnly` parameter is a boolean value that determines whether the
+ * function should only check the status of the jobs or also update their data. If `statusOnly` is
+ * true, the function will only check the status of the jobs and return the results without updating
+ * any data. If `statusOnly
+ * @returns an object with two properties: "upserted" and "response". The "upserted" property contains
+ * the number of records that were updated or inserted into the database. The "response" property
+ * contains an object with information about the job refresh process, including any errors that
+ * occurred and the status of each job that was processed.
  */
 const fetchPagesData = async (data, ws, statusOnly) => {
   const filtered = data.filter((datum) => {
@@ -96,8 +107,8 @@ const fetchPagesData = async (data, ws, statusOnly) => {
     let jobsProcessed = 0
 
     for (const result of results) {
-      console.log(result)
-      if (!result.error || !result?.puppeteerData?.error) {
+      if (!result.job || !result.error) {
+
         const record = filtered.find(({id}) => id === result.id)
         const isNew = !record._id
         const { id, status, org, role, location, puppeteerData, redirected } = result
@@ -147,7 +158,8 @@ const fetchPagesData = async (data, ws, statusOnly) => {
           action: 'JOB_REFRESH_ERROR',
           data: {
             message: `Error refreshing job`,
-            error: result.error || results.puppeteerData?.error
+            error: Object.keys(result.error).length === 0 ? 
+              { statusCode: result.data.statusCode } : result.error
           }
         }
         

@@ -13,10 +13,11 @@ puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
     if (data.success) {
       res.send(data.success)
     }
-  } catch (error) {
     if (data.error) {
-      res.status(500).send({ error: 'Internal server error', data: data.error })
+      res.status(500).send(data.error)
     }
+  } catch (error) {
+    res.status(500).send({ error: 'Internal server error', data: error })
   }
 })
 
@@ -30,10 +31,11 @@ puppeterRoutes.get('/job-data/:hostdomain/:jobId', async (req, res) => {
     if (data.success) {
       res.send(data.success)
     }
-  } catch (error) {
     if (data.error) {
-      res.status(500).send({ error: 'Internal server error', data: data.error })
+      res.status(500).send(data.error)
     }
+  } catch (error) {
+    res.status(500).send({ error: 'Internal server error', data: error })
   }
 })
 
