@@ -8,11 +8,15 @@ puppeteer.use(StealthPlugin())
 puppeteer.use(UserAgentPlugin({ makeWindows: true }))
 
 /**
- * It takes a job ID and a host domain as parameters, and returns an object with a success property
- * that contains the job data, or an error property that contains the error
- * @param jobId - The ID of the job you want to crawl
- * @param hostdomain - the domain of the job posting site
- * @returns a promise.
+ * The function checks the status of a job posting on either Indeed or LinkedIn by navigating to the
+ * job page and checking if it is still open.
+ * @param jobId - The ID of the job posting to check the status of.
+ * @param hostdomain - The domain of the job posting website, either "indeed" or "linkedin".
+ * @returns a Promise that resolves to an object with either a "success" or "error" property. The
+ * "success" property contains an object with information about the job position, including its status
+ * (open or closed), whether it was redirected, and any error messages. The "error" property contains
+ * an object with information about the error that occurred during processing, including the error
+ * message and any data that was collected during the crawl.
  */
 const positionStatus = async (jobId, hostdomain) => {
   console.log('')
@@ -30,6 +34,12 @@ const positionStatus = async (jobId, hostdomain) => {
   let redirected = false
   data.redirected = 'false'
   data.status = 'open'
+
+  /* This code block is listening for requests made by the page and checking if any of them are
+  navigation requests that result in a redirect. If a redirect is detected, it sets the `redirected`
+  variable to `true`, logs a message indicating that a redirect occurred, and takes a screenshot of
+  the page at the time of the redirect. It also updates the `data` object with information about the
+  redirect. */
   page.on('request', async (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
       console.log(chalk.bgYellow(`Redirected to ${request.redirectChain()[0].url()}`))
@@ -44,7 +54,7 @@ const positionStatus = async (jobId, hostdomain) => {
   try {
     if (hostdomain === 'indeed') {
       console.log(`Navigating to https://www.indeed.com/viewjob?jk=${jobId}`)
-      await page.goto(`https://www.indeed.com/viewjob?jk=${jobId}`)
+      const response = await page.goto(`https://www.indeed.com/viewjob?jk=${jobId}`)
       const pageTitle = await page.title()
       
       data.pageTitle = pageTitle
@@ -54,7 +64,7 @@ const positionStatus = async (jobId, hostdomain) => {
         status = 'closed'
       }
       
-      if (!redirected) {
+      if (!redirected && response.status() === 200) {
 
         console.log('Checking if job is stil open...')
         try {
@@ -78,6 +88,7 @@ const positionStatus = async (jobId, hostdomain) => {
         
       } else {
         data.redirected = 'true'
+        data.error = response
       }
 
       // update status after crawl
@@ -96,9 +107,9 @@ const positionStatus = async (jobId, hostdomain) => {
 
     } else if (hostdomain === `linkedin`) {
       console.log(`Navigating to https://www.linkedin.com/jobs/view/${jobId}/`)
-      await page.goto(`https://www.linkedin.com/jobs/view/${jobId}/`)
+      const response = await page.goto(`https://www.linkedin.com/jobs/view/${jobId}/`)
 
-      if (!redirected) {
+      if (!redirected && response.status() === 200) {
 
         console.log('Checking if job is stil open...')
         try {
@@ -122,6 +133,7 @@ const positionStatus = async (jobId, hostdomain) => {
         
       } else {
         data.redirected = 'true'
+        data.error = response
       }
 
       data.status = status
@@ -137,9 +149,10 @@ const positionStatus = async (jobId, hostdomain) => {
     }
   } catch (error) {
     console.log(chalk.redBright(`Error processing ${hostdomain} job id ${jobId}`))
-    console.error(error)
     return {
-      error: error
+      error: {
+        error, data
+      }
     }
   } finally {
   await browser.close()

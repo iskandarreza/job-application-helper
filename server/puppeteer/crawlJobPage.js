@@ -8,11 +8,14 @@ puppeteer.use(StealthPlugin())
 puppeteer.use(UserAgentPlugin({ makeWindows: true }))
 
 /**
- * It takes a job ID and a host domain as parameters, and returns an object with a success property
- * that contains the job data, or an error property that contains the error
- * @param jobId - The ID of the job you want to crawl
- * @param hostdomain - the domain of the job posting site
- * @returns a promise.
+ * The function crawls job postings on Indeed and LinkedIn, extracting various information about the
+ * job and checking if the job is still open and if there is an external link to apply on the company's
+ * website.
+ * @param jobId - The ID of the job posting that needs to be crawled.
+ * @param hostdomain - The website domain where the job posting is located, either "indeed" or
+ * "linkedin".
+ * @returns an object with the extracted data and the job status. If the function encounters an error,
+ * it returns an object with the error and the data object.
  */
 const crawlJobPage = async (jobId, hostdomain) => {
   console.log('')
@@ -31,6 +34,12 @@ const crawlJobPage = async (jobId, hostdomain) => {
   data.redirected = 'false'
   data.externalSource = 'false'
   data.status = 'open'
+  data.statusCode = null
+  
+  /* The code below is using the Puppeteer library in JavaScript to listen for navigation requests and
+  check if there is a redirect chain. If there is a redirect chain, it logs the first URL in the
+  chain, sets a flag to indicate that the page was redirected, takes a screenshot of the page, and
+  updates a data object with the value 'true' for the 'redirected' property. */
   page.on('request', async (request) => {
     if (request.isNavigationRequest() && request.redirectChain().length) {
       console.log(chalk.bgYellow(`Redirected to ${request.redirectChain()[0].url()}`))
@@ -45,15 +54,25 @@ const crawlJobPage = async (jobId, hostdomain) => {
   try {
     if (hostdomain === 'indeed') {
       console.log(`Navigating to https://www.indeed.com/viewjob?jk=${jobId}`)
-      await page.goto(`https://www.indeed.com/viewjob?jk=${jobId}`)
+      const response = await page.goto(`https://www.indeed.com/viewjob?jk=${jobId}`, {
+        waitUntil: 'load',
+        // Remove the timeout
+        timeout: 0
+      })
+
       const pageTitle = await page.title()
-      
-      data.pageTitle = pageTitle
-      if (pageTitle.includes('Page Not Found')) {
-        redirected = true
+
+      data.statusCode = response.statusCode
+      console.log({statusCode: response.status()})
+
+      if (response.status === 200) {
+        data.pageTitle = pageTitle
+        if (pageTitle.includes('Page Not Found')) {
+          redirected = true
+        }  
       }
       
-      if (!redirected) {
+      if (!redirected && response.status() === 200) {
 
         console.log('Checking if job is stil open...')
         try {
@@ -203,6 +222,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
         
       } else {
         data.redirected = 'true'
+        data.error = response
       }
 
       // update status after crawl
@@ -221,9 +241,16 @@ const crawlJobPage = async (jobId, hostdomain) => {
 
     } else if (hostdomain === `linkedin`) {
       console.log(`Navigating to https://www.linkedin.com/jobs/view/${jobId}/`)
-      await page.goto(`https://www.linkedin.com/jobs/view/${jobId}/`)
+      const response = await page.goto(`https://www.linkedin.com/jobs/view/${jobId}/`, {
+        waitUntil: 'load',
+        // Remove the timeout
+        timeout: 0
+      })
 
-      if (!redirected) {
+      data.statusCode = response.statusCode()
+      console.log({statusCode: response.status()})
+
+      if (!redirected && response.status() === 200) {
 
         console.log('Checking if job is stil open...')
         try {
@@ -301,6 +328,7 @@ const crawlJobPage = async (jobId, hostdomain) => {
         
       } else {
         data.redirected = 'true'
+        data.error = response
       }
 
       data.status = status
@@ -316,9 +344,10 @@ const crawlJobPage = async (jobId, hostdomain) => {
     }
   } catch (error) {
     console.log(chalk.redBright(`Error processing ${hostdomain} job id ${jobId}`))
-    console.error(error)
     return {
-      error: error
+      error: {
+        error, data
+      }
     }
   } finally {
   await browser.close()
