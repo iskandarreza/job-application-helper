@@ -29,15 +29,22 @@ const checkJobStatuses = async (jobs, statusOnly) => {
         if (!statusOnly) {
           return axios.get(`${process.env.SERVER_URI}/job-data/${hostname}/${id}`)
             .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
-            .catch((e) => console.log(e))
+            .catch((e) => {
+              console.log(e)
+              return 'error'
+            })
         } else {
           return axios.get(`${process.env.SERVER_URI}/job-status/${hostname}/${id}`)
           .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
-          .catch((e) => console.log(e)) 
+          .catch((e) => {
+            console.log(e)
+            return 'error'
+          })
         }
           
-      } catch (error) {
-        console.log(error)        
+      } catch (e) {
+        console.log(e)
+        return 'error'
       }
 
     })
@@ -83,53 +90,57 @@ const fetchPagesData = async (data, ws, statusOnly) => {
     let jobsProcessed = 0
 
     for (const result of results) {
-      const record = filtered.find(({id}) => id === result.id)
-      const isNew = !record._id
-      const { id, status, org, role, location, puppeteerData, redirected } = result
-      const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
-
-      await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
-
-      const url = isNew ? `${process.env.SERVER_URI}/record/new` : `${process.env.SERVER_URI}/record/${result._id}`
-      const method = isNew ? 'post' : 'put'
-      const body = {
-        ...record,
-        org: crawlData.org ? crawlData.org : org ? org : record.org,
-        role: crawlData.role ? crawlData.role : role ? role : record.role,
-        location: crawlData.location ? crawlData.location : location ? location : record.location,
-        crawlDate: crawlData.crawlDate,
-        externalSource: crawlData.externalSource,
-        redirected: redirected ? redirected.toString() : 'false'
-      }
-
-      delete body.status1
-      delete body.status2
-      delete body.status3
-      delete body.fieldsModified
-      delete body.dateModified
-      
-      if (status !== record.positionStatus) {
-        body.positionStatus = status
-      }
-      
-      await axios[method](url, body)
-      
-      upserted++
-      jobsProcessed++
-      totalJobsProcessed++
-      response = {
-        action: 'JOB_REFRESHED',
-        data: {
-          message: `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`,
-          job: body
+      if (result !== 'error') {
+        const record = filtered.find(({id}) => id === result.id)
+        const isNew = !record._id
+        const { id, status, org, role, location, puppeteerData, redirected } = result
+        const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
+  
+        await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
+  
+        const url = isNew ? `${process.env.SERVER_URI}/record/new` : `${process.env.SERVER_URI}/record/${result._id}`
+        const method = isNew ? 'post' : 'put'
+        const body = {
+          ...record,
+          org: crawlData.org ? crawlData.org : org ? org : record.org,
+          role: crawlData.role ? crawlData.role : role ? role : record.role,
+          location: crawlData.location ? crawlData.location : location ? location : record.location,
+          crawlDate: crawlData.crawlDate,
+          externalSource: crawlData.externalSource,
+          redirected: redirected ? redirected.toString() : 'false'
+        }
+  
+        delete body.status1
+        delete body.status2
+        delete body.status3
+        delete body.fieldsModified
+        delete body.dateModified
+        
+        if (status !== record.positionStatus) {
+          body.positionStatus = status
+        }
+        
+        await axios[method](url, body)
+        
+        upserted++
+        jobsProcessed++
+        totalJobsProcessed++
+        response = {
+          action: 'JOB_REFRESHED',
+          data: {
+            message: `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`,
+            job: body
+          }
+        }
+        if (ws) {
+          require('../websocket/sendMessage')(ws, response)
         }
       }
-      if (ws) {
-        require('../websocket/sendMessage')(ws, response)
-      }
-    }
+  
+      await new Promise((resolve) => setTimeout(resolve, 3000))
 
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+      }
+
   }
 
   return {upserted, response}
