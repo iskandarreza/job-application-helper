@@ -1,9 +1,10 @@
 require("dotenv").config({ path: "./config.env" })
 const { default: axios } = require('axios')
 const chalk = require('chalk')
+const chunkObjects = require("./chunkObjects")
 
 /**
- * It takes an array of objects, chunks them into arrays of 3, and then makes an axios request for each
+ * It takes an array of objects, chunks them into arrays of 1, and then makes an axios request for each
  * object in the chunk.
  * @param jobs - an array of objects that look like this:
  * @returns An array of objects.
@@ -50,21 +51,6 @@ const checkJobStatuses = async (jobs, statusOnly) => {
 }
 
 /**
- * It takes an array and a number, and returns an array of arrays, each of which is the size of the
- * number.
- * @param data - The array of objects you want to chunk
- * @param size - The number of items you want in each chunk.
- * @returns An array of arrays.
- */
-const chunkObjects = (data, size) => {
-  const chunks = []
-  for (let i = 0; i < data.length; i += size) {
-    chunks.push(data.slice(i, i + size))
-  }
-  return chunks
-}
-
-/**
  * It takes a list of job records, checks the status of each job, and updates the database with the new
  * status
  * @param ws - websocket connection
@@ -85,7 +71,7 @@ const fetchPagesData = async (data, ws, statusOnly) => {
   })
 
   console.log(chalk.bgWhite(`${filtered.length} records will be checked`))
-  const jobChunks = chunkObjects(filtered, 4)
+  const jobChunks = chunkObjects(filtered, 1)
 
   let totalJobsProcessed = 0
   let upserted = 0
@@ -146,7 +132,7 @@ const fetchPagesData = async (data, ws, statusOnly) => {
     await new Promise((resolve) => setTimeout(resolve, 3000))
   }
 
-  return upserted
+  return {upserted, response}
 }
 
 module.exports = fetchPagesData
