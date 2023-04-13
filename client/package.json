@@ -31,11 +31,9 @@
     "web-vitals": "^3.3.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "compile": "nodemon scripts/compile.js --ignore public/service-worker.js src/worker.js public/service-worker.js",
-    "watch:dev": "concurrently \"react-scripts start\" \"npm run compile\"",
-    "watch:compile": "concurrently \"yarn build\" \"npm run compile\"",
+    "start": "react-scripts start && rollup -c -w",
+    "build": "react-scripts build && rollup -c",
+    "compile": "rollup -c -w",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -61,6 +59,8 @@
     "@babel/core": "^7.0.0-0",
     "@babel/plugin-syntax-flow": "^7.21.4",
     "@babel/plugin-transform-react-jsx": "^7.14.9",
+    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-replace": "^5.0.2",
     "eslint": "^8.0.0",
     "nodemon": "^2.0.22",
     "sass": "^1.60.0",
