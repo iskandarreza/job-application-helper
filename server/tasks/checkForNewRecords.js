@@ -39,10 +39,11 @@ const checkForNewRecords = async (ws) => {
         const promises = chunk.map(async (record) => {
           const result = await fetchPagesData([record], ws, false)
           const message3 = {
-            action: 'FETCH_NEW_RECORDS_SUCCESS', data: {
-              message: `${result.upserted} new records fetched`
+            action: !result.response.data.error ? 'FETCH_NEW_RECORDS_SUCCESS' : 'FETCH_NEW_RECORDS_ERROR', 
+            data: {
+              message: !result.response.data.error ? `${result.upserted} new records fetched` : 'Failed to fetch page data'
+              (result.response.data.error && {error: result.response.data.error})
             },
-            data: result.response
           }
           sendMessage(ws, message3)
         })

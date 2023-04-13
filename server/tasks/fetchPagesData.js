@@ -30,21 +30,27 @@ const checkJobStatuses = async (jobs, statusOnly) => {
           return axios.get(`${process.env.SERVER_URI}/job-data/${hostname}/${id}`)
             .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
             .catch((e) => {
-              console.log(e)
-              return 'error'
+              return {
+                puppeteerData,             
+                error: e,
+              }
             })
         } else {
           return axios.get(`${process.env.SERVER_URI}/job-status/${hostname}/${id}`)
           .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
           .catch((e) => {
-            console.log(e)
-            return 'error'
+            return {
+              puppeteerData,             
+              error: e,
+            }   
           })
         }
           
       } catch (e) {
-        console.log(e)
-        return 'error'
+        return {
+          puppeteerData,             
+          error: e,
+        }
       }
 
     })
@@ -90,7 +96,8 @@ const fetchPagesData = async (data, ws, statusOnly) => {
     let jobsProcessed = 0
 
     for (const result of results) {
-      if (result !== 'error') {
+      console.log(result)
+      if (!result.error || !result?.puppeteerData?.error) {
         const record = filtered.find(({id}) => id === result.id)
         const isNew = !record._id
         const { id, status, org, role, location, puppeteerData, redirected } = result
@@ -132,6 +139,19 @@ const fetchPagesData = async (data, ws, statusOnly) => {
             job: body
           }
         }
+        if (ws) {
+          require('../websocket/sendMessage')(ws, response)
+        }
+      } else {
+        response = {
+          action: 'JOB_REFRESH_ERROR',
+          data: {
+            message: `Error refreshing job`,
+            error: result.error || results.puppeteerData?.error
+          }
+        }
+        
+        console.log({response})
         if (ws) {
           require('../websocket/sendMessage')(ws, response)
         }

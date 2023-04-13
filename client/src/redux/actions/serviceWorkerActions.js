@@ -36,7 +36,7 @@ export const receivedFromServiceWorker = (payload) => (dispatch) => {
 
     case 'FETCH_NEW_RECORDS_SUCCESS':
       dispatch(checkForNewRecordsComplete())
-      dispatch(showSnackbar(data, 'info', false))
+      dispatch(showSnackbar(data.message, 'info', false))
       break
 
 
