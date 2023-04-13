@@ -1,7 +1,5 @@
 const express = require('express')
 const puppeterRoutes = express.Router()
-// const crawlJobPage = require('../puppeteer/crawlJobPage');
-// const positionStatus = require('../puppeteer/positionStatus');
 const startInstance = require('../puppeteer/startInstance')
 const { linkedIn, indeed } = require('../puppeteer/microTasks')
 
