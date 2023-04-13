@@ -13,6 +13,7 @@
     "@react-querybuilder/dnd": "^6.1.4",
     "@react-querybuilder/material": "^6.1.4",
     "axios": "^1.3.4",
+    "concurrently": "^8.0.1",
     "eslint-config-react-app": "^7.0.1",
     "html-react-parser": "^3.0.13",
     "react": "^18.2.0",
@@ -32,6 +33,9 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "compile": "nodemon scripts/compile.js --ignore public/service-worker.js src/worker.js public/service-worker.js",
+    "watch:dev": "concurrently \"react-scripts start\" \"npm run compile\"",
+    "watch:compile": "concurrently \"yarn build\" \"npm run compile\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -58,6 +62,7 @@
     "@babel/plugin-syntax-flow": "^7.21.4",
     "@babel/plugin-transform-react-jsx": "^7.14.9",
     "eslint": "^8.0.0",
+    "nodemon": "^2.0.22",
     "sass": "^1.60.0",
     "typescript": "^5.0.2"
   }

@@ -9,7 +9,7 @@ export const serviceWorkerMiddleware = (store) => {
       store.dispatch(receivedFromServiceWorker(data))
     })
 
-    navigator.serviceWorker.register('/script/service-worker.js').then((registration) => {
+    navigator.serviceWorker.register('/service-worker.js').then((registration) => {
       setTimeout(() => {
         serviceWorker = registration.active
         try {
