@@ -1,13 +1,15 @@
 const express = require('express')
 const puppeterRoutes = express.Router()
-const crawlJobPage = require('../puppeteer/crawlJobPage');
-const positionStatus = require('../puppeteer/positionStatus');
+// const crawlJobPage = require('../puppeteer/crawlJobPage');
+// const positionStatus = require('../puppeteer/positionStatus');
+const startInstance = require('../puppeteer/startInstance')
+const { linkedIn, indeed } = require('../puppeteer/microTasks')
 
 puppeterRoutes.get('/job-status/:hostdomain/:jobId', async (req, res) => {
   const jobId = req.params.jobId
   const hostdomain = req.params.hostdomain
 
-  const data = await positionStatus(jobId, hostdomain)
+  const data = await startInstance(jobId, hostdomain)
 
   try {
     if (data.success) {
@@ -25,7 +27,24 @@ puppeterRoutes.get('/job-data/:hostdomain/:jobId', async (req, res) => {
   const jobId = req.params.jobId
   const hostdomain = req.params.hostdomain
 
-  const data = await crawlJobPage(jobId, hostdomain)
+  const callbackArray = hostdomain === 'linkedIn' ?
+  [
+    linkedIn.linkedInCheckExternalLink,
+    linkedIn.linkedInGetDescription,
+    linkedIn.linkedInGetRoleLocation
+  ] :
+  [
+    indeed.indeedCheckExternalLink,
+    indeed.indeedGetDescription,
+    indeed.indeedGetOrgName,
+    indeed.indeedGetQualifications,
+    indeed.indeedGetRoleLocation,
+    indeed.indeedGetRoleTitle,
+    indeed.indeedGetSalaryInfo,
+    indeed.indeedGetSummary
+  ]
+  
+  const data = await startInstance(jobId, hostdomain, callbackArray)
 
   try {
     if (data.success) {
