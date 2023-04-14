@@ -1,12 +1,13 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
-import { Provider } from 'react-redux';
-import store from './redux/store';
+import { Provider } from 'react-redux'
+import { configureStore } from './redux/store'
 import "./index.scss"
 import App from "./App"
 import reportWebVitals from "./reportWebVitals"
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 const root = ReactDOM.createRoot(document.getElementById("root"))
+const { store } = configureStore()
 
 // if ('serviceWorker' in navigator) {
 //   navigator.serviceWorker.ready.then(registration => {

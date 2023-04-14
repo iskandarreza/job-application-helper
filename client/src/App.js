@@ -1,7 +1,7 @@
 import React from "react"
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { SnackbarComponent } from "./components/atoms/SnackbarComponent"
-import { JobsList } from "./components/JobsList"
+import { JobsList } from "./components/MainPage"
 import { makeStyles } from '@mui/styles'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'

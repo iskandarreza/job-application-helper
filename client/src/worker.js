@@ -1,4 +1,4 @@
-const self = this
+const websocketURI = process.env.REACT_APP_WEBSOCKET_URI
 let wSocket
 let messageClient
 let clientMessageQueue = []
@@ -23,8 +23,23 @@ const taskReducer = async (task) => {
       break
     case 'GENERATE_SUMMARY_FROM_QUERY':
       sendWS(JSON.stringify({
-        message: 'Generate summarySend queried records to chatgpt prompt',
+        message: 'Send queried records to chatgpt prompt',
         data: payload
+      }))
+      break
+    case 'CHECK_FOR_NEW_RECORDS_BEGIN':
+      sendWS(JSON.stringify({
+        message: 'Check for new records'
+      }))
+      break
+    case 'CHECK_APPLIED':
+      sendWS(JSON.stringify({
+        message: 'Check applied postings status'
+      }))
+      break
+    case 'CHECK_OLDEST_24':
+      sendWS(JSON.stringify({
+        message: 'Check oldest 24 open records'
       }))
       break
 
@@ -55,71 +70,58 @@ const initWebWorker = async () => {
 
   ws.onopen = function (event) {
     console.log('WebSocket connection established')
-
-    sendWS(checkForNewRecords)
-
   }
 
   self.addEventListener('message', messageListener)
 
 }
 
-const checkForNewRecords = JSON.stringify({ message: 'Check for new records' })
-
 const messageListener = (event) => {
 
   return (() => {
-    if (event.origin === 'ws://localhost:5001') {
+    if (event.origin === websocketURI) {
       const { receiver, message } = JSON.parse(event.data)
       const { action, data } = message
 
       if (receiver === 'webworker') {
-        console.log('WebSocket WebWorker received message:', message)
-      }
+        console.log('Service worker received websocket message: ', { message })
 
-      if (action === 'LAST_FETCH_FALSE') {
-        sendWS(checkForNewRecords)
-      }
-
-      const newRecordsChecked = [
-        'NO_NEW_RECORDS',
-        'FETCH_NEW_RECORDS_SUCCESS'
-      ]
-      if (newRecordsChecked.includes(action)) {
-        const checkApplied = JSON.stringify({ message: 'Check applied postings status' })
-        sendWS(checkApplied)
-      }
-
-      const applicationsChecked = [
-        'CHECK_APPLIED_COMPLETE',
-        'CHECK_APPLIED_INCOMPLETE',
-      ]
-
-      if (applicationsChecked.includes(action)) {
-        sendWS(JSON.stringify({ message: 'Check oldest 24 open records' }))
-      }
-
-      if (action === 'RECORD_REFRESH_SUCCESS') {
-        let payload = { action: 'RECORD_REFRESH_SUCCESS', payload: data }
-        try {
-          messageClient.postMessage(payload)
-        } catch (error) {
-          console.error({ error, payload })
-          if (messageClient) {
-            console.debug({ messageClient, payload })
-            setTimeout(() => {
-              messageClient.postMessage(payload)
-            }, 5000)
-          }
+        if (action === 'SUMMARY_RECORD_INSERTED') {
+          sendPostMessage({ action, payload: data }, messageClient)
         }
+
+        if (action === 'RECORD_REFRESH_SUCCESS') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        const newRecordsChecked = [
+          'NO_NEW_RECORDS',
+          'FETCH_NEW_RECORDS_SUCCESS'
+        ]
+
+        if (newRecordsChecked.includes(action)) {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        const applicationsChecked = [
+          'CHECK_APPLIED_COMPLETE',
+          'CHECK_APPLIED_INCOMPLETE',
+        ]
+
+        if (applicationsChecked.includes(action)) {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
       }
+
     } else {
-      const { data, source: client } = event
+      const { source: client, data } = event
+      messageClient = client
+
       console.log('Service worker received postMessage: ', { data, client })
 
       if (data.action === 'SERVICE_WORKER_REGISTERED') {
-        messageClient = client
-        sendWS(checkForNewRecords)
+        sendWS(JSON.stringify({ message: 'Service worker registered' }))
       } else {
         try {
           clientMessageQueue.push({ data, client })
@@ -128,7 +130,6 @@ const messageListener = (event) => {
           console.log(error)
         }
       }
-
     }
 
   })()
@@ -136,7 +137,7 @@ const messageListener = (event) => {
 
 // WebSocket init
 const initWebSocket = () => {
-  const socket = new WebSocket('ws://localhost:5001')
+  const socket = new WebSocket(websocketURI)
 
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!')
@@ -189,5 +190,18 @@ const sendWS = async (data) => {
   }
 }
 
+const sendPostMessage = (payload) => {
+  try {
+    messageClient.postMessage(payload)
+  } catch (error) {
+    console.error({ error, payload })
+    if (messageClient) {
+      console.debug({ messageClient, payload })
+      setTimeout(() => {
+        messageClient.postMessage(payload)
+      }, 5000)
+    }
+  }
+}
 
 initWebWorker()

@@ -1,23 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { DataGrid } from '@mui/x-data-grid'
-import { Box, Tooltip } from '@mui/material'
+import { Tooltip } from '@mui/material'
 
-import RenderDateCell from './atoms/RenderDateCell'
-import RenderSelectMenu from './atoms/RenderSelectMenu'
-import RenderRoleCell from './atoms/RenderRoleCell'
-import JobLinkButtonRenderer from './atoms/JobLinkButtonRenderer'
+import RenderDateCell from './RenderDateCell'
+import RenderSelectMenu from './RenderSelectMenu'
+import RenderRoleCell from './RenderRoleCell'
+import RenderURLButtons from './RenderURLButtons'
+import CustomToolbar from './CustomToolBar'
 
-import CustomToolbar from './atoms/JobLinksToolBar'
-import AddRowForm from './atoms/JobRecordInsert'
-import JobDescriptionDialog from './JobDescriptionDialog'
-
-import '../index.scss'
+import '../../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
+  checkNewRecords,
   fetchJobs,
   updateRecord,
-} from '../redux/actions/jobActions'
+} from '../../redux/actions/jobActions'
 
 import { toast } from 'react-toastify'
 import { useTheme } from '@emotion/react'
@@ -29,10 +27,18 @@ const columns = [
   { 
     field: 'dateAdded', 
     flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
   },
   {
     field: 'dateModified',
+    flex: 1,
+  },
+  { 
+    field: 'received', 
+    flex: 1,
+    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
+  },
+  {
+    field: 'modified',
     flex: 1,
     renderCell: (params) => RenderDateCell(params.row?.dateModified),
   },
@@ -70,7 +76,7 @@ const columns = [
   },
   {
     field: 'link',
-    renderCell: JobLinkButtonRenderer,
+    renderCell: RenderURLButtons,
   },
   {
     field: 'positionStatus',
@@ -85,6 +91,7 @@ const columns = [
     ),
     editable: true,
   },
+  { field: 'keywords', flex: 1 },
   {
     field: 'status1',
     headerAlign: 'center',
@@ -111,18 +118,27 @@ const columns = [
     ),
     editable: true,
   },
+  { field: 'status3', flex: 1 },
+  { field: 'notes', flex: 1 },
   {
-    field: 'status3',
-    headerAlign: 'center',
+    field: 'last update',
     flex: 1,
-    editable: true,
-  },
-  {
-    field: 'notes',
-    headerAlign: 'center',
-    flex: 1,
-    editable: true,
-  },
+    renderCell: (params) => {
+      if (params?.row?.fieldsModified) {
+        const lastUpdatedField = params.row.fieldsModified.slice(-1)[0]
+
+        if (lastUpdatedField.value === 'open') {
+          return ''
+        }
+
+        if (lastUpdatedField.value !== '') {
+          return <span>{lastUpdatedField?.value}</span>            
+        } 
+      } 
+
+      return ''
+    }
+  }
 ]
 
 const JobsDataGrid = () => {
@@ -138,6 +154,7 @@ const JobsDataGrid = () => {
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
       dispatch(fetchJobs())
+      dispatch(checkNewRecords())
     }
   }, [jobsLoading, dispatch])
 
@@ -191,10 +208,15 @@ const JobsDataGrid = () => {
           columnVisibilityModel: {
             _id: false,
             id: false,
+            dateAdded: false,
+            dateModified: false,
+            status3: false,
+            notes: false,
+            keywords: false,
           },
         },
         sorting: {
-          sortModel: [{ field: 'dateModified', sort: 'asc' }],
+          sortModel: [{ field: 'received', sort: 'desc' }],
         },
       }}
       onCellEditStop={(params, event) => {
@@ -208,18 +230,4 @@ const JobsDataGrid = () => {
   )
 }
 
-export const JobsList = () => {
-
-  return (
-    <div style={{ padding: '5px 20px' }}>
-      <h1>Job Postings</h1>
-      <Box sx={{ height: '75vh', width: 'auto' }}>
-        <JobsDataGrid />
-      </Box>
-      <Box>
-        <AddRowForm />
-      </Box>
-      <JobDescriptionDialog />
-    </div>
-  )
-}
+export default JobsDataGrid

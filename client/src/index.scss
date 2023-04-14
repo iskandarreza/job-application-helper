@@ -38,22 +38,3 @@
 [data-field="status1"], [data-field="status1"] {
 	padding: 0;
 }
-
-.jobDescriptionDialog { 
-
-	& div > p {
-		margin-top: 20px;
-	}
-
-	ul, ol {
-		margin-left: 20px;
-	}
-	
-	img {
-		max-width: 20%;
-	}
-
-	.show-more-less-html__button {
-		opacity: 0;
-	}
-}

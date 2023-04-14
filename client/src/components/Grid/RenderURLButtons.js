@@ -2,7 +2,7 @@ import React from 'react'
 import { IconButton } from '@mui/material'
 import { Link } from '@mui/icons-material'
 
-const JobLinkButtonRenderer = (params) => {
+const RenderURLButtons = (params) => {
   const { id, url, externalSource } = params.row
   const isIndeed = url?.includes('indeed.com')
   const handleClickLink = () => {
@@ -52,4 +52,4 @@ const JobLinkButtonRenderer = (params) => {
   )
 }
 
-export default JobLinkButtonRenderer
+export default RenderURLButtons

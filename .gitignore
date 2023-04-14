@@ -109,3 +109,4 @@ server/data.json
 server/config.env
 client/yarn.lock
 client/yarn.lock
+client/public/service-worker.js

@@ -1,3 +1,4 @@
+require("dotenv").config({ path: "../config.env" })
 const { default: axios } = require("axios")
 const sendPrompt = require("../chatgpt")
 const generateChatPrompt = require("../chatgpt/generateChatPrompt")
@@ -24,7 +25,7 @@ const generateSummary = async (ws, record) => {
         promptData[field] = markdown
       } else {
         // handle this situation, should try a different prompt strategy instead of truncate
-        await axios.post('http://localhost:5000/logging/chatgpt-error-log', {
+        await axios.post(`${process.env.SERVER_URI}/logging/chatgpt-error-log`, {
             type: 'TOKEN_COUNT_EXCEEDED',
             data: { id: record.id, tokenCount: tokenCount(nhm.translate(record[field])) }
           })
@@ -81,8 +82,8 @@ const generateSummary = async (ws, record) => {
         }
 
         sendMessage(ws, {
-          message: 'PROMPT_COMPLETION',
-            data: { id: record.id, cost, parsedResponse }
+          action: 'PROMPT_COMPLETION',
+          data: { id: record.id, cost, parsedResponse }
         })
         console.log('----------PROMPT_COMPLETION----------')
 
@@ -90,17 +91,17 @@ const generateSummary = async (ws, record) => {
         if (parsedResponse.summary !== '') {
           payload.response.result = parsedResponse
           await axios
-          .post(`http://localhost:5000/record/${record.id}/summary`, payload)
+          .post(`${process.env.SERVER_URI}/record/${record.id}/summary`, payload)
           
           sendMessage(ws, {
-            message: 'SUMMARY_RECORD_INSERTED',
+            action: 'SUMMARY_RECORD_INSERTED',
             data: { id: record.id, cost, payload }
           })
           console.log('----------SUMMARY_RECORD_INSERTED----------')
         } else {
 
           await axios
-            .post('http://localhost:5000/logging/chatgpt-error-log', {
+            .post(`${process.env.SERVER_URI}/logging/chatgpt-error-log`, {
               type: 'SUMMARY_RECORD_INCOMPLETE',
               data: payload,
               completion: { id: record.id, cost, prompt, result: completion.data }
@@ -108,7 +109,7 @@ const generateSummary = async (ws, record) => {
             })
 
           sendMessage(ws, {
-            message: 'SUMMARY_RECORD_INCOMPLETE',
+            action: 'SUMMARY_RECORD_INCOMPLETE',
             data: { id: record.id, cost, prompt, result: completion.data }
           })
           console.log('----------SUMMARY_RECORD_INCOMPLETE----------')

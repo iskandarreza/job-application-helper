@@ -21,10 +21,11 @@
     "node-html-parser": "^6.1.5",
     "nodemon": "^2.0.20",
     "openai": "^3.2.1",
-    "puppeteer": "^19.7.5",
+    "puppeteer": "^19.8.5",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "user-agents": "^1.0.1323"
+    "user-agents": "^1.0.1323",
+    "ws": "^8.13.0"
   }
 }

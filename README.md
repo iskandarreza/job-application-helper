@@ -19,7 +19,6 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
   * send an API call to OpenAI to use the gpt-3.5-turbo model to generate a summary and produce the output in JSON format for consumption by the frontend 
   
 ### Still in development:
-* Host it somewhere where it can run on schedule? Or leave it local and on-demand? 
 * comparing the user's resume keywords against the full job description
 * generate a cover letter based on the user's resume and the job description
 * some pretty charts and/or graphs
@@ -41,3 +40,4 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
 * Express server backend serving data from MongoDB Atlas Cloud and Google Apps Script API
 * Puppeteer script to collect publicly viewable data from Indeed and/or LinkedIn completed
 * ChatGPT for summarizing and formatting the data completed
+* Demo [deployed](https://job-application-helper-js6l.onrender.com/)

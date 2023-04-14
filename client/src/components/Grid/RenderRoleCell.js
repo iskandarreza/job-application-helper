@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { fetchJobDescription, fetchJobSummary, openJobDescriptionDialog } from '../../redux/actions/uiActions'
+import { fetchJobDescription, fetchJobSummary, openJobDetailsDialog } from '../../redux/actions/uiActions'
 import { useTheme } from '@emotion/react'
 
 const RenderRoleCell = (params) => {
@@ -15,7 +15,7 @@ const RenderRoleCell = (params) => {
   const handleClick = () => {
     dispatch(fetchJobDescription(row))
     dispatch(fetchJobSummary(row.id))
-    dispatch(openJobDescriptionDialog())
+    dispatch(openJobDetailsDialog())
   }
 
   const theme = useTheme()
