@@ -31,9 +31,8 @@
     "web-vitals": "^3.3.1"
   },
   "scripts": {
-    "start": "react-scripts start && rollup -c -w",
-    "build": "react-scripts build && rollup -c",
-    "compile": "rollup -c -w",
+    "start": "rollup -c -w && react-scripts start",
+    "build": "rollup -c && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
