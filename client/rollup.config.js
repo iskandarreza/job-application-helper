@@ -12,6 +12,7 @@ export default {
   },
   plugins: [
     replace({
+      preventAssignment: true,
       'process.env.REACT_APP_WEBSOCKET_URI': JSON.stringify(process.env.REACT_APP_WEBSOCKET_URI),
     }),
     commonjs(),

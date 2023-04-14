@@ -1,6 +1,4 @@
-const serviceWorker = () => {
   const websocketURI = process.env.REACT_APP_WEBSOCKET_URI
-  const self = this
   let wSocket
   let messageClient
   let clientMessageQueue = []
@@ -207,7 +205,3 @@ const serviceWorker = () => {
   }
   
   initWebWorker()
-  
-}
-
-export default serviceWorker
