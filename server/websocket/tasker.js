@@ -8,7 +8,10 @@ const meta = require("../meta")
 
 const sendQueriedRecordsToPrompt = require("../tasks/sendQueriedRecordsToPrompt")
 const initPromptSetup = require("../chatgpt/initPromptSetup")
+const formatMessage = require("./formatMessage")
+const checkOlderRecords = require("../tasks/checkOlderRecords")
 
+let spawnCount = 0
 const setupTasks = (ws) => {
 
   const startupCheck = true
@@ -32,33 +35,16 @@ const setupTasks = (ws) => {
       }
 
       if (message === 'Check oldest 24 open records' && checkOld) {
-        const { default: axios } = require("axios")
-        const query = {
-          positionStatus: 'open'
-        }
-
-        const records = await axios.post(`${process.env.SERVER_URI}/records/email-link-data/`, query)
-          .then((response) => {
-            console.log(`${response.data.length} open records in total`)
-            return response.data
-          })
-          .catch((error) => console.error(error))
-
-        let result = await fetchPagesData(meta(records.slice(0, 24)), ws, true)
-        let payload = {
-          action: 'UPDATE_24_OLDEST_SUCCESS',
-          data: {
-            message: `${result} records refreshed`,
-            timestamp: new Date().toISOString()
-          }
-        }
-        sendMessage(ws, payload)
+        await checkOlderRecords(ws)
       }
 
     }
 
     if (message === 'Generate summary') {
       let { data: record } = JSON.parse(data)
+      const action = 'GENERATING_SUMMARY'
+      const send = formatMessage(action, 'Summary request sent to ChatGPT', record.id)
+      sendMessage(ws, send)
       await initPromptSetup(record, ws)
     }
 
@@ -84,6 +70,16 @@ const setupTasks = (ws) => {
   })
 
   console.log('Websocket task listener has been set up')
+
+  ws.on('spawn', () => {
+    spawnCount++
+    console.log(`New Websocket instance spawned. Spawn count: ${spawnCount}`)
+
+  })
+
+  ws.on('exit', () => {
+    console.log(`ws ${spawnCount}`)
+  })
 
 }
 
