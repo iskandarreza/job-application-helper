@@ -4,8 +4,7 @@ import {
 } from '@mui/x-data-grid'
 import { Button } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { showQueryDrawer, showResumeDialog } from '../../redux/actions/uiActions'
-import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
+import { showQueryDrawer } from '../../redux/actions/uiActions'
 
 const CustomToolbar = () => {
   const dispatch = useDispatch()
@@ -20,6 +19,11 @@ const CustomToolbar = () => {
 
   const handleCheckOldRecordsClick = () => {
     dispatch(sendToServiceWorker({ action: 'CHECK_OLDEST_24' }))
+  }
+
+  const handleFetchNewButtonClick = () => {
+    dispatch(checkNewRecords())
+
   }
 
   return (
@@ -38,10 +42,11 @@ const CustomToolbar = () => {
         <Button
           variant="outlined"
           color="secondary"
-          onClick={handleResumeButtonClick}
+          onClick={handleFetchNewButtonClick}
         >
-          CV / Resume
+          Fetch New Records
         </Button>
+
 
         <Button
           variant="outlined"
@@ -56,7 +61,7 @@ const CustomToolbar = () => {
           color="secondary"
           onClick={handleCheckOldRecordsClick}
         >
-          Check Oldest 24
+          Check Older Records
         </Button>
 
         <Button

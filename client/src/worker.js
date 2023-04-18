@@ -7,7 +7,7 @@ const taskReducer = async (task) => {
   const { data, client } = task
   const { action, data: payload } = data
 
-  console.log('taskReducer: ', { action, payload })
+  console.log('worker taskReducer: ', { action, payload })
   switch (action) {
     case 'UPDATE_LINK_DATA':
       sendWS(JSON.stringify({
@@ -86,11 +86,40 @@ const messageListener = (event) => {
       if (receiver === 'webworker') {
         console.log('Service worker received websocket message: ', { message })
 
+        
+        if (action === 'GENERATING_SUMMARY') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
         if (action === 'SUMMARY_RECORD_INSERTED') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 
         if (action === 'RECORD_REFRESH_SUCCESS') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'JOB_REFRESHED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'FETCH_NEW_RECORDS_BEGIN') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'FETCH_NEW_RECORDS_REPORT') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'NEW_JOB_RECORD_ADDED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'NEW_JOB_RECORD_NOT_ADDED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'CHECK_APPLIED_COMPLETE') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 
@@ -109,6 +138,14 @@ const messageListener = (event) => {
         ]
 
         if (applicationsChecked.includes(action)) {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'UPDATE_24_OLDEST_REPORT') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'UPDATE_24_OLDEST_SUCCESS') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 

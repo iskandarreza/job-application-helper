@@ -8,7 +8,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import makeStyles from '@mui/styles/makeStyles'
 
 import { useDispatch, useSelector } from 'react-redux'
-import { closeJobDetailsDialog, fetchJobSummaryBegin, setNewTabState, showSnackbar } from '../../redux/actions/uiActions'
+import { closeJobDetailsDialog, setNewTabState, showSnackbar } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
 import RoleDetailsTabs from './RoleDetailsTab'
@@ -159,8 +159,6 @@ const JobDetailsDialog = () => {
     })
 
     dispatch(sendToServiceWorker({ data: { ...promptData }, action: 'GENERATE_SUMMARY' }))
-    dispatch(showSnackbar('Service worker is requesting a summary from ChatGPT API', 'info', true))
-    dispatch(fetchJobSummaryBegin())
   }
 
   const handleOpenPage = () => {
@@ -194,10 +192,7 @@ const JobDetailsDialog = () => {
         <Container maxWidth={'xxl'} sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <Button color='secondary' variant='outlined' onClick={handleUpdateData}>Fetch Page Data</Button>
-            {!summary ?
-              <Button color='secondary' variant='outlined' onClick={handleGetSummary}>Generate Summary</Button>
-              : ''
-            }
+            <Button color='secondary' variant='outlined' onClick={handleGetSummary}>{summary ? 'Regenerate' : 'Generate'} Summary</Button>
           </Box>
           <Box sx={{ display: 'flex', gap: 2 }}>
             <StatusUpdateMenu {...{ handleClose }} />

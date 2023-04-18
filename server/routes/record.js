@@ -415,6 +415,7 @@ recordRoutes.route('/record/new').post(async (req, res) => {
       .collection(collection)
       .insertOne(record)
       .then((data) => {
+        console.log(`/record/new data: ${JSON.stringify(data)}`)
         res.json(data)
       })
       .catch((e) => console.log(e))

@@ -2,6 +2,8 @@ require("dotenv").config({ path: "./config.env" })
 const { default: axios } = require('axios')
 const chalk = require('chalk')
 const chunkObjects = require("./chunkObjects")
+const formatMessage = require("../websocket/formatMessage")
+const sendMessage = require("../websocket/sendMessage")
 
 /**
  * The function `checkJobStatuses` retrieves job data or status from a server endpoint for an array of
@@ -36,24 +38,24 @@ const checkJobStatuses = async (jobs, statusOnly) => {
             .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
             .catch((e) => {
               return {
-                data: job,             
+                data: job,
                 error: e.response.data,
               }
             })
         } else {
           return axios.get(`${process.env.SERVER_URI}/job-status/${hostname}/${id}`)
-          .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
-          .catch((e) => {
-            return {
-              data: job,             
-              error: e.response.data,
-            }   
-          })
+            .then(({ data }) => ({ _id, id, status: data.status, puppeteerData: data }))
+            .catch((e) => {
+              return {
+                data: job,
+                error: e.response.data,
+              }
+            })
         }
-          
+
       } catch (e) {
         console.error('checkJobStatuses error: ', e)
-        return 
+        return
       }
 
     })
@@ -67,19 +69,13 @@ const checkJobStatuses = async (jobs, statusOnly) => {
 }
 
 /**
- * The function fetches data, filters it based on certain criteria, checks the status of job positions,
- * updates the records, and sends messages through a WebSocket.
- * @param data - An array of job data objects to be filtered and checked for updates.
- * @param ws - The "ws" parameter is likely a WebSocket object used for sending messages to a client in
- * real-time.
- * @param statusOnly - The `statusOnly` parameter is a boolean value that determines whether the
- * function should only check the status of the jobs or also update their data. If `statusOnly` is
- * true, the function will only check the status of the jobs and return the results without updating
- * any data. If `statusOnly
- * @returns an object with two properties: "upserted" and "response". The "upserted" property contains
- * the number of records that were updated or inserted into the database. The "response" property
- * contains an object with information about the job refresh process, including any errors that
- * occurred and the status of each job that was processed.
+ * This function refreshes job records by checking their status, updating their data, and sending
+ * messages through a WebSocket.
+ * @param data - An array of job objects to be processed.
+ * @param ws - The WebSocket object used to send messages about the job refresh process.
+ * @param statusOnly - A boolean value indicating whether to only retrieve the job status or data from
+ * the server endpoint, without updating the job records.
+ * @returns an object with properties `upserted`, `response`, and `insertedId` (if it exists).
  */
 const fetchPagesData = async (data, ws, statusOnly) => {
   const filtered = data.filter((datum) => {
@@ -92,30 +88,54 @@ const fetchPagesData = async (data, ws, statusOnly) => {
       // return datum.positionStatus === 'open' ? datum : false
 
     }
+    
   })
 
+  if (filtered.length === 0) {
+    sendMessage(ws, formatMessage(
+      'NO_RECORDS_TO_CHECK',
+      'No records meeting the required criteria to check',
+      {data, filteredData: filtered}
+    ))
+  }
+
   console.log(chalk.bgWhite(`${filtered.length} records will be checked`))
+
   const jobChunks = chunkObjects(filtered, 1)
 
   let totalJobsProcessed = 0
   let upserted = 0
+  let closed = 0
   let response
+  let insertedId
+
   const totalJobs = filtered.length
 
+  /* This code block is iterating over an array of job chunks and processing each job object in each
+  chunk. It first calls the `checkJobStatuses` function to retrieve the job status or data from a
+  server endpoint for each job object in the chunk. For each job object, it checks whether there is
+  an error property in the result object. If there is no error property, it retrieves the
+  corresponding record from the `filtered` array using the `id` property, determines whether the
+  record is new or not, and updates the record with new data retrieved from the `puppeteerData`
+  object. It then sends a message through a WebSocket with information about the job refresh
+  process. If the job object has an error property, it sends a message through the WebSocket
+  indicating that there was an error refreshing the job. Finally, it waits for 3 seconds before
+  processing the next job object. */
   for (const [index, jobChunk] of jobChunks.entries()) {
     const results = await checkJobStatuses(jobChunk, statusOnly)
     let jobsProcessed = 0
 
     for (const result of results) {
+
       if (typeof result.error === 'undefined') {
 
-        const record = filtered.find(({id}) => id === result.id)
+        const record = filtered.find(({ id }) => id === result.id)
         const isNew = !record._id
         const { id, status, org, role, location, puppeteerData, redirected } = result
         const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
-  
+
         await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
-  
+
         const url = isNew ? `${process.env.SERVER_URI}/record/new` : `${process.env.SERVER_URI}/record/${result._id}`
         const method = isNew ? 'post' : 'put'
         const body = {
@@ -127,27 +147,41 @@ const fetchPagesData = async (data, ws, statusOnly) => {
           externalSource: crawlData.externalSource,
           redirected: redirected ? redirected.toString() : 'false'
         }
-  
+
         delete body.status1
         delete body.status2
         delete body.status3
         delete body.fieldsModified
         delete body.dateModified
-        
+
         if (status !== record.positionStatus) {
           body.positionStatus = status
+          if (body.positionStatus === 'closed') {
+            closed++
+          }
         }
-        
-        await axios[method](url, body)
-        
+
+        const recordResponse = await axios[method](url, body)
+        const { data: responseData } = recordResponse
+        const now = new Date().toISOString()
+
+        if (responseData.acknowledged) {
+          if (responseData.insertedId) {
+            insertedId = responseData.insertedId
+          }
+        }
+
         upserted++
         jobsProcessed++
         totalJobsProcessed++
+
+        // maybe we don't need to send the whole jobCchunks array.
         response = {
-          action: 'JOB_REFRESHED',
+          action: !isNew ? 'JOB_REFRESHED' : !!insertedId ? 'NEW_JOB_RECORD_ADDED' : 'NEW_JOB_RECORD_NOT_ADDED',
           data: {
-            message: `Processed ${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`,
-            job: body
+            message: `${jobsProcessed} of ${jobChunk.length} jobs in chunk ${index + 1}, ${totalJobsProcessed} of ${totalJobs} jobs total.`,
+            job: { ...body, ...(!!insertedId && { _id: insertedId, dateAdded: now, dateModified: now }) },
+            ...{ jobsProcessed, jobChunks, totalJobsProcessed, totalJobsProcessed, totalJobs }
           }
         }
         if (ws) {
@@ -161,20 +195,20 @@ const fetchPagesData = async (data, ws, statusOnly) => {
             error: result
           }
         }
-        
-        console.log({response})
+
         if (ws) {
           require('../websocket/sendMessage')(ws, response)
         }
       }
-  
+
       await new Promise((resolve) => setTimeout(resolve, 3000))
 
-      }
+    }
 
   }
 
-  return {upserted, response}
+  return { upserted, response, ...(!!insertedId && { insertedId }), closed }
 }
+
 
 module.exports = fetchPagesData
