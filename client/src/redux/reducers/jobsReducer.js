@@ -13,7 +13,7 @@ import {
   FILTER_RECORDS_FAILURE,
   HIGHLIGHT_RECORD_SUCCESS,
   CHECK_FOR_NEW_RECORDS_BEGIN,
-  CHECK_FOR_NEW_RECORDS_COMPLETE
+  CHECK_FOR_NEW_RECORDS_COMPLETE,
 } from '../actions/jobActions'
 
 const initialState = {
@@ -116,7 +116,6 @@ const jobsReducer = (state = initialState, action) => {
           isLoading: true
         }
       }
-      
     case CHECK_FOR_NEW_RECORDS_COMPLETE:
       return {
         ...state,

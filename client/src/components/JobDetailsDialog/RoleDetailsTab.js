@@ -35,44 +35,116 @@ function a11yProps(index) {
   };
 }
 
-const RoleDetailsTabs = () => {
-  const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content) || ''
-  const tabStartIndex = useSelector((state) => state.uiStates.roleDetailsTab.tabStartIndex)
-  const tabValue = useSelector((state) => state.uiStates.roleDetailsTab.tabValue) || 0
+function CustomTabs(props) {
+  const summary = useSelector((state) => state.uiStates.jobSummaryDialog.content)
+  const tabValue = useSelector((state) => state.uiStates.roleDetailsTab.tabValue)
+  const { tabLabel, notes } = props
+  
   const dispatch = useDispatch()
-
+  
   const handleChange = (event, newValue) => {
-    dispatch(setNewTabState({tabStartIndex, tabValue: newValue}))
+    dispatch(setNewTabState({tabValue: newValue}))
   }
 
-  React.useEffect(() => {
-    let index = summary ? 1 : 0
-    dispatch(setNewTabState({tabStartIndex: index, tabValue}))
-  }, [summary, dispatch, tabValue])
+  let currentIndex = 0;
+
+  const tabItems = [];
+  const tabPanels = [];
+
+  if (summary) {
+    tabItems.push(
+      <Tab label="Summary" {...a11yProps(currentIndex)} key={currentIndex} />
+    )
+    tabPanels.push(
+      <TabPanel value={tabValue} index={currentIndex} key={currentIndex}>
+        <RoleSummaryContainer />
+      </TabPanel>
+    )
+    currentIndex++;
+  }
+
+  tabItems.push(
+    <Tab label="Full Description" {...a11yProps(currentIndex)} key={currentIndex} />
+  )
+  tabPanels.push(
+    <TabPanel value={tabValue} index={currentIndex} key={currentIndex}>
+      {<RoleDescriptionContainer />}
+    </TabPanel>
+  )
+  currentIndex++;
+
+  if (!!tabLabel) {
+    tabItems.push(
+      <Tab label={tabLabel} {...a11yProps(currentIndex)} key={currentIndex} />
+    )
+    tabPanels.push(
+      <TabPanel value={tabValue} index={currentIndex} key={currentIndex}>
+        <Box>
+          {Object.entries(notes).map(([key, value]) => (
+            <div key={`${key}`} style={{ display: 'flex', flexDirection: 'column', marginBottom: '16px' }}>
+              <strong style={{ textTransform: 'capitalize' }}>{key}</strong>
+              <span>{value}</span>
+            </div>
+          ))}
+        </Box>
+      </TabPanel>
+    )
+    currentIndex++;
+  }
+
+  summary && tabItems.push(
+    <Tab label="Misc Data" {...a11yProps(currentIndex)} key={currentIndex} />
+  ) && tabPanels.push(
+    <TabPanel value={tabValue} index={currentIndex} key={currentIndex}>
+      <RoleExtraDataContainer />
+    </TabPanel>
+  )
+  currentIndex++;
 
   return (
-    <Box sx={{ width: '100%', height: '60vh' }}>
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleChange} aria-label="role details tabs">
-          {summary? <Tab label="Summary" {...a11yProps(0)} /> : ''}
-          <Tab label="Full Description" {...a11yProps(tabStartIndex)} />
-          <Tab label="Misc Data" {...a11yProps(tabStartIndex + 1)} />
-        </Tabs>
-      </Box>
+    <>
+      <Tabs value={tabValue} onChange={handleChange} aria-label="role details tabs">
+        {tabItems}
+      </Tabs>
+      
       <Box sx={{ height: '90%', overflowY: 'auto' }}>
-        { summary ?
-          <TabPanel value={tabValue} index={0}>
-            <RoleSummaryContainer />
-          </TabPanel> : ''
-        }
-        <TabPanel value={tabValue} index={tabStartIndex}>
-          <RoleDescriptionContainer />
-        </TabPanel>
-        <TabPanel value={tabValue} index={tabStartIndex + 1}>
-          { summary ? 
-            <RoleExtraDataContainer /> : ''
+        {tabPanels}
+      </Box>
+    </>
+  )
+}
+
+
+
+const RoleDetailsTabs = () => {
+  const activeRow = useSelector((state) => state.uiStates.activeRow)
+  const [tabLabel, setTabLabel] = React.useState('')
+  const [notes, setNotes] = React.useState({})
+
+  React.useEffect(() => {
+    const propsToCheck = ['status2', 'status3', 'notes']
+    if (!!activeRow.status2 || !!activeRow.status3 || !!activeRow.notes) {
+      const notesObj = Object.keys(activeRow)
+        .filter(key => propsToCheck.includes(key))
+        .reduce((obj, key) => {
+          if (!!activeRow[key]) {
+            obj[key] = activeRow[key]
           }
-        </TabPanel>
+          return obj  
+        }, {})
+
+      setTabLabel('Notes')
+      setNotes(notesObj)
+    } else {
+      setTabLabel('')
+      setNotes({})
+    }
+  }, [activeRow])
+
+  return (
+    <Box sx={{ width: '100%', height: '60vh', overflow: 'auto' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <CustomTabs {...{tabLabel, notes}} />
       </Box>
     </Box>
   )

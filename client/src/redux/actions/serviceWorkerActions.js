@@ -1,4 +1,4 @@
-import { checkForNewRecordsComplete, refreshRecord } from "./jobActions"
+import {  checkForNewRecordsComplete, refreshRecord } from "./jobActions"
 import { fetchJobSummary, showSnackbar } from "./uiActions"
 
 export const SEND_TO_SERVICE_WORKER = 'SEND_TO_SERVICE_WORKER'
@@ -29,6 +29,10 @@ export const receivedFromServiceWorker = (payload) => (dispatch) => {
       dispatch(showSnackbar('Summary generated successfully', 'success', false))
       break
 
+    case 'FETCH_NEW_RECORDS_BEGIN':
+      dispatch(showSnackbar(data, 'info', false))
+      break
+  
     case 'NO_NEW_RECORDS':
       dispatch(checkForNewRecordsComplete())
       dispatch(showSnackbar(data, 'info', false))
