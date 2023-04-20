@@ -9,7 +9,9 @@ const {
   JOB_DETAILS_DIALOG_CLOSE,
   SET_ROLE_DETAILS_TABS_STATE,
   JOB_SUMMARY_SUCCESS,
-  JOB_SUMMARY_FAILURE
+  JOB_SUMMARY_FAILURE,
+  SHOW_RESUME_DIALOG,
+  HIDE_RESUME_DIALOG
 } = require("../actions/uiActions")
 
 const initialState = {
@@ -25,7 +27,6 @@ const initialState = {
     isOpen: false,
   },
   roleDetailsTab: {
-    tabStartIndex: 1,
     tabValue: 0
   },
   jobDescriptionDialog: {
@@ -46,6 +47,9 @@ const initialState = {
     message: '',
   },
   queryDrawer: {
+    isOpen: false
+  },
+  resumeDialog: {
     isOpen: false
   }
 }
@@ -144,6 +148,24 @@ const hideQueryDrawer = (state) => {
   }
 }
 
+const showResumeDialog = (state) => {
+  return {
+    ...state,
+    resumeDialog: {
+      isOpen: true,
+    }
+  }
+}
+
+const hideResumeDialog = (state) => {
+  return {
+    ...state,
+    resumeDialog: {
+      isOpen: false,
+    }
+  }
+}
+
 const uiReducer = (state = initialState, action) => {
 
   switch (action.type) {
@@ -180,9 +202,15 @@ const uiReducer = (state = initialState, action) => {
     case CLOSE_SNACKBAR:
       return closeSnackbar(state)
     case SHOW_QUERY_DRAWER:
-      return showQueryDrawer(state, action.payload)
+      return showQueryDrawer(state)
     case HIDE_QUERY_DRAWER:
       return hideQueryDrawer(state)
+
+    case SHOW_RESUME_DIALOG:
+      return showResumeDialog(state)
+    case HIDE_RESUME_DIALOG:
+      return hideResumeDialog(state)
+  
     default:
       return state
   }  

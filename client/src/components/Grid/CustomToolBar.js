@@ -4,22 +4,22 @@ import {
 } from '@mui/x-data-grid'
 import { Button } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { showQueryDrawer } from '../../redux/actions/uiActions'
+import { showQueryDrawer, showResumeDialog } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 
 const CustomToolbar = () => {
   const dispatch = useDispatch()
 
-  const handleClick = () => {
+  const handleQueryButtonClick = () => {
     dispatch(showQueryDrawer())
   }
 
   const handleCheckAppliedRecordsClick = () => {
-    dispatch(sendToServiceWorker({action: 'CHECK_APPLIED'}))
+    dispatch(sendToServiceWorker({ action: 'CHECK_APPLIED' }))
   }
 
   const handleCheckOldRecordsClick = () => {
-    dispatch(sendToServiceWorker({action: 'CHECK_OLDEST_24'}))
+    dispatch(sendToServiceWorker({ action: 'CHECK_OLDEST_24' }))
   }
 
   return (
@@ -36,23 +36,33 @@ const CustomToolbar = () => {
         }}
       >
         <Button
-          variant="contained"
-          color="primary"
+          variant="outlined"
+          color="secondary"
+          onClick={handleResumeButtonClick}
+        >
+          CV / Resume
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="secondary"
           onClick={handleCheckAppliedRecordsClick}
         >
           Check Applied
         </Button>
+
         <Button
-          variant="contained"
-          color="primary"
+          variant="outlined"
+          color="secondary"
           onClick={handleCheckOldRecordsClick}
         >
           Check Oldest 24
-        </Button>        
+        </Button>
+
         <Button
           variant="contained"
-          color="primary"
-          onClick={() => handleClick()}
+          color="warning"
+          onClick={handleQueryButtonClick}
         >
           Advanced Query
         </Button>

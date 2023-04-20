@@ -102,11 +102,7 @@ dist
 
 # TernJS port file
 .tern-port
-server/yarn.lock
-server/package-lock.json
-client/package-lock.json
 server/data.json
 server/config.env
-client/yarn.lock
-client/yarn.lock
 client/public/service-worker.js
+server/yarn.lock

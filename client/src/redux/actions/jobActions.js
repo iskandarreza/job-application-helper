@@ -157,10 +157,11 @@ export const highlightJob = (id) => async (dispatch, getState) => {
 
 export const checkNewRecords = () => (dispatch, getState) => {
   const { newRecordsCheck } = getState().jobRecords
-  const diff = Math.abs(new Date() - new Date(newRecordsCheck.lastFetch)) / 36e5
+  const { lastFetch, isLoading } = newRecordsCheck
+  const diff = Math.abs(new Date() - new Date(lastFetch)) / 36e5
   console.log((`Last check for new records was ${diff} hours ago`))
-  if (diff >= 2) {
-    dispatch(checkForNewRecordsBegin())
+  if (diff >= 2 && !isLoading) {
+    dispatch(checkForNewRecordsBegin()) // set isLoading to true
     dispatch(sendToServiceWorker({action: CHECK_FOR_NEW_RECORDS_BEGIN}))  
   }
 }

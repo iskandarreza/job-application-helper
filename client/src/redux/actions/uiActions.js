@@ -19,6 +19,10 @@ export const CLOSE_SNACKBAR = 'CLOSE_SNACKBAR'
 export const SHOW_QUERY_DRAWER = 'SHOW_QUERY_DRAWER'
 export const HIDE_QUERY_DRAWER = 'HIDE_QUERY_DRAWER'
 
+export const SHOW_RESUME_DIALOG = 'SHOW_RESUME_DIALOG'
+export const HIDE_RESUME_DIALOG = 'HIDE_RESUME_DIALOG'
+
+
 // Define action creators
 const createAction = (type) => () => ({
   type,
@@ -47,6 +51,9 @@ export const closeSnackbarMessage = createAction(CLOSE_SNACKBAR)
 export const showQueryDrawer = createAction(SHOW_QUERY_DRAWER)
 export const hideQueryDrawer = createAction(HIDE_QUERY_DRAWER)
 
+export const showResumeDialog = createAction(SHOW_RESUME_DIALOG)
+export const hideResumeDialog = createAction(HIDE_RESUME_DIALOG)
+
 export const setNewTabState = (newState) => (dispatch) => {
   dispatch(setRoleDetailsTabState(newState))
 }
@@ -55,6 +62,8 @@ export const fetchJobDescription = (rowData, crawlDate) => async (dispatch) => {
   const { id } = rowData
   const data = await getLinkData(id)
   dispatch(fetchJobDescriptionDialogContent({ rowData, data: { crawlDate, ...data } }))
+  dispatch(setRoleDetailsTabState({tabValue: 0}))
+
 }
 
 export const fetchJobSummary = (id) => async (dispatch) => {
