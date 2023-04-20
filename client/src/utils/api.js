@@ -1,5 +1,4 @@
 import axios from 'axios'
-import { currentResume } from './resumeSample'
 
 export const runQuery = async (query) => {
   return axios
@@ -81,8 +80,4 @@ export const getSummaryData = async (id) => {
       return response.data
     })
     .catch((error) => console.error(error))
-}
-
-export const getResume = () => {
-  return currentResume
 }

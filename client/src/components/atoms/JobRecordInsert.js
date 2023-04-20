@@ -144,7 +144,7 @@ const AddRowForm = () => {
     <Box
       component="form"
       autoComplete="off"
-      sx={{ mt: '20px', width: 'auto' }}
+      sx={{ mt: '32px', width: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}
       onFocus={() => {
         setIsValidating(true)
       }}

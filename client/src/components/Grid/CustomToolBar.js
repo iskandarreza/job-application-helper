@@ -5,6 +5,8 @@ import {
 import { Button } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { showQueryDrawer } from '../../redux/actions/uiActions'
+import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
+import { checkNewRecords } from '../../redux/actions/jobActions'
 
 const CustomToolbar = () => {
   const dispatch = useDispatch()
