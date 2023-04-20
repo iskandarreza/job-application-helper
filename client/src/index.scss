@@ -7,27 +7,27 @@
 	padding: 0;
 }
 
-.open-cell .MuiSelect-select{
-	color: blue;
+.MuiDataGrid-cellContent[title="open"]{
+	color: lightskyblue;
 }
 
-.applied-cell .MuiSelect-select{
-	color: darkgreen;
+.MuiDataGrid-cellContent[title="applied"]{
+	color: palegreen;
 }
 
-.uncertain-cell .MuiSelect-select {
+.MuiDataGrid-cellContent[title="uncertain"]{
 	color: orange;
 }
 
-.declined-cell .MuiSelect-select {
+.MuiDataGrid-cellContent[title="declined"]{
 	color: palevioletred;
 }
 
-.closed-cell .MuiSelect-select {
+.MuiDataGrid-cellContent[title="closed"]{
 	color: darkgray;
 }
 
-.removed-cell .MuiSelect-select {
+.MuiDataGrid-cellContent[title="removed"]{
 	color: lightgray;
 }
 

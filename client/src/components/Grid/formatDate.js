@@ -1,5 +1,4 @@
-
-const RenderDateCell = (dateString) => {
+const formatDate = (params) => {
   const timeDifferenceFromNow = (_dateString) => {
     const date = new Date(_dateString)
     const now = new Date()
@@ -8,7 +7,7 @@ const RenderDateCell = (dateString) => {
     const diffInHours = Math.round(diff / (1000 * 60 * 60))
     const diffInDays = Math.round(diff / (1000 * 60 * 60 * 24))
     const diffInWeeks = Math.round(diff / (1000 * 60 * 60 * 24 * 7))
-
+  
     if (diffInMinutes < 60) {
       return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'}`
     } else if (diffInHours < 24) {
@@ -19,14 +18,8 @@ const RenderDateCell = (dateString) => {
       return `${diffInWeeks} week${diffInWeeks === 1 ? '' : 's'}`
     }
   }
-
-  return (
-    <>
-      <span style={{ width: '1px', opacity: '0%' }}>{dateString}</span>
-      <span>{`${timeDifferenceFromNow(dateString)} ago`}</span>
-    </>
-    
-  )
+  
+  return !!params.value && timeDifferenceFromNow(params.value)
 }
 
-export default RenderDateCell
+export default formatDate

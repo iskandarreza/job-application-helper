@@ -1,9 +1,37 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { IconButton } from '@mui/material'
-import { Link } from '@mui/icons-material'
+import { BusinessCenter, OpenInBrowser, PeopleOutline } from '@mui/icons-material'
 
-const RenderURLButtons = (params) => {
-  const { id, url, externalSource } = params.row
+const CustomCell = ({ isIndeed, handleClickLink, handleClickSource, externalSource }) => {
+  return <div
+    style={{
+      width: '100%',
+      display: 'flex',
+      justifyContent: 'space-between',
+    }}
+  >
+    <div>
+
+      {isIndeed ? (
+        <IconButton onClick={handleClickLink} size="small" color="primary">
+          <BusinessCenter />
+        </IconButton>
+      ) : (
+        <IconButton onClick={handleClickLink} size="small" color={'secondary'} >
+          <PeopleOutline />
+        </IconButton>
+      )}
+
+      {!!externalSource &&
+        <IconButton onClick={handleClickSource} size="small" color={'warning'} >
+          <OpenInBrowser />
+        </IconButton>
+      }
+    </div>
+  </div>
+}
+
+const RenderURLButtons = ({ id, url, externalSource }) => {
   const isIndeed = url?.includes('indeed.com')
   const handleClickLink = () => {
     window.open(url, '_blank')
@@ -15,40 +43,10 @@ const RenderURLButtons = (params) => {
     )
   }
 
-  return (
-    <div
-      style={{
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-      }}
-    >
-      <div>
+  const MemoizedCustomCell = memo(CustomCell)
 
-        {isIndeed ? (
-          <>
-            <IconButton onClick={handleClickLink} size="small" color="primary">
-              <Link />
-            </IconButton>
-            <IconButton
-              onClick={handleClickSource}
-              size="small"
-              color={externalSource === 'true' ? 'warning' : 'secondary'}
-            >
-              <Link>Source</Link>
-            </IconButton>
-          </>
-        ) : (
-          <IconButton
-            onClick={handleClickLink}
-            size="small"
-            color={externalSource === 'true' ? 'warning' : 'primary'}
-          >
-            <Link />
-          </IconButton>
-        )}
-      </div>
-    </div>
+  return (
+    <MemoizedCustomCell {...{ isIndeed, handleClickLink, handleClickSource, externalSource }} />
   )
 }
 

@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { memo, useState } from 'react'
 import makeStyles from '@mui/styles/makeStyles'
 import { MenuItem, Select } from '@mui/material'
-import { useDispatch } from 'react-redux'
-import { updateRecord } from '../../redux/actions/jobActions'
+import { useGridApiContext } from '@mui/x-data-grid'
 
 const useStyles = makeStyles(() => ({
   select: {
@@ -15,54 +14,37 @@ const useStyles = makeStyles(() => ({
   }
 }))
 
-const RenderSelectMenu = ({ params, menuOptions }) => {
-  const dispatch = useDispatch()
-  const [value, setValue] = useState(params.value ?? '')
+const CustomCell = ({value, handleChange, menuOptions}) => {
+  const classes = useStyles()
+
+  return <Select
+    className={classes.select}
+    value={value}
+    onChange={handleChange}
+  >
+    {menuOptions.map((option) => (
+      <MenuItem key={option} value={option}>
+        {option}
+      </MenuItem>
+    ))}
+  </Select>
+}
+
+const RenderSelectMenu = ({ cellValue, row, field, menuOptions }) => {
+  const [value, setValue] = useState(cellValue ?? '')
+  const apiRef = useGridApiContext()
 
   const handleChange = async (event) => {
-    const { row, field } = params
     const value = event?.target?.value
-    const newValue = { [field]: value }
 
     setValue(value)
-    dispatch(updateRecord(row, newValue))
+    apiRef.current.setEditCellValue({id: row.id, field, value})
   }
 
-  const toKebabCase = (str) => {
-    return str.replace(/([a-z])([A-Z])/g, '$1-$2')
-      .replace(/\s+/g, '-')
-      .toLowerCase();
-  }
-
-  const classes = useStyles()
-  const selectMenuClassNames = {}
-
-  menuOptions.forEach((value) => {
-    const safeClassName = toKebabCase(value) 
-
-    selectMenuClassNames[safeClassName] = `${safeClassName}-cell`
-  })
-
-  const cellClassName = selectMenuClassNames[value] || ''
-
-  useEffect(() => {
-    if (params.value) {
-      setValue(params.value)
-    }
-  }, [params, setValue])
+  const MemoizedCustomCell = memo(CustomCell)
 
   return (
-    <Select
-      className={`${classes.select} ${cellClassName}`}
-      value={value}
-      onChange={handleChange}
-    >
-      {menuOptions.map((option) => (
-        <MenuItem key={option} value={option}>
-          {option}
-        </MenuItem>
-      ))}
-    </Select>
+    <MemoizedCustomCell {...{value, handleChange, menuOptions}} />
   )
 }
 

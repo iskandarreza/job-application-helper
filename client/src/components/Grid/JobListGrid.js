@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { DataGrid } from '@mui/x-data-grid'
+import React, { useState, useEffect, useCallback, memo } from 'react'
+import { DataGrid, GridCell, GridRow } from '@mui/x-data-grid'
 import { Tooltip } from '@mui/material'
 
-import RenderDateCell from './RenderDateCell'
 import RenderSelectMenu from './RenderSelectMenu'
 import RenderRoleCell from './RenderRoleCell'
 import RenderURLButtons from './RenderURLButtons'
@@ -16,38 +15,35 @@ import {
   updateRecord,
 } from '../../redux/actions/jobActions'
 
-import { toast } from 'react-toastify'
-import { useTheme } from '@emotion/react'
 import { postStatusOpts, status1Opts, status2Opts } from './fieldOpts'
+import formatDate from './formatDate'
+import lastUpdatedField from './lastUpdatedField'
+
+const MemoizedRow = memo(GridRow)
+const MemoizedCell = memo(GridCell)
 
 const columns = [
   { field: '_id', flex: 1 },
   { field: 'id', flex: 1 },
-  { 
-    field: 'dateAdded', 
-    flex: 1,
+  {
+    field: 'dateAdded',
+    headerName: 'received',
+    flex: 0,
+    valueFormatter: formatDate
   },
   {
     field: 'dateModified',
-    flex: 1,
-  },
-  { 
-    field: 'received', 
-    flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
-  },
-  {
-    field: 'modified',
-    flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateModified),
+    headerName: 'modified',
+    flex: 0,
+    valueFormatter: formatDate
   },
   {
     field: 'org',
     flex: 1,
     renderCell: (params) => {
-      const details = async () => {
+      const details = () => {
         const { row } = params
-        console.info({ row })
+        console.info(row)
       }
 
       return (
@@ -60,11 +56,11 @@ const columns = [
   {
     field: 'role',
     flex: 1,
-    renderCell: RenderRoleCell,
+    renderCell: (params) => <RenderRoleCell {...{ row: params.row }} />,
   },
   {
     field: 'location',
-    flex: 1,
+    flex: 0,
     renderCell: (params) => {
       return (
         <Tooltip title={params.row.location}>
@@ -75,18 +71,26 @@ const columns = [
   },
   {
     field: 'link',
-    renderCell: RenderURLButtons,
+    flex: 0,
+    renderCell: (params) => <RenderURLButtons {...{
+      id: params.row.id,
+      url: params.row.url,
+      externalSource: params.row.externalSource
+    }} />
   },
   {
     field: 'positionStatus',
     headerAlign: 'center',
-    align: 'left',
-    width: 140,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={postStatusOpts}
-      />
+    align: 'center',
+    flex: 0,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: postStatusOpts,
+        params
+      }} />
     ),
     editable: true,
   },
@@ -94,58 +98,51 @@ const columns = [
   {
     field: 'status1',
     headerAlign: 'center',
-    align: 'left',
-    width: 140,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={status1Opts}
-      />
+    align: 'center',
+    flex: 0,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: status1Opts,
+        params
+      }} />
     ),
     editable: true,
   },
   {
     field: 'status2',
     headerAlign: 'center',
-    align: 'left',
-    width: 200,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={status2Opts}
-      />
+    align: 'center',
+    flex: 0,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: status2Opts,
+        params
+      }} />
     ),
     editable: true,
   },
-  { 
-    field: 'status3', 
-    flex: 1,
-    editable: true,
-   },
-  { 
-    field: 'notes', 
-    flex: 1,
-    editable: true,
-   },
   {
-    field: 'last update',
+    field: 'status3',
     flex: 1,
-    renderCell: (params) => {
-      if (params?.row?.fieldsModified) {
-        const lastUpdatedField = params.row.fieldsModified.slice(-1)[0]
-
-        if (lastUpdatedField.value === 'open') {
-          return ''
-        }
-
-        if (lastUpdatedField.value !== '') {
-          return <span>{lastUpdatedField?.value}</span>            
-        } 
-      } 
-
-      return ''
-    }
-  }
+    editable: true,
+  },
+  {
+    field: 'notes',
+    flex: 1,
+    editable: true,
+  },
+  {
+    field: 'fieldsModified',
+    headerName: 'last update',
+    flex: 1,
+    valueFormatter: lastUpdatedField
+  },
 ]
 
 const JobsDataGrid = () => {
@@ -164,31 +161,6 @@ const JobsDataGrid = () => {
     }
   }, [jobsLoading, dispatch])
 
-  const theme = useTheme()
-  const style = theme.palette.success.main
-  
-  useEffect(() => {
-    if (jobs?.length > 0) {
-      const appliedJobs = [...jobs].filter((job) => job.status1 === 'applied' || job.status1 === 'uncertain')
-      const stillOpen = [...appliedJobs].filter((job) => job.positionStatus === 'open')
-      const open = [...jobs].filter((job) => job.positionStatus === 'open')
-      toast(() => {
-        return (
-          <div>
-            <p>
-              <span style={{ color: style }}>{stillOpen.length}</span>
-              <strong>/{appliedJobs.length}</strong> jobs applied still open
-            </p>
-            <p>
-              <span style={{color: style}}>{open.length}</span>
-              <strong>/{jobs.length}</strong> jobs in record still open
-            </p>
-          </div>
-        )
-      }, {position: toast.POSITION.BOTTOM_RIGHT})
-    }
-  }, [jobs, style])
-
   useEffect(() => {
     fetchData()
   }, [fetchData])
@@ -204,20 +176,18 @@ const JobsDataGrid = () => {
       onPaginationModelChange={setPaginationModel}
       rows={jobs}
       columns={columns}
-      components={{
-        Toolbar: () => (
-          <CustomToolbar />
-        ),
+      slots={{
+        toolbar: CustomToolbar,
+        row: MemoizedRow,
+        cell: MemoizedCell,
       }}
       initialState={{
         columns: {
           columnVisibilityModel: {
             _id: false,
             id: false,
-            dateAdded: false,
-            dateModified: false,
-            // status3: false,
-            // notes: false,
+            status3: false,
+            notes: false,
             keywords: false,
           },
         },
@@ -233,6 +203,7 @@ const JobsDataGrid = () => {
         dispatch(updateRecord(row, newValue))
       }}
     />
+
   )
 }
 
