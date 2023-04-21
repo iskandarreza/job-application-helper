@@ -1,7 +1,12 @@
 import React, { memo, useState } from 'react'
 import makeStyles from '@mui/styles/makeStyles'
 import { MenuItem, Select } from '@mui/material'
-import { useGridApiContext } from '@mui/x-data-grid'
+import { configureStore } from '../../redux/store'
+import { updateRecord } from '../../redux/actions/jobActions'
+
+// disabled until upstream fixes the situation with the grid `onCellEditStop` method
+// https://codesandbox.io/s/mui-x-datagrid-custom-cell-editor-using-select-k0x77d?file=/demo.js
+// import { useGridApiContext } from '@mui/x-data-grid'
 
 const useStyles = makeStyles(() => ({
   select: {
@@ -32,13 +37,16 @@ const CustomCell = ({value, handleChange, menuOptions}) => {
 
 const RenderSelectMenu = ({ cellValue, row, field, menuOptions }) => {
   const [value, setValue] = useState(cellValue ?? '')
-  const apiRef = useGridApiContext()
+  // const apiRef = useGridApiContext()
 
   const handleChange = async (event) => {
     const value = event?.target?.value
+    const newValue = { [field]: value };
+
+    // apiRef.current.setEditCellValue({id: row.id, field, value})
+    configureStore().store.dispatch((updateRecord(row, newValue)))
 
     setValue(value)
-    apiRef.current.setEditCellValue({id: row.id, field, value})
   }
 
   const MemoizedCustomCell = memo(CustomCell)

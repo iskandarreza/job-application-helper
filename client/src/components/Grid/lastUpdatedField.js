@@ -6,7 +6,10 @@ const lastUpdatedField = (params) => {
 
   let i = 0
   const reduceValues = [...params.value].reduce((acc, curr) => {
+    const statusFields = ['status1', 'status2',  'status3']
     if (curr.field === 'positionStatus' && curr.value === 'open')
+      return acc
+    else if (statusFields.includes(curr.field) && curr.value === '')
       return acc
     else if (typeof curr.value === 'undefined')
       return acc

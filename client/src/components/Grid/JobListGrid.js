@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, memo } from 'react'
 import { DataGrid, GridCell, GridRow } from '@mui/x-data-grid'
 import { Tooltip } from '@mui/material'
 
-import RenderSelectMenu from './RenderSelectMenu'
 import RenderRoleCell from './RenderRoleCell'
 import RenderURLButtons from './RenderURLButtons'
 import CustomToolbar from './CustomToolBar'
@@ -12,19 +11,21 @@ import '../../index.scss'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   fetchJobs,
-  updateRecord,
 } from '../../redux/actions/jobActions'
 
 import { postStatusOpts, status1Opts, status2Opts } from './fieldOpts'
 import formatDate from './formatDate'
 import lastUpdatedField from './lastUpdatedField'
+import { configureStore } from '../../redux/store'
+import RenderSelectMenu from './RenderSelectMenu'
+import { getRecordById } from '../../utils/api'
 
 const MemoizedRow = memo(GridRow)
 const MemoizedCell = memo(GridCell)
 
 const columns = [
-  { field: '_id', flex: 1 },
-  { field: 'id', flex: 1 },
+  { field: '_id', flex: 0 },
+  { field: 'id', flex: 0 },
   {
     field: 'dateAdded',
     headerName: 'received',
@@ -43,7 +44,7 @@ const columns = [
     renderCell: (params) => {
       const details = () => {
         const { row } = params
-        console.info(row)
+        console.info('row data: ', row)
       }
 
       return (
@@ -83,16 +84,15 @@ const columns = [
     headerAlign: 'center',
     align: 'center',
     flex: 0,
+    editable: true,
     renderEditCell: (params) => (
       <RenderSelectMenu {...{
         cellValue: params.value,
         row: params.row,
         field: params.field,
         menuOptions: postStatusOpts,
-        params
       }} />
     ),
-    editable: true,
   },
   { field: 'keywords', flex: 1 },
   {
@@ -100,32 +100,30 @@ const columns = [
     headerAlign: 'center',
     align: 'center',
     flex: 0,
+    editable: true,
     renderEditCell: (params) => (
       <RenderSelectMenu {...{
         cellValue: params.value,
         row: params.row,
         field: params.field,
         menuOptions: status1Opts,
-        params
       }} />
     ),
-    editable: true,
   },
   {
     field: 'status2',
     headerAlign: 'center',
     align: 'center',
     flex: 0,
+    editable: true,
     renderEditCell: (params) => (
       <RenderSelectMenu {...{
         cellValue: params.value,
         row: params.row,
         field: params.field,
         menuOptions: status2Opts,
-        params
       }} />
     ),
-    editable: true,
   },
   {
     field: 'status3',
@@ -148,6 +146,7 @@ const columns = [
 const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
+  const [rows, setRows] = useState([])
   const dispatch = useDispatch()
 
   const [paginationModel, setPaginationModel] = useState({
@@ -166,15 +165,44 @@ const JobsDataGrid = () => {
   }, [fetchData])
 
   useEffect(() => {
+    // fixes 'undefined' value causing various issues
+    const normalizedRows = jobs.map((job) => { return {
+      ...job,
+      status1: job.status1 || '',
+      status2: job.status2 || '',
+    }})
+    setRows(normalizedRows)
+  }, [jobs])
+
+  useEffect(() => {
     console.log('DataGrid HOC mounted')
   }, [])
+
+  // flush the persisted store state on refresh
+  useEffect(() => {
+    window.onbeforeunload = function () {
+      const persistor = configureStore().persistor
+
+      persistor.pause()
+      //
+      persistor.flush().then(() => {
+        return
+      })
+
+      return
+    }
+
+    return () => {
+        window.onbeforeunload = null
+    }
+}, [])
 
   return (
     <DataGrid
       getRowId={(row) => row._id}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
-      rows={jobs}
+      rows={rows}
       columns={columns}
       slots={{
         toolbar: CustomToolbar,
@@ -192,16 +220,18 @@ const JobsDataGrid = () => {
           },
         },
         sorting: {
-          sortModel: [{ field: 'received', sort: 'desc' }],
+          sortModel: [{ field: 'dateAdded', sort: 'desc' }],
         },
       }}
-      onCellEditStop={(params, event) => {
-        const { row, field } = params
-        const value = event?.target?.value
-        const newValue = { [field]: value }
-
-        dispatch(updateRecord(row, newValue))
+      processRowUpdate={async (newRow, oldRow) => {
+        // temporary workaround until `onCellEditStop` method is worked out
+        // for now we have to dispatch the event in the custom cellEdit components
+        // and update the grid record state with data from the server
+        const row = await getRecordById(newRow._id)
+        return row
       }}
+      onProcessRowUpdateError={(e) => {console.log(e)}}
+
     />
 
   )
