@@ -19,7 +19,7 @@ const formatDate = (params) => {
     }
   }
   
-  return !!params.value && timeDifferenceFromNow(params.value)
+  return !!params.value && `${timeDifferenceFromNow(params.value)} ago`
 }
 
 export default formatDate

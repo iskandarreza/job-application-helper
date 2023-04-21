@@ -56,7 +56,6 @@ const processQueue = async () => {
 
     let dispatchMsg = JSON.stringify({ message: 'Task added to queue for processing', task })
     client.postMessage(dispatchMsg)
-    sendWS(dispatchMsg)
 
     await taskReducer(task)
 
@@ -179,6 +178,8 @@ const initWebSocket = () => {
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!')
     wSocket = socket
+
+    sendWS(null)
   })
 
   socket.addEventListener('message', messageListener)
@@ -212,19 +213,54 @@ const reconnectWS = async () => {
   }, 5000)
 }
 
-const sendWS = async (data) => {
-  try {
-    wSocket.send(data);
-  } catch (error) {
-    // console.error('sendWS error', { error, data })
-    if (wSocket) {
-      // this doesn't happen, but the data is received anyway.. ?
-      console.debug('resending data...', data)
-      setTimeout(function () {
-        sendWS(data)
-      }, 5000);
-    }
+let wsMessageQueue = []
+async function sendWS (data) {
+  const reduceMessageQueue = () => {
+    wsMessageQueue.length > 0 && wsMessageQueue.reduce((acc, curr) => {
+      console.log({wsMessageQueue})
+  
+      setTimeout(() => {
+        console.log({wsMessageQueue})
+        const {timestamp, data} = curr
+        console.log({timestamp, data})  
+        wsMessageQueue.shift()
+        data !== null && wSocket.send(data)
+  
+      }, (10 * 1000))
+    })
   }
+
+  if (data === null && wSocket.readyState === 1 && wsMessageQueue.length > 0) {
+    reduceMessageQueue()
+  }
+  
+  else if (wSocket !== null && typeof wSocket !== 'undefined') {
+
+    try {
+
+      if (wSocket.readyState === 1) {
+        if (wsMessageQueue.length > 0) {
+          
+          reduceMessageQueue()
+  
+        } else {
+          data !== null && wSocket.send(data)
+        }
+
+      } else {
+        data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data}) 
+      }
+
+
+    } catch (error) {
+      console.log('sendWS error. Storing message in queue.', { error, data })
+      data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data})
+    }
+  } else {
+    console.log('WebSocket connection currently unavailable. Retrying...')
+    data !== null && sendWS(data)
+  }
+ 
 }
 
 const sendPostMessage = (payload) => {
