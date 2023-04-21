@@ -6,20 +6,26 @@ import { Button } from '@mui/material'
 import { useDispatch } from 'react-redux'
 import { showQueryDrawer } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
+import { checkNewRecords } from '../../redux/actions/jobActions'
 
 const CustomToolbar = () => {
   const dispatch = useDispatch()
 
-  const handleClick = () => {
+  const handleQueryButtonClick = () => {
     dispatch(showQueryDrawer())
   }
 
   const handleCheckAppliedRecordsClick = () => {
-    dispatch(sendToServiceWorker({action: 'CHECK_APPLIED'}))
+    dispatch(sendToServiceWorker({ action: 'CHECK_APPLIED' }))
   }
 
   const handleCheckOldRecordsClick = () => {
-    dispatch(sendToServiceWorker({action: 'CHECK_OLDEST_24'}))
+    dispatch(sendToServiceWorker({ action: 'CHECK_OLDEST_24' }))
+  }
+
+  const handleFetchNewButtonClick = () => {
+    dispatch(checkNewRecords())
+
   }
 
   return (
@@ -36,23 +42,34 @@ const CustomToolbar = () => {
         }}
       >
         <Button
-          variant="contained"
-          color="primary"
+          variant="outlined"
+          color="secondary"
+          onClick={handleFetchNewButtonClick}
+        >
+          Fetch New Records
+        </Button>
+
+
+        <Button
+          variant="outlined"
+          color="secondary"
           onClick={handleCheckAppliedRecordsClick}
         >
           Check Applied
         </Button>
+
         <Button
-          variant="contained"
-          color="primary"
+          variant="outlined"
+          color="secondary"
           onClick={handleCheckOldRecordsClick}
         >
-          Check Oldest 24
-        </Button>        
+          Check Older Records
+        </Button>
+
         <Button
           variant="contained"
-          color="primary"
-          onClick={() => handleClick()}
+          color="warning"
+          onClick={handleQueryButtonClick}
         >
           Advanced Query
         </Button>

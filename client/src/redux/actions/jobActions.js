@@ -22,6 +22,8 @@ export const INSERT_RECORD_BEGIN = 'INSERT_RECORD_BEGIN'
 export const INSERT_RECORD_SUCCESS = 'INSERT_RECORD_SUCCESS'
 export const INSERT_RECORD_FAILURE = 'INSERT_RECORD_FAILURE'
 
+export const INSERT_FETCHED_RECORD = 'INSERT_FETCHED_RECORD'
+
 export const FILTER_RECORDS_SUCCESS = 'FILTER_RECORD_SUCCESS'
 export const FILTER_RECORDS_FAILURE = 'FILTER_RECORD_FAILURE'
 
@@ -55,6 +57,8 @@ export const updateRecordFailure = createPayloadAction(UPDATE_RECORD_FAILURE)
 export const insertRecordBegin = createAction(INSERT_RECORD_BEGIN)
 export const insertRecordSuccess = createPayloadAction(INSERT_RECORD_SUCCESS)
 export const insertRecordFailure = createPayloadAction(INSERT_RECORD_FAILURE)
+
+export const insertFetchedRecordIntoGrid = createPayloadAction(INSERT_FETCHED_RECORD)
 
 export const filterJobsSuccess = createPayloadAction(FILTER_RECORDS_SUCCESS)
 export const filterJobFailure = createPayloadAction(FILTER_RECORDS_FAILURE)
@@ -130,6 +134,14 @@ export const insertRecord = (row) => async (dispatch) => {
   }
 }
 
+export const insertFetchedRecord = (record) => async (dispatch) => {
+  try {
+    dispatch(insertFetchedRecordIntoGrid(record))
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 export const updateListWithQueryResults = (results) => async (dispatch) => {
   try {
    dispatch(filterJobsSuccess(results))
@@ -157,10 +169,16 @@ export const highlightJob = (id) => async (dispatch, getState) => {
 
 export const checkNewRecords = () => (dispatch, getState) => {
   const { newRecordsCheck } = getState().jobRecords
-  const diff = Math.abs(new Date() - new Date(newRecordsCheck.lastFetch)) / 36e5
-  console.log((`Last check for new records was ${diff} hours ago`))
-  if (diff >= 2) {
-    dispatch(checkForNewRecordsBegin())
+  const { lastRequest, lastComplete, isLoading } = newRecordsCheck
+  const diff = (actionEvent) => Math.abs(new Date() - new Date(actionEvent)) / 36e5
+
+  const requestDuration = diff(lastRequest)
+  const receiveDuration = diff(lastComplete)
+  console.log((`Last request for new records was ${requestDuration} hours ago`))
+  console.log((`Last received new records ${receiveDuration} hours ago`))
+
+  if (requestDuration >= 2 || receiveDuration > 2 || !isLoading) {
+    dispatch(checkForNewRecordsBegin()) // set isLoading to true
     dispatch(sendToServiceWorker({action: CHECK_FOR_NEW_RECORDS_BEGIN}))  
-  }
+  } 
 }

@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { DataGrid } from '@mui/x-data-grid'
+import React, { useState, useEffect, useCallback, memo } from 'react'
+import { DataGrid, GridCell, GridRow } from '@mui/x-data-grid'
 import { Tooltip } from '@mui/material'
 
-import RenderDateCell from './RenderDateCell'
-import RenderSelectMenu from './RenderSelectMenu'
 import RenderRoleCell from './RenderRoleCell'
 import RenderURLButtons from './RenderURLButtons'
 import CustomToolbar from './CustomToolBar'
@@ -12,43 +10,41 @@ import '../../index.scss'
 
 import { useDispatch, useSelector } from 'react-redux'
 import {
-  checkNewRecords,
   fetchJobs,
-  updateRecord,
 } from '../../redux/actions/jobActions'
 
-import { toast } from 'react-toastify'
-import { useTheme } from '@emotion/react'
 import { postStatusOpts, status1Opts, status2Opts } from './fieldOpts'
+import formatDate from './formatDate'
+import lastUpdatedField from './lastUpdatedField'
+import { configureStore } from '../../redux/store'
+import RenderSelectMenu from './RenderSelectMenu'
+import { getRecordById } from '../../utils/api'
+
+const MemoizedRow = memo(GridRow)
+const MemoizedCell = memo(GridCell)
 
 const columns = [
-  { field: '_id', flex: 1 },
-  { field: 'id', flex: 1 },
-  { 
-    field: 'dateAdded', 
-    flex: 1,
+  { field: '_id', flex: 0 },
+  { field: 'id', flex: 0 },
+  {
+    field: 'dateAdded',
+    headerName: 'received',
+    flex: 0,
+    valueFormatter: formatDate
   },
   {
     field: 'dateModified',
-    flex: 1,
-  },
-  { 
-    field: 'received', 
-    flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateAdded)
-  },
-  {
-    field: 'modified',
-    flex: 1,
-    renderCell: (params) => RenderDateCell(params.row?.dateModified),
+    headerName: 'modified',
+    flex: 0,
+    valueFormatter: formatDate
   },
   {
     field: 'org',
     flex: 1,
     renderCell: (params) => {
-      const details = async () => {
+      const details = () => {
         const { row } = params
-        console.info({ row })
+        console.info('row data: ', row)
       }
 
       return (
@@ -61,11 +57,11 @@ const columns = [
   {
     field: 'role',
     flex: 1,
-    renderCell: RenderRoleCell,
+    renderCell: (params) => <RenderRoleCell {...{ row: params.row }} />,
   },
   {
     field: 'location',
-    flex: 1,
+    flex: 0,
     renderCell: (params) => {
       return (
         <Tooltip title={params.row.location}>
@@ -76,74 +72,81 @@ const columns = [
   },
   {
     field: 'link',
-    renderCell: RenderURLButtons,
+    flex: 0,
+    renderCell: (params) => <RenderURLButtons {...{
+      id: params.row.id,
+      url: params.row.url,
+      externalSource: params.row.externalSource
+    }} />
   },
   {
     field: 'positionStatus',
     headerAlign: 'center',
-    align: 'left',
-    width: 140,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={postStatusOpts}
-      />
-    ),
+    align: 'center',
+    flex: 0,
     editable: true,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: postStatusOpts,
+      }} />
+    ),
   },
   { field: 'keywords', flex: 1 },
   {
     field: 'status1',
     headerAlign: 'center',
-    align: 'left',
-    width: 140,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={status1Opts}
-      />
-    ),
+    align: 'center',
+    flex: 0,
     editable: true,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: status1Opts,
+      }} />
+    ),
   },
   {
     field: 'status2',
     headerAlign: 'center',
-    align: 'left',
-    width: 200,
-    renderCell: (params) => (
-      <RenderSelectMenu
-        params={params}
-        menuOptions={status2Opts}
-      />
+    align: 'center',
+    flex: 0,
+    editable: true,
+    renderEditCell: (params) => (
+      <RenderSelectMenu {...{
+        cellValue: params.value,
+        row: params.row,
+        field: params.field,
+        menuOptions: status2Opts,
+      }} />
     ),
+  },
+  {
+    field: 'status3',
+    flex: 1,
     editable: true,
   },
-  { field: 'status3', flex: 1 },
-  { field: 'notes', flex: 1 },
   {
-    field: 'last update',
+    field: 'notes',
     flex: 1,
-    renderCell: (params) => {
-      if (params?.row?.fieldsModified) {
-        const lastUpdatedField = params.row.fieldsModified.slice(-1)[0]
-
-        if (lastUpdatedField.value === 'open') {
-          return ''
-        }
-
-        if (lastUpdatedField.value !== '') {
-          return <span>{lastUpdatedField?.value}</span>            
-        } 
-      } 
-
-      return ''
-    }
-  }
+    editable: true,
+  },
+  {
+    field: 'fieldsModified',
+    headerName: 'last update',
+    flex: 1,
+    valueFormatter: lastUpdatedField
+  },
 ]
 
 const JobsDataGrid = () => {
   const jobs = useSelector((state) => state.jobRecords.jobs)
   const jobsLoading = useSelector((state) => state.jobRecords.loading)
+  const [rows, setRows] = useState([])
   const dispatch = useDispatch()
 
   const [paginationModel, setPaginationModel] = useState({
@@ -154,79 +157,83 @@ const JobsDataGrid = () => {
   const fetchData = useCallback(async () => {
     if (!jobsLoading) {
       dispatch(fetchJobs())
-      dispatch(checkNewRecords())
     }
   }, [jobsLoading, dispatch])
-
-  const theme = useTheme()
-  const style = theme.palette.success.main
-  
-  useEffect(() => {
-    if (jobs?.length > 0) {
-      const appliedJobs = [...jobs].filter((job) => job.status1 === 'applied' || job.status1 === 'uncertain')
-      const stillOpen = [...appliedJobs].filter((job) => job.positionStatus === 'open')
-      const open = [...jobs].filter((job) => job.positionStatus === 'open')
-      toast(() => {
-        return (
-          <div>
-            <p>
-              <span style={{ color: style }}>{stillOpen.length}</span>
-              <strong>/{appliedJobs.length}</strong> jobs applied still open
-            </p>
-            <p>
-              <span style={{color: style}}>{open.length}</span>
-              <strong>/{jobs.length}</strong> jobs in record still open
-            </p>
-          </div>
-        )
-      }, {position: toast.POSITION.BOTTOM_RIGHT})
-    }
-  }, [jobs, style])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
   useEffect(() => {
+    // fixes 'undefined' value causing various issues
+    const normalizedRows = jobs.map((job) => { return {
+      ...job,
+      status1: job.status1 || '',
+      status2: job.status2 || '',
+    }})
+    setRows(normalizedRows)
+  }, [jobs])
+
+  useEffect(() => {
     console.log('DataGrid HOC mounted')
   }, [])
+
+  // flush the persisted store state on refresh
+  useEffect(() => {
+    window.onbeforeunload = function () {
+      const persistor = configureStore().persistor
+
+      persistor.pause()
+      //
+      persistor.flush().then(() => {
+        return
+      })
+
+      return
+    }
+
+    return () => {
+        window.onbeforeunload = null
+    }
+}, [])
 
   return (
     <DataGrid
       getRowId={(row) => row._id}
       paginationModel={paginationModel}
       onPaginationModelChange={setPaginationModel}
-      rows={jobs}
+      rows={rows}
       columns={columns}
-      components={{
-        Toolbar: () => (
-          <CustomToolbar />
-        ),
+      slots={{
+        toolbar: CustomToolbar,
+        row: MemoizedRow,
+        cell: MemoizedCell,
       }}
       initialState={{
         columns: {
           columnVisibilityModel: {
             _id: false,
             id: false,
-            dateAdded: false,
-            dateModified: false,
             status3: false,
             notes: false,
             keywords: false,
           },
         },
         sorting: {
-          sortModel: [{ field: 'received', sort: 'desc' }],
+          sortModel: [{ field: 'dateAdded', sort: 'desc' }],
         },
       }}
-      onCellEditStop={(params, event) => {
-        const { row, field } = params
-        const value = event?.target?.value
-        const newValue = { [field]: value }
-
-        dispatch(updateRecord(row, newValue))
+      processRowUpdate={async (newRow, oldRow) => {
+        // temporary workaround until `onCellEditStop` method is worked out
+        // for now we have to dispatch the event in the custom cellEdit components
+        // and update the grid record state with data from the server
+        const row = await getRecordById(newRow._id)
+        return row
       }}
+      onProcessRowUpdateError={(e) => {console.log(e)}}
+
     />
+
   )
 }
 

@@ -2,6 +2,7 @@ const { default: axios } = require("axios")
 const sendMessage = require("../websocket/sendMessage")
 const fetchPagesData = require("./fetchPagesData")
 const meta = require("../meta")
+const formatMessage = require("../websocket/formatMessage")
 
 const checkAppiedStatus = async (ws) => {
     const query = {
@@ -31,7 +32,8 @@ const checkAppiedStatus = async (ws) => {
 
   let result = await fetchPagesData(meta(records), ws, true)
 
-  sendMessage(ws, { action: 'CHECK_APPLIED_COMPLETE', data: result })
+  // TODO: send a better message
+  !!result.response && sendMessage(ws, formatMessage('CHECK_APPLIED_COMPLETE', result.response.data.message, result.response.data.job))
 
 }
 

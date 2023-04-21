@@ -25,23 +25,23 @@ puppeterRoutes.get('/job-data/:hostdomain/:jobId', async (req, res) => {
   const jobId = req.params.jobId
   const hostdomain = req.params.hostdomain
 
-  const callbackArray = hostdomain === 'linkedIn' ?
-  [
-    linkedIn.linkedInCheckExternalLink,
-    linkedIn.linkedInGetDescription,
-    linkedIn.linkedInGetRoleLocation
-  ] :
-  [
-    indeed.indeedCheckExternalLink,
-    indeed.indeedGetDescription,
-    indeed.indeedGetOrgName,
-    indeed.indeedGetQualifications,
-    indeed.indeedGetRoleLocation,
-    indeed.indeedGetRoleTitle,
-    indeed.indeedGetSalaryInfo,
-    indeed.indeedGetSummary
-  ]
-  
+  const callbackArray = hostdomain === 'linkedin' ?
+    [
+      linkedIn.linkedInCheckExternalLink,
+      linkedIn.linkedInGetDescription,
+      linkedIn.linkedInGetRoleLocation
+    ] :
+    [
+      indeed.indeedCheckExternalLink,
+      indeed.indeedGetDescription,
+      indeed.indeedGetOrgName,
+      indeed.indeedGetQualifications,
+      indeed.indeedGetRoleLocation,
+      indeed.indeedGetRoleTitle,
+      indeed.indeedGetSalaryInfo,
+      indeed.indeedGetSummary
+    ]
+
   const data = await startInstance(jobId, hostdomain, callbackArray)
 
   try {

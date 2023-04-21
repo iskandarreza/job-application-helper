@@ -26,6 +26,7 @@ const rootReducer = combineReducers({
 const persistConfig = {
   key: 'root',
   storage,
+  blacklist: ['jobRecords'] // we don't want stale records
 }
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

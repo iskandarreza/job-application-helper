@@ -7,7 +7,7 @@ const taskReducer = async (task) => {
   const { data, client } = task
   const { action, data: payload } = data
 
-  console.log('taskReducer: ', { action, payload })
+  console.log('worker taskReducer: ', { action, payload })
   switch (action) {
     case 'UPDATE_LINK_DATA':
       sendWS(JSON.stringify({
@@ -56,7 +56,6 @@ const processQueue = async () => {
 
     let dispatchMsg = JSON.stringify({ message: 'Task added to queue for processing', task })
     client.postMessage(dispatchMsg)
-    sendWS(dispatchMsg)
 
     await taskReducer(task)
 
@@ -86,11 +85,40 @@ const messageListener = (event) => {
       if (receiver === 'webworker') {
         console.log('Service worker received websocket message: ', { message })
 
+        
+        if (action === 'GENERATING_SUMMARY') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
         if (action === 'SUMMARY_RECORD_INSERTED') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 
         if (action === 'RECORD_REFRESH_SUCCESS') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'JOB_REFRESHED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'FETCH_NEW_RECORDS_BEGIN') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'FETCH_NEW_RECORDS_REPORT') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'NEW_JOB_RECORD_ADDED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'NEW_JOB_RECORD_NOT_ADDED') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'CHECK_APPLIED_COMPLETE') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 
@@ -109,6 +137,14 @@ const messageListener = (event) => {
         ]
 
         if (applicationsChecked.includes(action)) {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'UPDATE_24_OLDEST_REPORT') {
+          sendPostMessage({ action, payload: data }, messageClient)
+        }
+
+        if (action === 'UPDATE_24_OLDEST_SUCCESS') {
           sendPostMessage({ action, payload: data }, messageClient)
         }
 
@@ -142,6 +178,8 @@ const initWebSocket = () => {
   socket.addEventListener('open', (event) => {
     console.log('WebSocket connection opened!')
     wSocket = socket
+
+    sendWS(null)
   })
 
   socket.addEventListener('message', messageListener)
@@ -175,19 +213,56 @@ const reconnectWS = async () => {
   }, 5000)
 }
 
-const sendWS = async (data) => {
-  try {
-    wSocket.send(data);
-  } catch (error) {
-    // console.error('sendWS error', { error, data })
-    if (wSocket) {
-      // this doesn't happen, but the data is received anyway.. ?
-      console.debug('resending data...', data)
-      setTimeout(function () {
-        sendWS(data)
-      }, 5000);
-    }
+let wsMessageQueue = []
+async function sendWS (data) {
+  const reduceMessageQueue = () => {
+    wsMessageQueue.length > 0 && wsMessageQueue.reduce((acc, curr) => {
+      console.log({wsMessageQueue})
+  
+      // TODO: check if its a duplicate message within n number of minutes or seconds or hours I haven't decided yet
+      setTimeout(() => {
+        const {timestamp, data} = curr
+        const diff = Math.abs(new Date() - new Date(timestamp)) / 36e5
+        console.log({messageAge: `${diff.toPrecision(3)} hours ago`, data})  
+
+        wsMessageQueue.shift()
+        data !== null && wSocket.send(data)
+  
+      }, (10 * 1000))
+    })
   }
+
+  if (data === null && wSocket.readyState === 1 && wsMessageQueue.length > 0) {
+    reduceMessageQueue()
+  }
+  
+  else if (wSocket !== null && typeof wSocket !== 'undefined') {
+
+    try {
+
+      if (wSocket.readyState === 1) {
+        if (wsMessageQueue.length > 0) {
+          
+          reduceMessageQueue()
+  
+        } else {
+          data !== null && wSocket.send(data)
+        }
+
+      } else {
+        data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data}) 
+      }
+
+
+    } catch (error) {
+      console.log('sendWS error. Storing message in queue.', { error, data })
+      data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data})
+    }
+  } else {
+    console.log('WebSocket connection currently unavailable. Storing message in queue.')
+    data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data})
+  }
+ 
 }
 
 const sendPostMessage = (payload) => {
