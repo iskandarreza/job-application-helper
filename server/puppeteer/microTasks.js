@@ -26,7 +26,7 @@ async function linkedInGetDescription(page, data, jobId) {
     await page.waitForSelector(showMore, { timeout: 10000 })
     await page.click(showMore)
 
-    const selector = '.core-section-container__content.break-words'
+    const selector = '.show-more-less-html__markup'
     const element = await page.waitForSelector(selector, { timeout: 10000 })
 
     if (element) {

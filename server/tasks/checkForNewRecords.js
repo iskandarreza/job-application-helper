@@ -61,18 +61,18 @@ const checkForNewRecords = async (ws) => {
         const promises = chunk.map(async (record) => {
           let newRecordsAddedCount = 0
           const result = await fetchPagesData([record], ws, false)
-          const { response, closed } = result
+          const { insertedId, response, closed } = result
           const { data } = response
 
           // increment the counter if record was inserted
-          !!data._id && newRecordsAddedCount++
+          !!insertedId && newRecordsAddedCount++
 
           const message3 = formatMessage(
             !data.error ? 'FETCH_NEW_RECORDS_SUCCESS' : 'FETCH_NEW_RECORDS_ERROR',
             !data.error ?
               `${newRecordsAddedCount} new records fetched, ${closed} positions closed or expired`
               : `Failed to fetch page data ${data.error && JSON.stringify({ error:data.error })}`,
-            data.error && { error: data.error }
+            !data.error ? data : data.error && { error: data.error }
           )
           sendMessage(ws, message3)
         })

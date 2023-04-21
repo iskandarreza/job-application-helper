@@ -37,7 +37,7 @@ app.use(
 )
 
 app.use(require("./routes/puppeteer"))
-
+app.use(require("./routes/maintenance"))
 app.use(require("./routes/record"))
 
 app.get('/data', (req, res) => {

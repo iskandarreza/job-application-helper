@@ -134,7 +134,7 @@ const fetchPagesData = async (data, ws, statusOnly) => {
         const { id, status, org, role, location, puppeteerData, redirected } = result
         const crawlData = { ...puppeteerData, id, crawlDate: new Date().toISOString() }
 
-        await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
+        !!crawlData.jobDescriptionText && await axios.post(`${process.env.SERVER_URI}/record/${id}/linkdata`, crawlData)
 
         const url = isNew ? `${process.env.SERVER_URI}/record/new` : `${process.env.SERVER_URI}/record/${result._id}`
         const method = isNew ? 'post' : 'put'
