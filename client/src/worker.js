@@ -219,10 +219,12 @@ async function sendWS (data) {
     wsMessageQueue.length > 0 && wsMessageQueue.reduce((acc, curr) => {
       console.log({wsMessageQueue})
   
+      // TODO: check if its a duplicate message within n number of minutes or seconds or hours I haven't decided yet
       setTimeout(() => {
-        console.log({wsMessageQueue})
         const {timestamp, data} = curr
-        console.log({timestamp, data})  
+        const diff = Math.abs(new Date() - new Date(timestamp)) / 36e5
+        console.log({messageAge: `${diff.toPrecision(3)} hours ago`, data})  
+
         wsMessageQueue.shift()
         data !== null && wSocket.send(data)
   
@@ -257,8 +259,8 @@ async function sendWS (data) {
       data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data})
     }
   } else {
-    console.log('WebSocket connection currently unavailable. Retrying...')
-    data !== null && sendWS(data)
+    console.log('WebSocket connection currently unavailable. Storing message in queue.')
+    data !== null && wsMessageQueue.push({timestamp: new Date().toISOString(), data})
   }
  
 }
