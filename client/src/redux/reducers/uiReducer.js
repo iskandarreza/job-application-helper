@@ -10,8 +10,8 @@ const {
   SET_ROLE_DETAILS_TABS_STATE,
   JOB_SUMMARY_SUCCESS,
   JOB_SUMMARY_FAILURE,
-  SHOW_RESUME_DIALOG,
-  HIDE_RESUME_DIALOG
+  SHOW_ANALYSIS_DIALOG,
+  HIDE_ANALYSIS_DIALOG
 } = require("../actions/uiActions")
 
 const initialState = {
@@ -49,9 +49,9 @@ const initialState = {
   queryDrawer: {
     isOpen: false
   },
-  resumeDialog: {
+  analysisDialog: {
     isOpen: false
-  }
+  },
 }
 
 const jobDetailsDialogOpen = (state) => {
@@ -148,19 +148,19 @@ const hideQueryDrawer = (state) => {
   }
 }
 
-const showResumeDialog = (state) => {
+const showAnalysisDialog = (state) => {
   return {
     ...state,
-    resumeDialog: {
+    analysisDialog: {
       isOpen: true,
     }
   }
 }
 
-const hideResumeDialog = (state) => {
+const hideAnalysisDialog = (state) => {
   return {
     ...state,
-    resumeDialog: {
+    analysisDialog: {
       isOpen: false,
     }
   }
@@ -206,12 +206,12 @@ const uiReducer = (state = initialState, action) => {
     case HIDE_QUERY_DRAWER:
       return hideQueryDrawer(state)
 
-    case SHOW_RESUME_DIALOG:
-      return showResumeDialog(state)
-    case HIDE_RESUME_DIALOG:
-      return hideResumeDialog(state)
-  
-    default:
+    case SHOW_ANALYSIS_DIALOG:
+      return showAnalysisDialog(state)
+    case HIDE_ANALYSIS_DIALOG:
+      return hideAnalysisDialog(state)
+
+      default:
       return state
   }  
 }
