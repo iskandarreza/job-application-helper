@@ -4,16 +4,21 @@ import {
   Container,
   DialogTitle,
   DialogContent,
+  FormControl,
+  FormControlLabel,
   Paper,
+  Radio,
+  RadioGroup,
   Typography,
 } from '@mui/material'
 import makeStyles from '@mui/styles/makeStyles'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { hideAnalysisDialog } from '../../redux/actions/uiActions'
 
 import WordCloudContainer from './WordCloudContainer'
+import BarChart from './BarChart'
 
 const flexColumn = { display: 'flex', flexDirection: 'column' }
 const useStyles = makeStyles((theme) => ({
@@ -29,31 +34,32 @@ const useStyles = makeStyles((theme) => ({
 
 const AnalysisDialog = () => {
   const open = useSelector((state) => state.uiStates.analysisDialog.isOpen)
-
-  const [jobDataSkillsList, setJobDataSkillsList] = useState([])
+  const [jobDataSkillsList, setJobDataSkillsList] = useState(null)
+  const [toggleWordCloud, setToggleWordCloud] = useState('wordcloud')
 
   const classes = useStyles()
-
   const dispatch = useDispatch()
 
   const handleClose = () => {
     dispatch(hideAnalysisDialog())
   }
 
-  const fetchJobDataSkills = async () => {
-    const res = await fetch(`${process.env.REACT_APP_SERVER_URI}/query/skills`)
-    const skills = await res.json()
-    setJobDataSkillsList(skills.keywordsList)
+  const handleChange = (event) => {
+    console.log(event.target.value)
+    setToggleWordCloud(event.target.value);
   }
 
+  const fetchJobDataSkills = useCallback(async () => {
+    if (jobDataSkillsList === null) {
+      const res = await fetch(`${process.env.REACT_APP_SERVER_URI}/query/skills`)
+      const skills = await res.json()
+      setJobDataSkillsList(skills)
+    }    
+  }, [jobDataSkillsList])
 
   useEffect(() => {
-    if (jobDataSkillsList?.length === 0) {
-      fetchJobDataSkills()
-    } else {
-
-    }
-  }, [jobDataSkillsList])
+    fetchJobDataSkills()
+  }, [fetchJobDataSkills])
 
   return (
     <Dialog
@@ -72,9 +78,37 @@ const AnalysisDialog = () => {
         <DialogContent id="analysis-dialog-description" sx={flexColumn}>
           <Paper sx={{ width: '100%', height: '65vh', overflow: 'auto' }}>
             <Box elevation={4} className={classes.wordCloudContainer}>
-              <Typography variant='h6' gutterBottom>Top skills employers are looking for</Typography>
+              <div>
+                {!!jobDataSkillsList &&
+                  <Typography variant='h6' gutterBottom>
+                    {`Top skills employers are looking for (from analysis of ${jobDataSkillsList.records} records)`}
+                  </Typography>
+                }
+                <FormControl>
+                  {/* <FormLabel id="data-visualization-controlled-radio-buttons-group">Gender</FormLabel> */}
+                  <RadioGroup
+                    row
+                    aria-labelledby="data-visualization-controlled-radio-buttons-group"
+                    name="data-visualization-radio-buttons-group"
+                    value={toggleWordCloud}
+                    onChange={handleChange}
+                  >
+                    <FormControlLabel value="wordcloud" control={<Radio />} label="Word Cloud" />
+                    <FormControlLabel value="barchart" control={<Radio />} label="Bar Chart" />
+                  </RadioGroup>
+                </FormControl>
+              </div>
+              {jobDataSkillsList?.keywordsList?.length > 0 ?
+                <>
+                  {toggleWordCloud === 'wordcloud' ?
+                    <WordCloudContainer {...{ data: jobDataSkillsList?.keywordsList }} /> :
+                    <BarChart {...{ data: jobDataSkillsList?.keywordsList }} />
+                  }
+                </> : ''
+              }
 
-              <WordCloudContainer {...{ jobDataSkillsList }} />
+              {/* <WordCloudContainer {...{ jobDataSkillsList }} /> */}
+              {/* {jobDataSkillsList?.keywordsList?.length > 0 ? <BarChart {...{data: jobDataSkillsList?.keywordsList}} /> : ''} */}
 
             </Box>
           </Paper>
