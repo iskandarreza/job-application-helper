@@ -19,8 +19,8 @@ export const CLOSE_SNACKBAR = 'CLOSE_SNACKBAR'
 export const SHOW_QUERY_DRAWER = 'SHOW_QUERY_DRAWER'
 export const HIDE_QUERY_DRAWER = 'HIDE_QUERY_DRAWER'
 
-export const SHOW_RESUME_DIALOG = 'SHOW_RESUME_DIALOG'
-export const HIDE_RESUME_DIALOG = 'HIDE_RESUME_DIALOG'
+export const SHOW_ANALYSIS_DIALOG = 'SHOW_ANALYSIS_DIALOG'
+export const HIDE_ANALYSIS_DIALOG = 'HIDE_ANALYSIS_DIALOG'
 
 
 // Define action creators
@@ -51,8 +51,8 @@ export const closeSnackbarMessage = createAction(CLOSE_SNACKBAR)
 export const showQueryDrawer = createAction(SHOW_QUERY_DRAWER)
 export const hideQueryDrawer = createAction(HIDE_QUERY_DRAWER)
 
-export const showResumeDialog = createAction(SHOW_RESUME_DIALOG)
-export const hideResumeDialog = createAction(HIDE_RESUME_DIALOG)
+export const showAnalysisDialog = createAction(SHOW_ANALYSIS_DIALOG)
+export const hideAnalysisDialog = createAction(HIDE_ANALYSIS_DIALOG)
 
 export const setNewTabState = (newState) => (dispatch) => {
   dispatch(setRoleDetailsTabState(newState))
