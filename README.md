@@ -17,11 +17,13 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
   * filter/edit that data, then save it to the connected database in the server backend
   * manually trigger Puppeteer on the Express server to check the open/expired/closed status of the job and update the database
   * send an API call to OpenAI to use the gpt-3.5-turbo model to generate a summary and produce the output in JSON format for consumption by the frontend 
+* with MongdDB aggregate queries using `react-wordcloud` or `react-chartjs-2`
+  * display a word cloud or bar chart of the top skills employers are looking for 
+* using a chrome extension, it can scrape the applicant count data from `https://myjobs.indeed.com/applied` and save it into the database for analysis
   
 ### Still in development:
 * comparing the user's resume keywords against the full job description
 * generate a cover letter based on the user's resume and the job description
-* some pretty charts and/or graphs
 
 ### Tech used or to be used:
 * Node.js backend
@@ -32,6 +34,7 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
 * Puppeteer for data scraping
 * [OpenAI API](https://platform.openai.com/docs/introduction)
 * [JSON Resume](https://jsonresume.org/)
+* ChartJS and ReactWordCloud for data visualization
 
 ### Progress report:
 * Google Apps Script to pull data into a Google Sheet completed
@@ -41,3 +44,78 @@ It can also scrape extra data from the URL `[‘status’, ‘jobDescriptionText
 * Puppeteer script to collect publicly viewable data from Indeed and/or LinkedIn completed
 * ChatGPT for summarizing and formatting the data completed
 * Demo [deployed](https://job-application-helper-js6l.onrender.com/)
+* Data visualization with ChartJS and ReactWordcloud 
+* Chrome extension to save applicant count data from `https://myjobs.indeed.com/applied`
+
+## How to deploy on your machine
+### Pre-setup
+1. Subscribe to job alert emails on Indeed and/or LinkedIn to a Gmail account
+2. Filter those alert emails in Gmail so that it can be organized into folders/labels
+
+### Setup
+1. Set up Google Sheets + Google Apps Script to pull data from the alert emails and serve it out an API endpoint. Refer to this [README.md](https://github.com/iskandarreza/job-post-email-data/blob/main/README.MD) for details. You may need to customize [`app-script/api/getData.js`](https://github.com/iskandarreza/job-application-helper/blob/main/app-script/api/getData.js) and [`app-script/email-data-scraper/script.js`](https://github.com/iskandarreza/job-application-helper/blob/main/app-script/email-data-scraper/script.js) to match your configuration*
+2. Set up a mongoDB database either locally or on mongodb.com
+3. Create and [OpenAI API key](https://platform.openai.com/account/api-keys)
+4. Add a `.env` file to the `client` folder and a `config.env` file to the `server` folder
+```
+# client/.env
+PORT=3030
+REACT_APP_SERVER_URI=http://localhost:5030
+REACT_APP_WEBSOCKET_URI=ws://localhost:5030
+
+# server/config.env
+OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
+API_DATA_SOURCE=<GOOGLE_APPS_SCRIPT_URL>
+ATLAS_URI=<MONGODB_ATLAS_CONNECTION_STRING>
+DB_NAME=<MONGO_DB_DATABASE_NAME>
+PORT=5030
+CLIENT_URI=http://localhost:3030
+SERVER_URI=http://localhost:5030
+```
+4. Install dependencies for the frontend client
+```bash
+$ cd client
+$ yarn
+```
+5. Install dependencies for the backend server
+```bash
+$ cd server
+$ yarn
+```
+6. Start the server and the client
+```bash
+$ cd server
+$ yarn start
+```
+```bash
+$ cd client
+$ yarn start
+```
+7. This last step only needs to run once on first start or deploy, or if you made changes to `client/src/worker.js`
+```bash
+$ cd client
+$ yarn compile
+```
+
+Optional: install Chrome extension to save applicant count data from Indeed (`https://myjobs.indeed.com/applied`)
+1. Install the dependencies required to compile the extension:
+```bash
+$ cd extension
+$ yarn
+```
+2. Create a `.env` file in the `extension` directory and add the server URI
+```
+# extension/.env 
+SERVER_URI=http://localhost:5030
+```
+3. Run the build command
+```bash
+$ cd extension
+$ yarn build
+```
+4. Open the Chrome browser and navigate to `chrome://extensions/`
+5. Turn on developer mode by toggling the switch in the top-right corner
+6. Click on "Load unpacked" and select the directory where the compiled extension is located (`extension/dist/`)
+
+
+*The email templates sent by LinkedIn in different countries are not identical. What I have here is for US based LinkedIn job alerts. Apparently they are not the same with Australian LinkedIn, so this `script.js` will not work as-is with that.

@@ -1,0 +1,21 @@
+{
+  "name": "Save Indeed Applicant Data",
+  "version": "1.0",
+  "manifest_version": 3,
+  "description": "Save Indeed Applicant Data",
+  "host_permissions": ["http://localhost:5030/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://myjobs.indeed.com/applied"],
+      "js": ["content.js"]
+    }
+  ],
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
