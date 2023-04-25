@@ -138,8 +138,28 @@ recordRoutes.post('/records/:collection/', async (req, res) => {
           }
         },
         {
+          $lookup: {
+          from: "indeed-applicant-count",
+          localField: "id",
+          foreignField: "id",
+          as: "applicantCount"
+          }
+        },
+        {
+          $addFields: {
+          applicants: {
+            $cond: {
+            if: { $gt: [{ $size: "$applicantCount" }, 0] },
+            then: { $arrayElemAt: ["$applicantCount.applicants", 0] },
+            else: null
+            }
+          }
+          }
+        },
+        {
           $project: {
-            lookupResults: 0
+          lookupResults: 0,
+          applicantCount: 0
           }
         },
         { $match: queryObj },
@@ -646,6 +666,35 @@ recordRoutes.route('/logging/chatgpt-error-log').post(async (req, res) => {
     console.log('error @/logging/chatgpt-error-log POST:', { error, body: record })
   }
 })
+
+recordRoutes.route('/logging/indeed-applicant-count').post(async (req, res) => {
+  console.log(
+    `endpoint ${req.path} ${req.method} from ${req.headers.origin}, req.body: `,
+    req.body
+  )
+
+  const now = new Date()
+  let db_connect = await dbo.getDb()
+  let record = req.body
+
+  record.dateAdded = now
+
+  try {
+    const target = 'indeed-applicant-count'
+    await db_connect.collection(target).deleteMany({})
+    
+    db_connect
+      .collection(target)
+      .insertMany(record)
+      .then((data) => {
+        res.json(data)
+      })
+      .catch((e) => console.log(e))
+  } catch (error) {
+    console.log('error @/logging/indeed-applicant-count POST:', { error, body: record })
+  }
+})
+
 
 
 module.exports = recordRoutes

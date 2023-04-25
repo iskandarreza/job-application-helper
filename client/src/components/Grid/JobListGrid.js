@@ -141,6 +141,13 @@ const columns = [
     flex: 1,
     valueFormatter: lastUpdatedField
   },
+  { 
+    field: 'applicants', 
+    flex: 0,
+    headerAlign: 'right',
+    align: 'right'
+   },
+
 ]
 
 const JobsDataGrid = () => {

@@ -31,7 +31,7 @@ app.use(cors())
 
 app.use(
   cors({
-    origin: [process.env.CLIENT_URI, process.env.SERVER_URI],
+    origin: [process.env.CLIENT_URI, 'https://myjobs.indeed.com'],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

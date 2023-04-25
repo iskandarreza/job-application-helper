@@ -107,9 +107,6 @@ const AnalysisDialog = () => {
                 </> : ''
               }
 
-              {/* <WordCloudContainer {...{ jobDataSkillsList }} /> */}
-              {/* {jobDataSkillsList?.keywordsList?.length > 0 ? <BarChart {...{data: jobDataSkillsList?.keywordsList}} /> : ''} */}
-
             </Box>
           </Paper>
 
