@@ -4,7 +4,7 @@ import {
 } from '@mui/x-data-grid'
 import { Button } from '@mui/material'
 import { useDispatch } from 'react-redux'
-import { showQueryDrawer } from '../../redux/actions/uiActions'
+import { showAnalysisDialog, showQueryDrawer } from '../../redux/actions/uiActions'
 import { sendToServiceWorker } from '../../redux/actions/serviceWorkerActions'
 import { checkNewRecords } from '../../redux/actions/jobActions'
 
@@ -26,6 +26,10 @@ const CustomToolbar = () => {
   const handleFetchNewButtonClick = () => {
     dispatch(checkNewRecords())
 
+  }
+
+  const handleAnalysisButtonClick = () => {
+    dispatch(showAnalysisDialog())
   }
 
   return (
@@ -73,6 +77,15 @@ const CustomToolbar = () => {
         >
           Advanced Query
         </Button>
+
+        <Button
+          variant="contained"
+          color="info"
+          onClick={() => handleAnalysisButtonClick()}
+        >
+          Analysis
+        </Button>
+        
       </div>
     </GridToolbarContainer>
   )

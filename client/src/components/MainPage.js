@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Box, Chip } from '@mui/material'
 
 import AddRowForm from './atoms/JobRecordInsert'
+import AnalysisDialog from './atoms/AnalysisDialog'
 import JobDetailsDialog from './JobDetailsDialog/JobDetailsDialog'
 import AdvancedQueryDrawer from './QueryDrawer/AdvancedQueryDrawer'
 import JobsDataGrid from './Grid/JobListGrid'
@@ -91,6 +92,7 @@ export const JobsList = () => {
       </Box>
       <JobDetailsDialog />
       <AdvancedQueryDrawer />
+      <AnalysisDialog />
     </div>
   )
 }
